@@ -1,0 +1,24 @@
+import React from 'react';
+import { MessageCircle } from 'lucide-react';
+
+export const WhatsAppButton: React.FC = () => {
+  const whatsappNumber = '6281234567890';
+  const defaultMessage = 'Hello! I am interested in your travel packages.';
+
+  const handleClick = () => {
+    window.open(
+      `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(defaultMessage)}`,
+      '_blank'
+    );
+  };
+
+  return (
+    <button
+      onClick={handleClick}
+      className="fixed bottom-6 right-6 z-50 bg-green-500 text-white p-4 rounded-full shadow-lg hover:bg-green-600 hover:scale-110 transition-all duration-300 animate-bounce"
+      aria-label="Contact us on WhatsApp"
+    >
+      <MessageCircle className="h-6 w-6" />
+    </button>
+  );
+};

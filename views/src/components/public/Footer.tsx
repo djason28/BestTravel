@@ -1,0 +1,104 @@
+import React from 'react';
+import { Link } from 'react-router-dom';
+import { Plane, Mail, Phone, MapPin, Facebook, Instagram, Twitter, Youtube } from 'lucide-react';
+
+export const Footer: React.FC = () => {
+  return (
+    <footer className="bg-gray-900 text-gray-300">
+      <div className="container mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+          <div>
+            <Link to="/" className="flex items-center gap-2 text-2xl font-bold text-white mb-4">
+              <Plane className="h-8 w-8 text-blue-500" />
+              <span>Best Travel Agency</span>
+            </Link>
+            <p className="text-sm leading-relaxed">
+              Your trusted travel partner for unforgettable adventures. We create personalized travel experiences that exceed expectations.
+            </p>
+            <div className="flex gap-4 mt-4">
+              <a href="#" className="hover:text-blue-500 transition-colors">
+                <Facebook className="h-5 w-5" />
+              </a>
+              <a href="#" className="hover:text-blue-500 transition-colors">
+                <Instagram className="h-5 w-5" />
+              </a>
+              <a href="#" className="hover:text-blue-500 transition-colors">
+                <Twitter className="h-5 w-5" />
+              </a>
+              <a href="#" className="hover:text-blue-500 transition-colors">
+                <Youtube className="h-5 w-5" />
+              </a>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="text-white font-semibold text-lg mb-4">Quick Links</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/" className="hover:text-blue-500 transition-colors">Home</Link>
+              </li>
+              <li>
+                <Link to="/packages" className="hover:text-blue-500 transition-colors">Packages</Link>
+              </li>
+              <li>
+                <Link to="/about" className="hover:text-blue-500 transition-colors">About Us</Link>
+              </li>
+              <li>
+                <Link to="/contact" className="hover:text-blue-500 transition-colors">Contact</Link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-white font-semibold text-lg mb-4">Popular Destinations</h3>
+            <ul className="space-y-2">
+              <li>
+                <Link to="/packages?destination=bali" className="hover:text-blue-500 transition-colors">Bali</Link>
+              </li>
+              <li>
+                <Link to="/packages?destination=lombok" className="hover:text-blue-500 transition-colors">Lombok</Link>
+              </li>
+              <li>
+                <Link to="/packages?destination=yogyakarta" className="hover:text-blue-500 transition-colors">Yogyakarta</Link>
+              </li>
+              <li>
+                <Link to="/packages?destination=raja-ampat" className="hover:text-blue-500 transition-colors">Raja Ampat</Link>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h3 className="text-white font-semibold text-lg mb-4">Contact Us</h3>
+            <ul className="space-y-3">
+              <li className="flex items-start gap-2">
+                <MapPin className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                <span className="text-sm">Jl. Raya Senggigi No. 123, Lombok, Indonesia</span>
+              </li>
+              <li className="flex items-center gap-2">
+                <Phone className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                <a href="tel:+6281234567890" className="text-sm hover:text-blue-500 transition-colors">
+                  +62 812-3456-7890
+                </a>
+              </li>
+              <li className="flex items-center gap-2">
+                <Mail className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                <a href="mailto:info@besttravel.com" className="text-sm hover:text-blue-500 transition-colors">
+                  info@besttravel.com
+                </a>
+              </li>
+            </ul>
+          </div>
+        </div>
+
+        <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm">
+          <p>&copy; {new Date().getFullYear()} Best Travel Agency. All rights reserved.</p>
+          <div className="flex justify-center gap-6 mt-2">
+            <Link to="/privacy" className="hover:text-blue-500 transition-colors">Privacy Policy</Link>
+            <Link to="/terms" className="hover:text-blue-500 transition-colors">Terms of Service</Link>
+            <Link to="/faq" className="hover:text-blue-500 transition-colors">FAQ</Link>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+};

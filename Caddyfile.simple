@@ -1,0 +1,29 @@
+# ===================================
+# CADDYFILE - SIMPLE VERSION (DEVELOPMENT)
+# Best for: Local testing, development
+# ===================================
+
+{$DOMAIN:localhost}
+
+# API routes
+handle_path /api/* {
+    reverse_proxy backend:8080
+}
+
+# Health check
+handle /health {
+    reverse_proxy backend:8080
+}
+
+# Uploads
+handle /uploads/* {
+    root * /usr/share/caddy
+    file_server
+}
+
+# Frontend (SPA)
+handle {
+    root * /usr/share/caddy
+    try_files {path} /index.html
+    file_server
+}

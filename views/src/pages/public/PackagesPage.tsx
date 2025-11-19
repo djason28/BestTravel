@@ -1,0 +1,475 @@
+import React, { useEffect, useState } from 'react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Search, SlidersHorizontal, MapPin, Calendar, Star, X } from 'lucide-react';
+import { packageApi } from '../../services/api';
+import type { Package, FilterOptions, PackageFilterOptions } from '../../types';
+import { formatPrice, debounce, formatCategories } from '../../utils/security';
+import { Card } from '../../components/common/Card';
+import { PackageCardSkeleton } from '../../components/common/Loading';
+import { Button } from '../../components/common/Button';
+
+export const PackagesPage: React.FC = () => {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [packages, setPackages] = useState<Package[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [showFilters, setShowFilters] = useState(false);
+  const [totalPages, setTotalPages] = useState(1);
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const [filters, setFilters] = useState<FilterOptions>({
+    search: searchParams.get('search') || '',
+    category: searchParams.get('category') || '',
+    categories: (searchParams.get('categories') || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+    categoryMode: (searchParams.get('categoryMode') as FilterOptions['categoryMode']) || 'any',
+    destination: searchParams.get('destination') || '',
+    // multi-destination and multi-currency support
+    destinations: (searchParams.get('destinations') || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+    currency: searchParams.get('currency') || '',
+    currencies: (searchParams.get('currencies') || '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean),
+    availability: searchParams.get('availability') || '',
+    sortBy: (searchParams.get('sortBy') as FilterOptions['sortBy']) || 'newest',
+    featuredOnly: searchParams.get('featuredOnly') === 'true',
+    notFeatured: searchParams.get('notFeatured') === 'true',
+    status: 'published',
+    page: Number(searchParams.get('page') || 1),
+    limit: Number(searchParams.get('limit') || 12),
+  });
+
+  const [options, setOptions] = useState<PackageFilterOptions>({ categories: [], destinations: [], currencies: [], availability: [] });
+
+  useEffect(() => {
+    // load dynamic filter options once
+    (async () => {
+      try {
+        const res = await packageApi.getOptions();
+        if (res.success && res.data) {
+          setOptions(res.data);
+        }
+      } catch (e) {
+        // non-fatal
+        console.warn('Failed to load filter options', e);
+      }
+    })();
+  }, []);
+
+  useEffect(() => {
+    loadPackages();
+  }, [filters]);
+
+  const loadPackages = async () => {
+    setIsLoading(true);
+    try {
+      const response = await packageApi.getAll(filters);
+      if (response.success) {
+        setPackages(response.data);
+        setTotalPages(response.pagination.totalPages);
+        setCurrentPage(response.pagination.page);
+      }
+    } catch (error) {
+      console.error('Failed to load packages:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSearchChange = debounce((value: string) => {
+    updateFilter('search', value);
+  }, 500);
+
+  const syncSearchParams = (obj: FilterOptions) => {
+    const params = new URLSearchParams();
+    Object.entries(obj).forEach(([k, v]) => {
+      if (v === undefined || v === null) return;
+      if (Array.isArray(v)) {
+        if (v.length > 0) params.set(k, v.join(','));
+        return;
+      }
+      if (typeof v === 'boolean') {
+        if (v) params.set(k, 'true');
+        return;
+      }
+      const sv = String(v);
+      if (sv !== '') params.set(k, sv);
+    });
+    setSearchParams(params);
+  };
+
+  const updateFilter = (key: keyof FilterOptions, value: any) => {
+    const newFilters: FilterOptions = { ...filters, [key]: value, page: 1 };
+    setFilters(newFilters);
+    syncSearchParams(newFilters);
+  };
+
+  const updateCategories = (cat: string, checked: boolean) => {
+    const current = new Set(filters.categories || []);
+    if (checked) current.add(cat); else current.delete(cat);
+    const categories = Array.from(current);
+    const newFilters = { ...filters, categories, category: '', page: 1 };
+    setFilters(newFilters);
+    syncSearchParams(newFilters);
+  };
+
+  const clearFilters = () => {
+    const defaults: FilterOptions = {
+      search: '',
+      category: '',
+      categories: [],
+      categoryMode: 'any',
+      destination: '',
+      sortBy: 'newest',
+      featuredOnly: false,
+      notFeatured: false,
+      status: 'published',
+      page: 1,
+      limit: 12,
+    };
+    setFilters(defaults);
+    setSearchParams({});
+  };
+
+  const hasActiveFilters = Boolean(
+    (filters.search && filters.search !== '') ||
+    (filters.category && filters.category !== '') ||
+    (filters.categories && filters.categories.length > 0) ||
+    (filters.destination && filters.destination !== '') ||
+    (filters.destinations && filters.destinations.length > 0) ||
+    (filters.currencies && filters.currencies.length > 0) ||
+    (filters.currency && filters.currency !== '') ||
+    (filters.availability && filters.availability !== '') ||
+    filters.featuredOnly || filters.notFeatured
+  );
+
+  return (
+    <div className="bg-gray-50 min-h-screen">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
+        <div className="container mx-auto px-4">
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">Explore Our Packages</h1>
+          <p className="text-xl text-blue-100">Discover amazing destinations and unforgettable experiences</p>
+        </div>
+      </div>
+
+      <div className="container mx-auto px-4 py-8">
+        <div className="bg-white rounded-lg shadow-md p-4 mb-8">
+          <div className="flex flex-col md:flex-row gap-4">
+            <div className="flex-1 relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
+              <input
+                type="text"
+                placeholder="Search packages..."
+                defaultValue={filters.search}
+                onChange={(e) => handleSearchChange(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
+            </div>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className="flex items-center gap-2 px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <SlidersHorizontal className="h-5 w-5" />
+              <span>Filters</span>
+              {hasActiveFilters && (
+                <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">Active</span>
+              )}
+            </button>
+          </div>
+
+          {showFilters && (
+            <div className="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Categories</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(options.categories || []).map((cat) => (
+                    <label key={cat} className="inline-flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={!!filters.categories?.includes(cat)}
+                        onChange={(e) => updateCategories(cat, e.target.checked)}
+                      />
+                      <span className="capitalize">{cat}</span>
+                    </label>
+                  ))}
+                </div>
+                <div className="mt-2">
+                  <label className="text-sm text-gray-600 mr-3">Match</label>
+                  <select
+                    value={filters.categoryMode || 'any'}
+                    onChange={(e) => updateFilter('categoryMode', e.target.value)}
+                    className="px-2 py-1 border rounded"
+                  >
+                    <option value="any">Any</option>
+                    <option value="all">All</option>
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Destination</label>
+                <div className="grid grid-cols-2 gap-2">
+                  {(options.destinations || []).map((d) => (
+                    <label key={d} className="inline-flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={!!filters.destinations?.includes(d)}
+                        onChange={(e) => {
+                          const current = new Set(filters.destinations || []);
+                          if (e.target.checked) current.add(d); else current.delete(d);
+                          const dests = Array.from(current);
+                          const nf = { ...filters, destinations: dests, destination: '', page: 1 };
+                          setFilters(nf); syncSearchParams(nf);
+                        }}
+                      />
+                      <span className="capitalize">{d.replace('-', ' ')}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                <div className="grid grid-cols-3 gap-2">
+                  {(options.currencies || []).map((ccy) => (
+                    <label key={ccy} className="inline-flex items-center gap-2 text-sm">
+                      <input
+                        type="checkbox"
+                        checked={!!filters.currencies?.includes(ccy)}
+                        onChange={(e) => {
+                          const current = new Set(filters.currencies || []);
+                          if (e.target.checked) current.add(ccy); else current.delete(ccy);
+                          const arr = Array.from(current);
+                          const nf = { ...filters, currencies: arr, currency: '', page: 1 };
+                          setFilters(nf); syncSearchParams(nf);
+                        }}
+                      />
+                      <span>{ccy}</span>
+                    </label>
+                  ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Availability</label>
+                <input
+                  type="text"
+                  value={filters.availability || ''}
+                  onChange={(e) => updateFilter('availability', e.target.value)}
+                  placeholder="e.g., year-round, seasonal"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+                <select
+                  value={filters.sortBy}
+                  onChange={(e) => updateFilter('sortBy', e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="newest">Newest First</option>
+                  <option value="popular">Most Popular</option>
+                  <option value="price_asc">Price: Low to High</option>
+                  <option value="price_desc">Price: High to Low</option>
+                  <option value="duration_asc">Duration: Short to Long</option>
+                  <option value="duration_desc">Duration: Long to Short</option>
+                  <option value="inquiries_desc">Most Inquiries</option>
+                  <option value="inquiries_asc">Least Inquiries</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Featured</label>
+                <select
+                  value={filters.featuredOnly ? 'featured' : filters.notFeatured ? 'not' : 'all'}
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    if (val === 'featured') {
+                      const nf = { ...filters, featuredOnly: true, notFeatured: false, page: 1 };
+                      setFilters(nf); syncSearchParams(nf);
+                    } else if (val === 'not') {
+                      const nf = { ...filters, featuredOnly: false, notFeatured: true, page: 1 };
+                      setFilters(nf); syncSearchParams(nf);
+                    } else {
+                      const nf = { ...filters, featuredOnly: false, notFeatured: false, page: 1 };
+                      setFilters(nf); syncSearchParams(nf);
+                    }
+                  }}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="all">All</option>
+                  <option value="featured">Featured only</option>
+                  <option value="not">Not featured</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
+                <div className="flex gap-2">
+                  <input type="number" min="1" placeholder="Min" className="w-full px-3 py-2 border rounded"
+                    value={String(searchParams.get('priceMin') || '')}
+                    onChange={(e) => updateFilter('priceMin', e.target.value ? Number(e.target.value) : undefined)} />
+                  <input type="number" min="1" placeholder="Max" className="w-full px-3 py-2 border rounded"
+                    value={String(searchParams.get('priceMax') || '')}
+                    onChange={(e) => updateFilter('priceMax', e.target.value ? Number(e.target.value) : undefined)} />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Duration (days)</label>
+                <div className="flex gap-2">
+                  <input type="number" min="1" placeholder="Min" className="w-full px-3 py-2 border rounded"
+                    value={String(searchParams.get('durationMin') || '')}
+                    onChange={(e) => updateFilter('durationMin', e.target.value ? Number(e.target.value) : undefined)} />
+                  <input type="number" min="1" placeholder="Max" className="w-full px-3 py-2 border rounded"
+                    value={String(searchParams.get('durationMax') || '')}
+                    onChange={(e) => updateFilter('durationMax', e.target.value ? Number(e.target.value) : undefined)} />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">Participants</label>
+                <div className="flex gap-2">
+                  <input type="number" min="1" placeholder="Min" className="w-full px-3 py-2 border rounded"
+                    value={String(searchParams.get('participantsMin') || '')}
+                    onChange={(e) => updateFilter('participantsMin', e.target.value ? Number(e.target.value) : undefined)} />
+                  <input type="number" min="1" placeholder="Max" className="w-full px-3 py-2 border rounded"
+                    value={String(searchParams.get('participantsMax') || '')}
+                    onChange={(e) => updateFilter('participantsMax', e.target.value ? Number(e.target.value) : undefined)} />
+                </div>
+              </div>
+
+              {hasActiveFilters && (
+                <div className="md:col-span-3 flex justify-end">
+                  <button
+                    onClick={clearFilters}
+                    className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
+                  >
+                    <X className="h-4 w-4" />
+                    <span>Clear All Filters</span>
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+
+        <div className="mb-6 flex items-center justify-between">
+          <p className="text-gray-600">
+            {isLoading ? 'Loading...' : `${packages.length} packages found`}
+          </p>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+          {isLoading ? (
+            <>
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <PackageCardSkeleton key={i} />
+              ))}
+            </>
+          ) : packages.length === 0 ? (
+            <div className="col-span-full text-center py-16">
+              <p className="text-xl text-gray-600 mb-4">No packages found</p>
+              <Button onClick={clearFilters}>Clear Filters</Button>
+            </div>
+          ) : (
+            packages.map((pkg) => {
+              const { visible: visibleCategories, remaining: remainingCount } = formatCategories(pkg.categories || [], 3);
+              
+              return (
+              <Link key={pkg.id} to={`/packages/${pkg.slug}`}>
+                <Card hover className="h-full">
+                  <div className="relative h-64 overflow-hidden">
+                    <img
+                      src={pkg.images[0]?.url || 'https://images.pexels.com/photos/1430676/pexels-photo-1430676.jpeg'}
+                      alt={pkg.title}
+                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                    />
+                    {pkg.featured && (
+                      <div className="absolute top-4 right-4 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+                        <Star className="h-4 w-4 fill-current" />
+                        Featured
+                      </div>
+                    )}
+                    {/* Categories chips overlay */}
+                    {visibleCategories.length > 0 && (
+                      <div className="absolute top-4 left-4 flex flex-wrap gap-2 max-w-[calc(100%-8rem)]">
+                        {visibleCategories.map((cat, idx) => (
+                          <span key={idx} className="px-2 py-1 bg-white/90 backdrop-blur-sm text-gray-900 rounded-full text-xs font-semibold shadow-sm">
+                            {cat}
+                          </span>
+                        ))}
+                        {remainingCount > 0 && (
+                          <span className="px-2 py-1 bg-white/90 backdrop-blur-sm text-gray-700 rounded-full text-xs font-semibold shadow-sm">
+                            +{remainingCount}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                  <div className="p-6">
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">{pkg.title}</h3>
+                    <p className="text-gray-600 mb-4 line-clamp-2">{pkg.shortDescription}</p>
+
+                    <div className="space-y-2 mb-4">
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <MapPin className="h-4 w-4 text-blue-600" />
+                        <span>{pkg.destination}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm text-gray-600">
+                        <Calendar className="h-4 w-4 text-blue-600" />
+                        <span>{pkg.duration} {pkg.durationUnit}</span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between pt-4 border-t">
+                      <div>
+                        <p className="text-sm text-gray-600">Starting from</p>
+                        <p className="text-2xl font-bold text-blue-600">{formatPrice(pkg.price, pkg.currency)}</p>
+                      </div>
+                      <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        Details
+                      </button>
+                    </div>
+                  </div>
+                </Card>
+              </Link>
+              );
+            })
+          )}
+        </div>
+
+        {totalPages > 1 && (
+          <div className="flex justify-center gap-2">
+            <Button
+              disabled={currentPage === 1}
+              onClick={() => setFilters({ ...filters, page: currentPage - 1 })}
+            >
+              Previous
+            </Button>
+            {[...Array(totalPages)].map((_, i) => (
+              <Button
+                key={i}
+                variant={currentPage === i + 1 ? 'primary' : 'outline'}
+                onClick={() => setFilters({ ...filters, page: i + 1 })}
+              >
+                {i + 1}
+              </Button>
+            ))}
+            <Button
+              disabled={currentPage === totalPages}
+              onClick={() => setFilters({ ...filters, page: currentPage + 1 })}
+            >
+              Next
+            </Button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};

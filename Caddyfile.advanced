@@ -1,0 +1,227 @@
+# ===================================
+# CADDYFILE - ADVANCED VERSION
+# Best for: High traffic, multiple backends
+# ===================================
+
+{
+    email admin@yourdomain.com
+    
+    # Admin API (for metrics)
+    admin :2019
+    
+    # ACME settings
+    acme_ca https://acme-v02.api.letsencrypt.org/directory
+}
+
+# Main site with www redirect
+www.yourdomain.com {
+    redir https://yourdomain.com{uri} permanent
+}
+
+yourdomain.com {
+    # Rate limiting (requires plugin)
+    # rate_limit {
+    #     zone dynamic {
+    #         key {remote_host}
+    #         events 100
+    #         window 1m
+    #     }
+    # }
+    
+    # Compression
+    encode {
+        gzip 6
+        # zstd (if supported)
+        minimum_length 256
+    }
+    
+    # Security headers
+    header {
+        # HSTS
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+        
+        # XSS Protection
+        X-Frame-Options "SAMEORIGIN"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        
+        # Privacy
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Permissions-Policy "geolocation=(), microphone=(), camera=()"
+        
+        # Remove fingerprinting
+        -Server
+        -X-Powered-By
+    }
+    
+    # Basic auth for admin routes (optional)
+    @admin {
+        path /admin/*
+    }
+    # basicauth @admin {
+    #     admin $2a$14$hashed_password_here
+    # }
+    
+    # API routes with load balancing
+    handle_path /api/* {
+        reverse_proxy backend:8080 backend2:8080 {
+            # Load balancing
+            lb_policy least_conn
+            lb_try_duration 2s
+            
+            # Health checks
+            health_uri /health
+            health_interval 10s
+            health_timeout 5s
+            health_status 200
+            
+            # Circuit breaker
+            fail_duration 30s
+            max_fails 3
+            unhealthy_status 5xx
+            
+            # Timeouts
+            transport http {
+                dial_timeout 5s
+                read_timeout 30s
+                write_timeout 30s
+            }
+            
+            # Headers
+            header_up X-Real-IP {remote_host}
+            header_up X-Forwarded-For {remote_host}
+            header_up X-Forwarded-Proto {scheme}
+            header_up X-Forwarded-Host {host}
+            
+            # Remove backend headers
+            header_down -Server
+        }
+    }
+    
+    # WebSocket support (if needed)
+    @websocket {
+        header Connection *Upgrade*
+        header Upgrade websocket
+    }
+    handle @websocket {
+        reverse_proxy backend:8080
+    }
+    
+    # Health check endpoint
+    handle /health {
+        respond "OK" 200
+    }
+    
+    # Metrics endpoint (protected)
+    handle /metrics {
+        basicauth {
+            admin $2a$14$hashed_password_here
+        }
+        reverse_proxy backend:8080
+    }
+    
+    # Static uploads with CDN-like caching
+    handle /uploads/* {
+        root * /usr/share/caddy
+        file_server {
+            precompressed gzip
+        }
+        
+        # Aggressive caching
+        header {
+            Cache-Control "public, max-age=31536000, immutable"
+            Access-Control-Allow-Origin "*"
+            Access-Control-Allow-Methods "GET, OPTIONS"
+        }
+        
+        # 404 handler
+        handle_errors {
+            respond "File not found" 404
+        }
+    }
+    
+    # Frontend SPA with precompressed files
+    handle {
+        root * /usr/share/caddy
+        
+        # Enable precompressed files
+        file_server {
+            precompressed gzip br
+            index index.html
+        }
+        
+        # Try files
+        try_files {path} /index.html
+        
+        # Static assets (versioned)
+        @static {
+            path *.js *.css *.woff *.woff2
+        }
+        header @static {
+            Cache-Control "public, max-age=31536000, immutable"
+            Content-Security-Policy "default-src 'self'"
+        }
+        
+        # Images
+        @images {
+            path *.png *.jpg *.jpeg *.gif *.ico *.svg *.webp
+        }
+        header @images Cache-Control "public, max-age=2592000"
+        
+        # HTML - no cache
+        @html {
+            path *.html /
+        }
+        header @html {
+            Cache-Control "no-cache, no-store, must-revalidate"
+            Content-Security-Policy "default-src 'self' 'unsafe-inline' 'unsafe-eval'; img-src 'self' data: https:; connect-src 'self' https:"
+        }
+    }
+    
+    # Error handling
+    handle_errors {
+        @404 {
+            expression {http.error.status_code} == 404
+        }
+        rewrite @404 /index.html
+        file_server
+        
+        @5xx {
+            expression {http.error.status_code} >= 500
+        }
+        respond @5xx "Service temporarily unavailable" 503
+    }
+    
+    # Structured logging
+    log {
+        output file /var/log/caddy/{host}/access.log {
+            roll_size 100mb
+            roll_keep 10
+            roll_keep_for 2160h
+        }
+        format json {
+            time_format "iso8601"
+            message_key "msg"
+        }
+        level INFO
+    }
+}
+
+# API subdomain (alternative pattern)
+api.yourdomain.com {
+    reverse_proxy backend:8080 {
+        health_uri /health
+        health_interval 10s
+    }
+}
+
+# Admin subdomain
+admin.yourdomain.com {
+    basicauth {
+        admin $2a$14$hashed_password_here
+    }
+    
+    reverse_proxy backend:8080 {
+        header_up X-Admin-Request true
+    }
+}
