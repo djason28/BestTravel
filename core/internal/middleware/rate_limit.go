@@ -13,8 +13,13 @@ import (
 
 type ipKey string
 
+type clientLimiter struct {
+	limiter  *rate.Limiter
+	lastSeen time.Time
+}
+
 var (
-	limiterStore = make(map[ipKey]*rate.Limiter)
+	limiterStore = make(map[ipKey]*clientLimiter)
 	mu           sync.Mutex
 )
 
@@ -30,12 +35,15 @@ func getLimiter(ip string, r rate.Limit, b int) *rate.Limiter {
 	mu.Lock()
 	defer mu.Unlock()
 	key := ipKey(ip)
-	limiter, exists := limiterStore[key]
+	client, exists := limiterStore[key]
 	if !exists {
-		limiter = rate.NewLimiter(r, b)
-		limiterStore[key] = limiter
+		client = &clientLimiter{
+			limiter: rate.NewLimiter(r, b),
+		}
+		limiterStore[key] = client
 	}
-	return limiter
+	client.lastSeen = time.Now()
+	return client.limiter
 }
 
 // RateLimit limits requests per IP
@@ -50,15 +58,40 @@ func RateLimit(rps float64, burst int) gin.HandlerFunc {
 	}
 }
 
-// Cleanup old limiters periodically (optional)
+// LoginRateLimit creates a stricter limiter for login endpoints
+// e.g. 5 requests per minute
+func LoginRateLimit() gin.HandlerFunc {
+	// Use a separate store for login attempts to avoid conflict with global limiter
+	// For simplicity in this example, we reuse the logic but could use a different map key prefix
+	// Ideally, use a separate map or prefix the IP.
+	return func(c *gin.Context) {
+		ip := getIP(c)
+		// Prefix IP to distinguish from global limiter
+		loginKey := "login:" + ip
+
+		// 5 requests per minute (approx 0.083 rps), burst 5
+		limiter := getLimiter(loginKey, rate.Limit(5.0/60.0), 5)
+
+		if !limiter.Allow() {
+			c.AbortWithStatusJSON(http.StatusTooManyRequests, gin.H{
+				"success": false,
+				"error":   "too many login attempts, please try again later",
+			})
+			return
+		}
+		c.Next()
+	}
+}
+
+// Cleanup old limiters periodically
 func StartLimiterCleanup(interval time.Duration) {
 	go func() {
 		for range time.Tick(interval) {
 			mu.Lock()
-			for k, l := range limiterStore {
-				_ = l // placeholder; in memory cleanup could track last seen
-				// keep all in this simple impl
-				_ = k
+			for k, client := range limiterStore {
+				if time.Since(client.lastSeen) > interval {
+					delete(limiterStore, k)
+				}
 			}
 			mu.Unlock()
 		}

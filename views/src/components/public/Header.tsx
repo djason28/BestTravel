@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Menu, X, Plane, MessageCircle } from 'lucide-react';
+import { Menu, X, MessageCircle } from 'lucide-react';
+import logo from '@/assets/branding/logo pendek.png';
 
 export const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -19,9 +20,9 @@ export const Header: React.FC = () => {
     <header className="bg-white shadow-md sticky top-0 z-40">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
-          <Link to="/" className="flex items-center gap-2 text-2xl font-bold text-blue-600">
-            <Plane className="h-8 w-8" />
-            <span>Best Travel Agency</span>
+          <Link to="/" className="flex items-center gap-3 group">
+            <img src={logo} alt="Bintan Batam Exclusive Trip Logo" className="h-16 w-auto select-none" draggable={false} />
+            <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:via-purple-700 group-hover:to-pink-700 transition-all">Bintan Batam Exclusive Trip</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">

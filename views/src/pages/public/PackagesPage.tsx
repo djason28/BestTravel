@@ -48,17 +48,16 @@ export const PackagesPage: React.FC = () => {
 
   useEffect(() => {
     // load dynamic filter options once
-    (async () => {
-      try {
-        const res = await packageApi.getOptions();
+    packageApi.getOptions()
+      .then((res) => {
         if (res.success && res.data) {
           setOptions(res.data);
         }
-      } catch (e) {
+      })
+      .catch((e) => {
         // non-fatal
         console.warn('Failed to load filter options', e);
-      }
-    })();
+      });
   }, []);
 
   useEffect(() => {
@@ -67,18 +66,20 @@ export const PackagesPage: React.FC = () => {
 
   const loadPackages = async () => {
     setIsLoading(true);
-    try {
-      const response = await packageApi.getAll(filters);
-      if (response.success) {
-        setPackages(response.data);
-        setTotalPages(response.pagination.totalPages);
-        setCurrentPage(response.pagination.page);
-      }
-    } catch (error) {
-      console.error('Failed to load packages:', error);
-    } finally {
-      setIsLoading(false);
-    }
+    packageApi.getAll(filters)
+      .then((response) => {
+        if (response.success) {
+          setPackages(response.data);
+          setTotalPages(response.pagination.totalPages);
+          setCurrentPage(response.pagination.page);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to load packages:', error);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   };
 
   const handleSearchChange = debounce((value: string) => {
@@ -386,7 +387,7 @@ export const PackagesPage: React.FC = () => {
                 <Card hover className="h-full">
                   <div className="relative h-64 overflow-hidden">
                     <img
-                      src={pkg.images[0]?.url || 'https://images.pexels.com/photos/1430676/pexels-photo-1430676.jpeg'}
+                      src={(Array.isArray(pkg.images) && pkg.images.length > 0 && pkg.images[0]?.url) ? pkg.images[0]?.url : 'https://images.pexels.com/photos/1430676/pexels-photo-1430676.jpeg'}
                       alt={pkg.title}
                       className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
                     />

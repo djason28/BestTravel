@@ -106,7 +106,7 @@ func (h *PackageController) GetBySlug(c *gin.Context) {
 func (h *PackageController) Create(c *gin.Context) {
 	var req packageForm
 	if err := c.ShouldBindJSON(&req); err != nil {
-		fail(c, http.StatusBadRequest, "invalid request body")
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "errors": FormatValidationError(err)})
 		return
 	}
 
@@ -173,7 +173,7 @@ func (h *PackageController) Update(c *gin.Context) {
 	id := c.Param("id")
 	var req packageForm
 	if err := c.ShouldBindJSON(&req); err != nil {
-		fail(c, http.StatusBadRequest, "invalid request body")
+		c.JSON(http.StatusBadRequest, gin.H{"success": false, "errors": FormatValidationError(err)})
 		return
 	}
 
@@ -301,30 +301,27 @@ func (h *PackageController) GetOptions(c *gin.Context) {
 
 	// Distinct destinations
 	var destinations []string
-	if err := base.Distinct().Where("destination <> ''").Pluck("destination", &destinations).Error; err != nil {
-		fail(c, http.StatusInternalServerError, "failed to load destinations")
-		return
+	if err := base.Distinct().Where("destination IS NOT NULL AND destination <> ''").Pluck("destination", &destinations).Error; err != nil {
+		destinations = []string{}
 	}
 
 	// Distinct currencies
 	var currencies []string
-	if err := base.Distinct().Where("currency <> ''").Pluck("currency", &currencies).Error; err != nil {
-		fail(c, http.StatusInternalServerError, "failed to load currencies")
-		return
+	if err := base.Distinct().Where("currency IS NOT NULL AND currency <> ''").Pluck("currency", &currencies).Error; err != nil {
+		currencies = []string{}
 	}
 
 	// Distinct availability
 	var availability []string
-	if err := base.Distinct().Where("availability <> ''").Pluck("availability", &availability).Error; err != nil {
-		fail(c, http.StatusInternalServerError, "failed to load availability")
-		return
+	if err := base.Distinct().Where("availability IS NOT NULL AND availability <> ''").Pluck("availability", &availability).Error; err != nil {
+		availability = []string{}
 	}
 
 	// Aggregate categories from JSON arrays
 	var rows []struct{ Categories models.StringArray }
-	if err := base.Select("categories").Find(&rows).Error; err != nil {
-		fail(c, http.StatusInternalServerError, "failed to load categories")
-		return
+	// Normalize empty or NULL categories to JSON array '[]' to avoid scan errors
+	if err := base.Select("COALESCE(NULLIF(categories, ''), '[]') as categories").Find(&rows).Error; err != nil {
+		rows = []struct{ Categories models.StringArray }{}
 	}
 	catSet := map[string]struct{}{}
 	for _, r := range rows {

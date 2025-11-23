@@ -17,8 +17,7 @@ type Config struct {
 	JWTSecret     string
 	JWTTTLMinutes int
 	// DB
-	DBDriver       string // sqlite | mysql
-	DBPath         string // sqlite path
+	DBDriver       string // mysql (only)
 	DBDSN          string // optional DSN override (mysql)
 	DBHost         string
 	DBPort         int
@@ -43,7 +42,8 @@ type Config struct {
 
 func Load() *Config {
 	// Try loading .env from current and parent directories to allow a single root .env
-	_ = godotenv.Load(".env", "../.env", "../../.env")
+	// Ensure .env values override any existing env vars in dev
+	_ = godotenv.Overload(".env", "../.env", "../../.env")
 
 	cfg := &Config{
 		Port:                          getEnv("PORT", "8080"),
@@ -51,8 +51,7 @@ func Load() *Config {
 		CorsOrigins:                   splitAndTrim(getEnv("CORS_ORIGINS", "http://localhost:5173")),
 		JWTSecret:                     getEnv("JWT_SECRET", "change-this-in-production"),
 		JWTTTLMinutes:                 getEnvAsInt("JWT_TTL_MINUTES", 30),
-		DBDriver:                      strings.ToLower(getEnv("DB_DRIVER", "sqlite")),
-		DBPath:                        getEnv("DB_PATH", "./data/app.db"),
+		DBDriver:                      strings.ToLower(getEnv("DB_DRIVER", "mysql")),
 		DBDSN:                         getEnv("DB_DSN", ""),
 		DBHost:                        getEnv("DB_HOST", "127.0.0.1"),
 		DBPort:                        getEnvAsInt("DB_PORT", 3306),
@@ -76,10 +75,9 @@ func Load() *Config {
 	if err := os.MkdirAll(cfg.UploadDir, 0755); err != nil {
 		log.Fatalf("failed to create upload dir: %v", err)
 	}
-	if cfg.DBDriver == "sqlite" {
-		if err := os.MkdirAll(dirOf(cfg.DBPath), 0755); err != nil {
-			// ignore if path has no dir (e.g., file in current dir)
-		}
+	// Enforce MySQL only
+	if cfg.DBDriver != "mysql" {
+		log.Fatalf("unsupported DB_DRIVER '%s' - only 'mysql' is supported now", cfg.DBDriver)
 	}
 
 	// Basic production hardening: require strong JWT secret and non-default admin creds
@@ -121,15 +119,4 @@ func splitAndTrim(s string) []string {
 		}
 	}
 	return res
-}
-
-func dirOf(path string) string {
-	idx := strings.LastIndex(path, "/")
-	if idx == -1 {
-		idx = strings.LastIndex(path, "\\")
-	}
-	if idx == -1 {
-		return "."
-	}
-	return path[:idx]
 }

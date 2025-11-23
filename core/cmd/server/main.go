@@ -11,8 +11,10 @@ import (
 
 	"besttravel/internal/config"
 	"besttravel/internal/database"
+	"besttravel/internal/logger"
 	"besttravel/internal/middleware"
 	"besttravel/internal/models"
+
 	"besttravel/internal/router"
 	"besttravel/internal/utils"
 
@@ -21,6 +23,7 @@ import (
 
 func main() {
 	cfg := config.Load()
+	logger.Init(cfg.Env)
 	database.Init(cfg)
 
 	// seed admin

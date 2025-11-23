@@ -13,6 +13,11 @@ if (existsSync(rootEnv)) {
 // https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
+  resolve: {
+    alias: {
+      '@': resolve(__dirname, 'src'),
+    },
+  },
   optimizeDeps: {
     exclude: ['lucide-react'],
   },
@@ -20,5 +25,15 @@ export default defineConfig({
     // bind to all network interfaces so dev server is accessible from other devices on the same LAN
     host: true,
     port: 5173,
+    proxy: {
+      '/api': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+      '/uploads': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+      },
+    },
   },
 });

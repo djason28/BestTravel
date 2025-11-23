@@ -86,16 +86,20 @@ export const ContactPage: React.FC = () => {
 
   return (
     <div className="bg-gray-50">
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
+      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-12">
         <div className="container mx-auto px-4">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Contact Us</h1>
-          <p className="text-xl text-blue-100">Get in touch with our travel experts</p>
+          <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex-1">
+              <h1 className="text-3xl md:text-4xl font-bold mb-3">Contact Us</h1>
+              <p className="text-lg text-blue-100">Get in touch with our travel experts</p>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2">
+      <div className="container mx-auto px-4 py-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          <div>
             <div className="bg-white rounded-lg shadow-md p-8">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Send Us a Message</h2>
               <form onSubmit={handleSubmit} className="space-y-6">
@@ -229,7 +233,7 @@ export const ContactPage: React.FC = () => {
 
             <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-xl font-bold text-gray-900 mb-3">Visit Our Office</h3>
-              <div className="w-full h-64 bg-gray-200 rounded-lg overflow-hidden">
+              <div className="w-full h-48 bg-gray-200 rounded-lg overflow-hidden">
                 <iframe
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3945.7687!2d116.0400!3d-8.4800!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zOMKwMjgnNDguMCJTIDExNsKwMDInMjQuMCJF!5e0!3m2!1sen!2sid!4v1234567890"
                   width="100%"

@@ -22,9 +22,9 @@ func Setup(cfg *config.Config) *gin.Engine {
 	if err := r.SetTrustedProxies(cfg.TrustedProxies); err != nil {
 		log.Fatalf("failed to set trusted proxies: %v", err)
 	}
-	r.Use(gin.Logger())
 	r.Use(gin.Recovery())
 	r.Use(middleware.RequestID())
+	r.Use(middleware.StructuredLogger())
 	r.Use(middleware.SecureHeaders())
 	r.Use(middleware.CORS(cfg))
 	r.Use(middleware.RateLimit(10, 20)) // 10 req/sec with burst 20 per IP
@@ -47,7 +47,7 @@ func Setup(cfg *config.Config) *gin.Engine {
 	{
 		// Auth
 		auth := controllers.NewAuthController(cfg)
-		api.POST("/auth/login", auth.Login)
+		api.POST("/auth/login", middleware.LoginRateLimit(), auth.Login)
 		api.POST("/auth/refresh", auth.Refresh)
 
 		apiAuth := api.Group("/auth")

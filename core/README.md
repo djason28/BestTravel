@@ -1,6 +1,6 @@
 BestTravel Backend (Gin + GORM)
 
-A secure REST API backend for the BestTravel frontend, built with Gin (Go), GORM (MySQL/SQLite), and JWT auth.
+A secure REST API backend for the BestTravel frontend, built with Gin (Go), GORM (MySQL only), and JWT auth.
 
 ## Features
 
@@ -41,10 +41,10 @@ CompileDaemon --build="go build -o ..\bin\server.exe .\cmd\server" --command="..
 - CORS_ORIGINS: asal frontend, contoh http://localhost:5173
 - JWT_SECRET: kunci rahasia JWT (WAJIB ubah di production)
 - JWT_TTL_MINUTES: masa berlaku access token (default 30)
-- DB_DRIVER: mysql | sqlite (dev default: mysql untuk Laragon)
+- DB_DRIVER: mysql (hanya mysql sekarang, sqlite dihapus)
 - DB_HOST/PORT/USER/PASSWORD/NAME: koneksi MySQL
 - DB_PARAMS: parseTime=true&charset=utf8mb4&loc=Local (disarankan)
-- DB_PATH: path SQLite (default ./data/app.db) jika DB_DRIVER=sqlite
+- (SQLite dihapus, DB_PATH tidak lagi digunakan)
 - UPLOAD_DIR: folder upload (default ./uploads)
 - MAX_UPLOAD_MB: batas ukuran upload (default 5)
 - ADMIN_EMAIL/ADMIN_PASSWORD/ADMIN_NAME: user admin seed saat pertama run

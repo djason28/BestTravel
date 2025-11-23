@@ -15,6 +15,18 @@ import type {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
 
+export class ApiError extends Error {
+  status: number;
+  validationErrors?: Record<string, string>;
+
+  constructor(message: string, status: number, validationErrors?: Record<string, string>) {
+    super(message);
+    this.status = status;
+    this.validationErrors = validationErrors;
+    this.name = 'ApiError';
+  }
+}
+
 const getAuthHeaders = (): HeadersInit => {
   const token = localStorage.getItem('auth_token');
   return {
@@ -25,8 +37,21 @@ const getAuthHeaders = (): HeadersInit => {
 
 const handleResponse = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Network error' }));
-    throw new Error(error.error || `HTTP error! status: ${response.status}`);
+    const data = await response.json().catch(() => ({ error: 'Network error' }));
+    let message = data.error || `HTTP error! status: ${response.status}`;
+    
+    if (data.errors) {
+      const details = Object.values(data.errors).join(', ');
+      if (details) {
+         // If the main error message is generic, replace it or append
+         if (message === 'invalid request body' || !message) {
+             message = details;
+         } else {
+             message = `${message}: ${details}`;
+         }
+      }
+    }
+    throw new ApiError(message, response.status, data.errors);
   }
   return response.json();
 };

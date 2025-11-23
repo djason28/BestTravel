@@ -1,6 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Plane, Mail, Phone, MapPin, Facebook, Instagram, Twitter, Youtube } from 'lucide-react';
+import { Mail, Phone, MapPin, Facebook, Instagram, Twitter, Youtube } from 'lucide-react';
+import logo from '@/assets/branding/logo panjang.png';
 
 export const Footer: React.FC = () => {
   return (
@@ -8,10 +9,15 @@ export const Footer: React.FC = () => {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           <div>
-            <Link to="/" className="flex items-center gap-2 text-2xl font-bold text-white mb-4">
-              <Plane className="h-8 w-8 text-blue-500" />
-              <span>Best Travel Agency</span>
-            </Link>
+            <div className="flex items-center gap-4 mb-4">
+              <Link to="/" className="flex-shrink-0">
+                <img src={logo} alt="Bintan Batam Exclusive Trip Logo" className="h-24 w-auto select-none" draggable={false} />
+              </Link>
+              <div className="flex flex-col justify-center">
+                <h3 className="text-xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight">Bintan Batam</h3>
+                <h3 className="text-xl font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight">Exclusive Trip</h3>
+              </div>
+            </div>
             <p className="text-sm leading-relaxed">
               Your trusted travel partner for unforgettable adventures. We create personalized travel experiences that exceed expectations.
             </p>
@@ -91,7 +97,7 @@ export const Footer: React.FC = () => {
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm">
-          <p>&copy; {new Date().getFullYear()} Best Travel Agency. All rights reserved.</p>
+          <p>&copy; {new Date().getFullYear()} Bintan Batam Exclusive Trip. All rights reserved.</p>
           <div className="flex justify-center gap-6 mt-2">
             <Link to="/privacy" className="hover:text-blue-500 transition-colors">Privacy Policy</Link>
             <Link to="/terms" className="hover:text-blue-500 transition-colors">Terms of Service</Link>
