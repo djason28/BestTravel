@@ -17,11 +17,13 @@ export const AboutPage: React.FC = () => {
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto mb-16">
           <div className="bg-white rounded-lg shadow-md p-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6">{t('our_story')}</h2>
-            <div className="prose prose-lg max-w-none text-gray-700 space-y-4">
-              <p>{t('story_p1')}</p>
-              <p>{t('story_p2')}</p>
-              <p>{t('story_p3')}</p>
+                <h2 className="text-3xl font-bold text-gray-900 mb-6">{t('our_story')}</h2>
+                <div className="prose prose-lg max-w-none text-gray-700 space-y-4">
+                  {(t('story_text') || `${t('story_p1')}\n\n${t('story_p2')}\n\n${t('story_p3')}`)
+                    .split(/\n{2,}/)
+                    .map((paragraph, idx) => (
+                      <p key={idx}>{paragraph}</p>
+                    ))}
             </div>
           </div>
         </div>

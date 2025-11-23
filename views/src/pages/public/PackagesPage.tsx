@@ -4,6 +4,7 @@ import { Search, SlidersHorizontal, MapPin, Calendar, Star, X } from 'lucide-rea
 import { packageApi } from '../../services/api';
 import type { Package, FilterOptions, PackageFilterOptions } from '../../types';
 import { formatPrice, debounce, formatCategories } from '../../utils/security';
+import { buildFilterQuery, parseFilterParams } from '../../utils/query';
 import { Card } from '../../components/common/Card';
 import { PackageCardSkeleton } from '../../components/common/Loading';
 import { Button } from '../../components/common/Button';
@@ -18,32 +19,9 @@ export const PackagesPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   const [filters, setFilters] = useState<FilterOptions>({
-    search: searchParams.get('search') || '',
-    category: searchParams.get('category') || '',
-    categories: (searchParams.get('categories') || '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean),
-    categoryMode: (searchParams.get('categoryMode') as FilterOptions['categoryMode']) || 'any',
-    destination: searchParams.get('destination') || '',
-    // multi-destination and multi-currency support
-    destinations: (searchParams.get('destinations') || '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean),
-    currency: searchParams.get('currency') || '',
-    currencies: (searchParams.get('currencies') || '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean),
-    availability: searchParams.get('availability') || '',
-    sortBy: (searchParams.get('sortBy') as FilterOptions['sortBy']) || 'newest',
-    featuredOnly: searchParams.get('featuredOnly') === 'true',
-    notFeatured: searchParams.get('notFeatured') === 'true',
-    status: 'published',
-    page: Number(searchParams.get('page') || 1),
-    limit: Number(searchParams.get('limit') || 12),
-  });
+    ...parseFilterParams(searchParams as any),
+    status: 'published'
+  } as FilterOptions);
 
   const [options, setOptions] = useState<PackageFilterOptions>({ categories: [], destinations: [], currencies: [], availability: [] });
 
@@ -89,20 +67,8 @@ export const PackagesPage: React.FC = () => {
   }, 500);
 
   const syncSearchParams = (obj: FilterOptions) => {
-    const params = new URLSearchParams();
-    Object.entries(obj).forEach(([k, v]) => {
-      if (v === undefined || v === null) return;
-      if (Array.isArray(v)) {
-        if (v.length > 0) params.set(k, v.join(','));
-        return;
-      }
-      if (typeof v === 'boolean') {
-        if (v) params.set(k, 'true');
-        return;
-      }
-      const sv = String(v);
-      if (sv !== '') params.set(k, sv);
-    });
+    const q = buildFilterQuery(obj);
+    const params = new URLSearchParams(q);
     setSearchParams(params);
   };
 
@@ -371,7 +337,6 @@ export const PackagesPage: React.FC = () => {
                     <img
                       src={(Array.isArray(pkg.images) && pkg.images.length > 0 && pkg.images[0]?.url) ? pkg.images[0]?.url : 'https://images.pexels.com/photos/1430676/pexels-photo-1430676.jpeg'}
                       alt={pkg.title}
-                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
                       loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
                     />

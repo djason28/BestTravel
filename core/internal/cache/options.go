@@ -1,6 +1,7 @@
 package cache
 
 import (
+	"strings"
 	"sync"
 	"time"
 
@@ -33,5 +34,16 @@ func Get(key string) (gin.H, bool) {
 func Set(key string, data gin.H) {
 	mu.Lock()
 	store[key] = entry{data: data, expires: time.Now().Add(ttl)}
+	mu.Unlock()
+}
+
+// InvalidateOptions removes all cached option entries (keys prefixed with options:)
+func InvalidateOptions() {
+	mu.Lock()
+	for k := range store {
+		if strings.HasPrefix(k, "options:") {
+			delete(store, k)
+		}
+	}
 	mu.Unlock()
 }

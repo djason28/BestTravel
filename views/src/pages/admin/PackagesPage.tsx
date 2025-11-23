@@ -4,6 +4,7 @@ import { Plus, Edit, Trash2, Eye, Search, SlidersHorizontal, X } from 'lucide-re
 import { packageApi } from '../../services/api';
 import type { Package, FilterOptions, PackageFilterOptions } from '../../types';
 import { formatPrice, formatDate, debounce, formatCategories } from '../../utils/security';
+import { buildFilterQuery } from '../../utils/query';
 import { Button } from '../../components/common/Button';
 import { Card } from '../../components/common/Card';
 import { Loading } from '../../components/common/Loading';
@@ -125,7 +126,11 @@ export const PackagesPage: React.FC = () => {
   };
 
   const updateFilter = (key: keyof FilterOptions, value: any) => {
-    setFilters((prev) => ({ ...prev, [key]: value, page: 1 }));
+    setFilters((prev) => {
+      const next = { ...prev, [key]: value, page: 1 };
+      // (Optional) Could sync URL here if admin uses query params later
+      return next;
+    });
   };
 
   const updateCategories = (cat: string, checked: boolean) => {

@@ -2,23 +2,22 @@ package controllers
 
 import "strings"
 
-func applySort(query string) string {
-	switch strings.ToLower(query) {
-	case "popular":
-		return "view_count DESC"
-	case "price_asc":
-		return "price ASC"
-	case "price_desc":
-		return "price DESC"
-	case "duration_asc":
-		return "duration ASC"
-	case "duration_desc":
-		return "duration DESC"
-	case "inquiries_asc":
-		return "inquiry_count ASC"
-	case "inquiries_desc":
-		return "inquiry_count DESC"
-	default:
-		return "created_at DESC"
+var allowedSort = map[string]string{
+	"newest":         "created_at DESC",
+	"popular":        "view_count DESC",
+	"price_asc":      "price ASC",
+	"price_desc":     "price DESC",
+	"duration_asc":   "duration ASC",
+	"duration_desc":  "duration DESC",
+	"inquiries_asc":  "inquiry_count ASC",
+	"inquiries_desc": "inquiry_count DESC",
+}
+
+func applySort(query string) (string, bool) {
+	q := strings.ToLower(strings.TrimSpace(query))
+	if q == "" || q == "newest" {
+		return allowedSort["newest"], true
 	}
+	val, ok := allowedSort[q]
+	return val, ok
 }

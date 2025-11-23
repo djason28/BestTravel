@@ -2,6 +2,8 @@ package controllers
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"net/http"
 	"sort"
 	"strconv"
@@ -54,6 +56,78 @@ type packageForm struct {
 	Itinerary          []models.ItineraryItem `json:"itinerary"`
 }
 
+// PackageDTO exposes a consistent subset of Package fields for API consumers.
+// (Chinese language substitution applied before conversion when requested.)
+type PackageDTO struct {
+	ID               string                `json:"id"`
+	Title            string                `json:"title"`
+	Slug             string                `json:"slug"`
+	ShortDescription string                `json:"shortDescription"`
+	Description      string                `json:"description"`
+	Price            int64                 `json:"price"`
+	Currency         string                `json:"currency"`
+	Duration         int                   `json:"duration"`
+	DurationUnit     string                `json:"durationUnit"`
+	Categories       models.StringArray    `json:"categories"`
+	Destination      string                `json:"destination"`
+	Included         models.StringArray    `json:"included"`
+	Excluded         models.StringArray    `json:"excluded"`
+	Highlights       models.StringArray    `json:"highlights"`
+	Availability     string                `json:"availability"`
+	MaxParticipants  int                   `json:"maxParticipants"`
+	Featured         bool                  `json:"featured"`
+	Status           string                `json:"status"`
+	ViewCount        int64                 `json:"viewCount"`
+	InquiryCount     int64                 `json:"inquiryCount"`
+	Images           []models.PackageImage `json:"images"`
+	// Itinerary only included in detail endpoints; left empty for list (can expand later).
+	Itinerary []models.ItineraryItem `json:"itinerary,omitempty"`
+}
+
+type PaginationDTO struct {
+	Page       int   `json:"page"`
+	Limit      int   `json:"limit"`
+	Total      int64 `json:"total"`
+	TotalPages int   `json:"totalPages"`
+}
+
+type PackageListResponse struct {
+	Data       []PackageDTO  `json:"data"`
+	Pagination PaginationDTO `json:"pagination"`
+	SortBy     string        `json:"sortBy"`
+	Cached     bool          `json:"cached"`
+}
+
+func toDTO(p models.Package, includeDetail bool) PackageDTO {
+	dto := PackageDTO{
+		ID:               p.ID,
+		Title:            p.Title,
+		Slug:             p.Slug,
+		ShortDescription: p.ShortDescription,
+		Description:      p.Description,
+		Price:            p.Price,
+		Currency:         p.Currency,
+		Duration:         p.Duration,
+		DurationUnit:     p.DurationUnit,
+		Categories:       p.Categories,
+		Destination:      p.Destination,
+		Included:         p.Included,
+		Excluded:         p.Excluded,
+		Highlights:       p.Highlights,
+		Availability:     p.Availability,
+		MaxParticipants:  p.MaxParticipants,
+		Featured:         p.Featured,
+		Status:           p.Status,
+		ViewCount:        p.ViewCount,
+		InquiryCount:     p.InquiryCount,
+		Images:           p.Images,
+	}
+	if includeDetail {
+		dto.Itinerary = p.Itinerary
+	}
+	return dto
+}
+
 func (h *PackageController) GetAll(c *gin.Context) {
 	isAdmin := false
 	if role, ok := c.Get("role"); ok && role == "admin" {
@@ -68,7 +142,23 @@ func (h *PackageController) GetAll(c *gin.Context) {
 	page, limit := utils.GetPageLimit(c, 12)
 	var total int64
 	var items []models.Package
-	sortBy := applySort(c.Query("sortBy"))
+	sortBy, okSort := applySort(c.Query("sortBy"))
+	if !okSort {
+		fail(c, http.StatusBadRequest, "invalid sortBy")
+		return
+	}
+
+	// Build stable cache key from essential query params
+	rawKey := c.Request.URL.RawQuery + "|admin=" + strconv.FormatBool(isAdmin) + "|lang=" + detectLang(c) + "|page=" + strconv.Itoa(page) + "|limit=" + strconv.Itoa(limit) + "|sort=" + sortBy
+	sum := sha1.Sum([]byte(rawKey))
+	cacheKey := "pkg:list:" + hex.EncodeToString(sum[:])
+	if cachedRaw, ok := cache.GetPackageList(cacheKey); ok {
+		if cachedResp, ok2 := cachedRaw.(PackageListResponse); ok2 {
+			// Fast path: return cached response
+			c.JSON(http.StatusOK, gin.H{"success": true, "data": cachedResp.Data, "pagination": cachedResp.Pagination, "sortBy": cachedResp.SortBy, "cached": true})
+			return
+		}
+	}
 
 	utils.ParallelCountAndList(
 		qBase,
@@ -85,13 +175,18 @@ func (h *PackageController) GetAll(c *gin.Context) {
 			applyLangZh(&items[i])
 		}
 	}
-	c.JSON(http.StatusOK, gin.H{
-		"success": true,
-		"data":    items,
-		"pagination": gin.H{
-			"page": page, "limit": limit, "total": total, "totalPages": (int((total + int64(limit) - 1) / int64(limit))),
-		},
-	})
+	dtoList := make([]PackageDTO, len(items))
+	for i, p := range items {
+		dtoList[i] = toDTO(p, false)
+	}
+	resp := PackageListResponse{
+		Data:       dtoList,
+		Pagination: PaginationDTO{Page: page, Limit: limit, Total: total, TotalPages: int((total + int64(limit) - 1) / int64(limit))},
+		SortBy:     sortBy,
+		Cached:     false,
+	}
+	cache.SetPackageList(cacheKey, resp)
+	c.JSON(http.StatusOK, gin.H{"success": true, "data": resp.Data, "pagination": resp.Pagination, "sortBy": resp.SortBy, "cached": false})
 }
 
 func (h *PackageController) GetByID(c *gin.Context) {
@@ -106,7 +201,7 @@ func (h *PackageController) GetByID(c *gin.Context) {
 	if detectLang(c) == "zh" {
 		applyLangZh(&pkg)
 	}
-	ok(c, pkg)
+	ok(c, toDTO(pkg, true))
 }
 
 func (h *PackageController) GetBySlug(c *gin.Context) {
@@ -129,7 +224,7 @@ func (h *PackageController) GetBySlug(c *gin.Context) {
 	if detectLang(c) == "zh" {
 		applyLangZh(&pkg)
 	}
-	ok(c, pkg)
+	ok(c, toDTO(pkg, true))
 }
 
 func (h *PackageController) Create(c *gin.Context) {
@@ -160,51 +255,60 @@ func (h *PackageController) Create(c *gin.Context) {
 	}
 	// ensure unique slug
 	slug = ensureUniqueSlug(c, slug)
-	pkg := models.Package{
-		ID:                 uuid.NewString(),
-		Title:              req.Title,
-		TitleZh:            req.TitleZh,
-		Slug:               slug,
-		Description:        req.Description,
-		DescriptionZh:      req.DescriptionZh,
-		ShortDescription:   req.ShortDescription,
-		ShortDescriptionZh: req.ShortDescriptionZh,
-		Price:              req.Price,
-		Currency:           normalizeCurrency(choose(req.Currency, "IDR")),
-		Duration:           req.Duration,
-		DurationUnit:       choose(req.DurationUnit, "days"),
-		Categories:         models.StringArray(req.Categories),
-		CategoriesZh:       models.StringArray(req.CategoriesZh),
-		Destination:        req.Destination,
-		DestinationZh:      req.DestinationZh,
-		Included:           models.StringArray(req.Included),
-		IncludedZh:         models.StringArray(req.IncludedZh),
-		Excluded:           models.StringArray(req.Excluded),
-		ExcludedZh:         models.StringArray(req.ExcludedZh),
-		Highlights:         models.StringArray(req.Highlights),
-		HighlightsZh:       models.StringArray(req.HighlightsZh),
-		Availability:       req.Availability,
-		AvailabilityZh:     req.AvailabilityZh,
-		MaxParticipants:    req.MaxParticipants,
-		Featured:           req.Featured,
-		Status:             choose(req.Status, "draft"),
-	}
-	for i := range req.Images {
-		req.Images[i].ID = uuid.NewString()
-		req.Images[i].PackageID = pkg.ID
-	}
-	for i := range req.Itinerary {
-		req.Itinerary[i].ID = uuid.NewString()
-		req.Itinerary[i].PackageID = pkg.ID
-	}
-	pkg.Images = req.Images
-	pkg.Itinerary = req.Itinerary
-
-	if err := database.Ctx(c).Create(&pkg).Error; err != nil {
+	// Begin transaction for atomic create
+	err := database.DB.Transaction(func(tx *gorm.DB) error {
+		pkg := models.Package{
+			ID:                 uuid.NewString(),
+			Title:              req.Title,
+			TitleZh:            req.TitleZh,
+			Slug:               slug,
+			Description:        req.Description,
+			DescriptionZh:      req.DescriptionZh,
+			ShortDescription:   req.ShortDescription,
+			ShortDescriptionZh: req.ShortDescriptionZh,
+			Price:              req.Price,
+			Currency:           normalizeCurrency(choose(req.Currency, "IDR")),
+			Duration:           req.Duration,
+			DurationUnit:       choose(req.DurationUnit, "days"),
+			Categories:         models.StringArray(req.Categories),
+			CategoriesZh:       models.StringArray(req.CategoriesZh),
+			Destination:        req.Destination,
+			DestinationZh:      req.DestinationZh,
+			Included:           models.StringArray(req.Included),
+			IncludedZh:         models.StringArray(req.IncludedZh),
+			Excluded:           models.StringArray(req.Excluded),
+			ExcludedZh:         models.StringArray(req.ExcludedZh),
+			Highlights:         models.StringArray(req.Highlights),
+			HighlightsZh:       models.StringArray(req.HighlightsZh),
+			Availability:       req.Availability,
+			AvailabilityZh:     req.AvailabilityZh,
+			MaxParticipants:    req.MaxParticipants,
+			Featured:           req.Featured,
+			Status:             choose(req.Status, models.StatusDraft),
+		}
+		for i := range req.Images {
+			req.Images[i].ID = uuid.NewString()
+			req.Images[i].PackageID = pkg.ID
+		}
+		for i := range req.Itinerary {
+			req.Itinerary[i].ID = uuid.NewString()
+			req.Itinerary[i].PackageID = pkg.ID
+		}
+		pkg.Images = req.Images
+		pkg.Itinerary = req.Itinerary
+		if err := tx.Create(&pkg).Error; err != nil {
+			return err
+		}
+		// Invalidate caches (options + list)
+		cache.InvalidateOptions()
+		cache.InvalidatePackages()
+		created(c, toDTO(pkg, true))
+		return nil
+	})
+	if err != nil {
 		fail(c, http.StatusInternalServerError, "failed to create")
 		return
 	}
-	created(c, pkg)
 }
 
 func (h *PackageController) Update(c *gin.Context) {
@@ -307,6 +411,10 @@ func (h *PackageController) Update(c *gin.Context) {
 		pkg.MaxParticipants = req.MaxParticipants
 	}
 	if req.Status != "" {
+		if !models.IsValidPackageStatus(req.Status) {
+			fail(c, http.StatusBadRequest, "invalid status")
+			return
+		}
 		pkg.Status = req.Status
 	}
 	pkg.Featured = req.Featured
@@ -329,11 +437,20 @@ func (h *PackageController) Update(c *gin.Context) {
 		pkg.Itinerary = req.Itinerary
 	}
 
-	if err := database.Ctx(c).Session(&gorm.Session{FullSaveAssociations: true}).Save(&pkg).Error; err != nil {
+	// Transaction for update with association replacement
+	err := database.DB.Transaction(func(tx *gorm.DB) error {
+		if err := tx.Session(&gorm.Session{FullSaveAssociations: true}).Save(&pkg).Error; err != nil {
+			return err
+		}
+		cache.InvalidateOptions()
+		cache.InvalidatePackages()
+		ok(c, toDTO(pkg, true))
+		return nil
+	})
+	if err != nil {
 		fail(c, http.StatusInternalServerError, "failed to update")
 		return
 	}
-	ok(c, pkg)
 }
 
 func (h *PackageController) Delete(c *gin.Context) {
@@ -343,6 +460,8 @@ func (h *PackageController) Delete(c *gin.Context) {
 		fail(c, http.StatusInternalServerError, "failed to delete")
 		return
 	}
+	cache.InvalidateOptions()
+	cache.InvalidatePackages()
 	ok(c, gin.H{"message": "deleted"})
 }
 

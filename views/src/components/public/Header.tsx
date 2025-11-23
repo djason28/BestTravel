@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, MessageCircle } from 'lucide-react';
-import logo from '@/assets/branding/logo panjang.png';
-import { toggleLang, currentLang } from '../../i18n';
+import logo from '@/assets/branding/logo pendek.png';
+import { toggleLang, currentLang, t } from '../../i18n';
 
 export const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -24,8 +24,11 @@ export const Header: React.FC = () => {
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-3 group">
-            <img src={logo} alt="Bintan Batam Exclusive Trip Logo" className="h-16 w-auto select-none" draggable={false} />
-            <span className="text-xl md:text-2xl font-display font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:via-purple-700 group-hover:to-pink-700 transition-all">Bintan Batam Exclusive Trip</span>
+            <img src={logo} alt="Best Tour and Travel Logo" className="h-16 w-auto select-none" draggable={false} />
+            <div className="flex flex-col">
+              <span className="text-xl md:text-2xl font-display font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:via-purple-700 group-hover:to-pink-700 transition-all">Best Tour and Travel</span>
+              <span className="text-[11px] md:text-xs text-gray-500 font-medium tracking-wide group-hover:text-gray-600 transition-colors leading-tight">{t('header_subtagline_header')}</span>
+            </div>
           </Link>
 
           <nav className="hidden md:flex items-center gap-8" aria-label={lang==='zh' ? '主导航' : 'Main navigation'}>

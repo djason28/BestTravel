@@ -25,6 +25,7 @@ func main() {
 	cfg := config.Load()
 	logger.Init(cfg.Env)
 	database.Init(cfg)
+	database.EnsureIndexes()
 
 	// seed admin
 	seedAdmin(cfg)
