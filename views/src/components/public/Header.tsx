@@ -28,7 +28,7 @@ export const Header: React.FC = () => {
             <span className="text-xl md:text-2xl font-display font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:via-purple-700 group-hover:to-pink-700 transition-all">Bintan Batam Exclusive Trip</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-8">
+          <nav className="hidden md:flex items-center gap-8" aria-label={lang==='zh' ? '主导航' : 'Main navigation'}>
             {navLinks.map((link) => (
               <Link
                 key={link.path}
@@ -46,15 +46,16 @@ export const Header: React.FC = () => {
 
           <div className="hidden md:flex items-center gap-4">
             <a
-              href="https://wa.me/6281234567890"
+              href={`https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER || '6281234567890'}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors w-36"
+              aria-label={lang === 'zh' ? '通过微信联系我们' : 'Contact us on WhatsApp'}
             >
               <MessageCircle className="h-4 w-4" />
               <span>{lang === 'zh' ? '微信' : 'WhatsApp'}</span>
             </a>
-            <div className="relative inline-flex items-center bg-gray-200 rounded-full p-1 w-32">
+            <div className="relative inline-flex items-center bg-gray-200 rounded-full p-1 w-32" aria-label={lang==='zh' ? '语言切换' : 'Language toggle'} role="group">
               <div
                 className={`absolute top-1 bottom-1 w-[calc(50%-0.25rem)] bg-blue-600 rounded-full transition-transform duration-300 ease-in-out ${
                   tempLang === 'zh' ? 'translate-x-full' : 'translate-x-0'
@@ -70,6 +71,7 @@ export const Header: React.FC = () => {
                 className={`relative z-10 flex-1 px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
                   tempLang === 'en' ? 'text-white' : 'text-gray-700 hover:text-gray-900'
                 }`}
+                aria-label={lang==='zh' ? '切换语言为英文' : 'Switch language to English'}
               >
                 EN
               </button>
@@ -83,6 +85,7 @@ export const Header: React.FC = () => {
                 className={`relative z-10 flex-1 px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
                   tempLang === 'zh' ? 'text-white' : 'text-gray-700 hover:text-gray-900'
                 }`}
+                aria-label={lang==='zh' ? '当前语言中文' : 'Switch language to Chinese'}
               >
                 中文
               </button>
@@ -99,7 +102,7 @@ export const Header: React.FC = () => {
 
         {isMobileMenuOpen && (
           <div className="md:hidden py-4 border-t">
-            <nav className="flex flex-col gap-4">
+            <nav className="flex flex-col gap-4" aria-label={lang==='zh' ? '移动导航' : 'Mobile navigation'}>
               {navLinks.map((link) => (
                 <Link
                   key={link.path}
@@ -115,15 +118,16 @@ export const Header: React.FC = () => {
                 </Link>
               ))}
               <a
-                href="https://wa.me/6281234567890"
+                href={`https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER || '6281234567890'}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors w-36"
+                aria-label={lang === 'zh' ? '通过微信联系我们' : 'Contact us on WhatsApp'}
               >
                 <MessageCircle className="h-4 w-4" />
                 <span>{lang === 'zh' ? '微信' : 'WhatsApp'}</span>
               </a>
-              <div className="relative inline-flex items-center bg-gray-200 rounded-full p-1 w-32">
+              <div className="relative inline-flex items-center bg-gray-200 rounded-full p-1 w-32" aria-label={lang==='zh' ? '语言切换' : 'Language toggle'} role="group">
                 <div
                   className={`absolute top-1 bottom-1 w-[calc(50%-0.25rem)] bg-blue-600 rounded-full transition-transform duration-300 ease-in-out ${
                     tempLang === 'zh' ? 'translate-x-full' : 'translate-x-0'
@@ -139,6 +143,7 @@ export const Header: React.FC = () => {
                   className={`relative z-10 flex-1 px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
                     tempLang === 'en' ? 'text-white' : 'text-gray-700 hover:text-gray-900'
                   }`}
+                  aria-label={lang==='zh' ? '切换语言为英文' : 'Switch language to English'}
                 >
                   EN
                 </button>
@@ -152,6 +157,7 @@ export const Header: React.FC = () => {
                   className={`relative z-10 flex-1 px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
                     tempLang === 'zh' ? 'text-white' : 'text-gray-700 hover:text-gray-900'
                   }`}
+                  aria-label={lang==='zh' ? '当前语言中文' : 'Switch language to Chinese'}
                 >
                   中文
                 </button>

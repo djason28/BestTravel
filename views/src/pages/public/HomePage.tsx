@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, MapPin, Calendar, Users, Shield, Award, Clock, Star } from 'lucide-react';
+import { ArrowRight, MapPin, Calendar, Shield, Award, Clock, Star } from 'lucide-react';
 import { packageApi } from '../../services/api';
 import type { Package } from '../../types';
 import { formatPrice, formatCategories } from '../../utils/security';
@@ -18,7 +18,8 @@ export const HomePage: React.FC = () => {
 
   const loadFeaturedPackages = async () => {
     try {
-      const response = await packageApi.getAll({ limit: 6, sortBy: 'popular', status: 'published', lang: currentLang()==='zh' ? 'zh' : 'en' });
+      const langOverride = currentLang()==='zh' ? 'zh' : 'en';
+      const response = await packageApi.getAll({ limit: 6, sortBy: 'popular', status: 'published' }, langOverride);
       if (response.success) {
         setFeaturedPackages(response.data.slice(0, 6));
       }
@@ -95,7 +96,7 @@ export const HomePage: React.FC = () => {
                 description: t('feature_best_prices_desc'),
               },
               {
-                icon: <Users className="h-12 w-12 text-blue-600" />,
+                icon: <Calendar className="h-12 w-12 text-blue-600" />,
                 title: t('feature_expert_guides_title'),
                 description: t('feature_expert_guides_desc'),
               },
@@ -142,6 +143,7 @@ export const HomePage: React.FC = () => {
                       <img
                         src={pkg.images[0]?.url || 'https://images.pexels.com/photos/1430676/pexels-photo-1430676.jpeg'}
                         alt={pkg.title}
+                        loading="lazy"
                         className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
                       />
                       {pkg.featured && (
@@ -224,7 +226,7 @@ export const HomePage: React.FC = () => {
                 <ArrowRight className="h-5 w-5" />
               </Link>
               <a
-                href="https://wa.me/6281234567890?text=Hello! I would like to inquire about travel packages."
+                href={`https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER || '6281234567890'}?text=${encodeURIComponent('Hello! I would like to inquire about travel packages.')}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors"
@@ -273,6 +275,7 @@ export const HomePage: React.FC = () => {
                     <img
                       src={testimonial.image}
                       alt={testimonial.name}
+                      loading="lazy"
                       className="w-16 h-16 rounded-full object-cover"
                     />
                     <div>

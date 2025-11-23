@@ -8,18 +8,20 @@ import { PublicLayout } from './layouts/PublicLayout';
 import { AdminLayout } from './layouts/AdminLayout';
 
 
-import { HomePage } from './pages/public/HomePage';
-import { PackagesPage } from './pages/public/PackagesPage';
-import { PackageDetailPage } from './pages/public/PackageDetailPage';
-import { ContactPage } from './pages/public/ContactPage';
-import { AboutPage } from './pages/public/AboutPage';
+import React, { Suspense, lazy } from 'react';
+// Wrap named exports so React.lazy gets a default
+const HomePage = lazy(() => import('./pages/public/HomePage').then(m => ({ default: m.HomePage })));
+const PackagesPage = lazy(() => import('./pages/public/PackagesPage').then(m => ({ default: m.PackagesPage })));
+const PackageDetailPage = lazy(() => import('./pages/public/PackageDetailPage').then(m => ({ default: m.PackageDetailPage })));
+const ContactPage = lazy(() => import('./pages/public/ContactPage').then(m => ({ default: m.ContactPage })));
+const AboutPage = lazy(() => import('./pages/public/AboutPage').then(m => ({ default: m.AboutPage })));
 
-import { LoginPage } from './pages/admin/LoginPage';
-import { DashboardPage } from './pages/admin/DashboardPage';
-import { PackagesPage as AdminPackagesPage } from './pages/admin/PackagesPage';
-import { PackageFormPage } from './pages/admin/PackageFormPage';
-import { PackagePreviewPage } from './pages/admin/PackagePreviewPage';
-import { InquiriesPage } from './pages/admin/InquiriesPage';
+const LoginPage = lazy(() => import('./pages/admin/LoginPage').then(m => ({ default: m.default || m.LoginPage })));
+const DashboardPage = lazy(() => import('./pages/admin/DashboardPage').then(m => ({ default: m.DashboardPage })));
+const AdminPackagesPage = lazy(() => import('./pages/admin/PackagesPage').then(m => ({ default: m.PackagesPage })));
+const PackageFormPage = lazy(() => import('./pages/admin/PackageFormPage').then(m => ({ default: m.PackageFormPage })));
+const PackagePreviewPage = lazy(() => import('./pages/admin/PackagePreviewPage').then(m => ({ default: m.PackagePreviewPage })));
+const InquiriesPage = lazy(() => import('./pages/admin/InquiriesPage').then(m => ({ default: m.InquiriesPage })));
 
 function App() {
   return (
@@ -28,6 +30,7 @@ function App() {
         <AuthProvider>
           <ToastProvider>
             <ToastContainer />
+            <Suspense fallback={<div className="p-10 text-center">Loading...</div>}>
             <Routes>
               <Route path="/" element={<PublicLayout />}>
                 <Route index element={<HomePage />} />
@@ -58,6 +61,7 @@ function App() {
 
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
+            </Suspense>
           </ToastProvider>
         </AuthProvider>
       </BrowserRouter>

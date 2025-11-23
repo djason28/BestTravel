@@ -190,6 +190,8 @@ export interface FilterOptions {
   // pagination
   page?: number;
   limit?: number;
+  // language override (frontend convenience, passed separately in API layer)
+  lang?: 'en' | 'zh';
 }
 
 export interface ContactFormData {

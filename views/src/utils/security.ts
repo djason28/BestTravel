@@ -80,7 +80,8 @@ export const debounce = <Args extends any[]>(
 export const getWhatsAppLink = (phone: string, message: string): string => {
   const cleanPhone = phone.replace(/\D/g, '');
   const encodedMessage = encodeURIComponent(message);
-  return `https://wa.me/${cleanPhone}?text=${encodedMessage}`;
+  const base = import.meta.env?.VITE_WHATSAPP_NUMBER && phone === cleanPhone ? import.meta.env.VITE_WHATSAPP_NUMBER : cleanPhone;
+  return `https://wa.me/${base}?text=${encodedMessage}`;
 };
 
 export const generateId = (): string => {

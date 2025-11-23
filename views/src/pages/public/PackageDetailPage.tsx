@@ -111,6 +111,7 @@ export const PackageDetailPage: React.FC = () => {
                 <img
                   src={pkg.images[currentImageIndex]?.url || 'https://images.pexels.com/photos/1430676/pexels-photo-1430676.jpeg'}
                   alt={pkg.title}
+                  loading="lazy"
                   className="w-full h-full object-cover cursor-pointer"
                   onClick={() => setIsGalleryOpen(true)}
                 />
@@ -150,6 +151,7 @@ export const PackageDetailPage: React.FC = () => {
                       key={image.id}
                       src={image.url}
                       alt={image.alt}
+                      loading="lazy"
                       className={`w-full h-24 object-cover rounded-lg cursor-pointer transition-all ${
                         index === currentImageIndex ? 'ring-2 ring-blue-600' : 'opacity-70 hover:opacity-100'
                       }`}
@@ -368,6 +370,7 @@ export const PackageDetailPage: React.FC = () => {
           <img
             src={pkg.images[currentImageIndex]?.url}
             alt={pkg.title}
+            loading="lazy"
             className="max-w-[90vw] max-h-[90vh] object-contain"
           />
           <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white">

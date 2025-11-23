@@ -1,11 +1,14 @@
 package controllers
 
 import (
+	"context"
 	"net/http"
 	"sort"
 	"strconv"
 	"strings"
+	"time"
 
+	"besttravel/internal/cache"
 	"besttravel/internal/config"
 	"besttravel/internal/database"
 	"besttravel/internal/models"
@@ -52,13 +55,15 @@ type packageForm struct {
 }
 
 func (h *PackageController) GetAll(c *gin.Context) {
-	// Show only published to non-admin
 	isAdmin := false
 	if role, ok := c.Get("role"); ok && role == "admin" {
 		isAdmin = true
 	}
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
 
-	qBase := buildPackageFilters(database.Ctx(c).Model(&models.Package{}), c, isAdmin)
+	base := database.DB.WithContext(ctx).Model(&models.Package{})
+	qBase := buildPackageFilters(base, c, isAdmin)
 
 	page, limit := utils.GetPageLimit(c, 12)
 	var total int64
@@ -68,15 +73,14 @@ func (h *PackageController) GetAll(c *gin.Context) {
 	utils.ParallelCountAndList(
 		qBase,
 		func(db *gorm.DB) *gorm.DB {
-			return db.Preload("Images").Preload("Itinerary").
-				Offset((page - 1) * limit).Limit(limit).Order(sortBy)
+			// Only preload Images for listing to avoid N+1 / heavy payload
+			return db.Preload("Images").Offset((page - 1) * limit).Limit(limit).Order(sortBy)
 		},
 		&items,
 		&total,
 	)
 
-	lang := strings.ToLower(strings.TrimSpace(c.Query("lang")))
-	if lang == "zh" {
+	if detectLang(c) == "zh" {
 		for i := range items {
 			applyLangZh(&items[i])
 		}
@@ -92,12 +96,14 @@ func (h *PackageController) GetAll(c *gin.Context) {
 
 func (h *PackageController) GetByID(c *gin.Context) {
 	id := c.Param("id")
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
 	var pkg models.Package
-	if err := database.Ctx(c).Preload("Images").Preload("Itinerary").First(&pkg, "id = ?", id).Error; err != nil {
+	if err := database.DB.WithContext(ctx).Preload("Images").Preload("Itinerary").First(&pkg, "id = ?", id).Error; err != nil {
 		fail(c, http.StatusNotFound, "not found")
 		return
 	}
-	if strings.ToLower(strings.TrimSpace(c.Query("lang"))) == "zh" {
+	if detectLang(c) == "zh" {
 		applyLangZh(&pkg)
 	}
 	ok(c, pkg)
@@ -105,7 +111,9 @@ func (h *PackageController) GetByID(c *gin.Context) {
 
 func (h *PackageController) GetBySlug(c *gin.Context) {
 	slug := c.Param("slug")
-	q := database.Ctx(c).Preload("Images").Preload("Itinerary")
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
+	defer cancel()
+	q := database.DB.WithContext(ctx).Preload("Images").Preload("Itinerary")
 	isAdmin := false
 	if role, ok := c.Get("role"); ok && role == "admin" {
 		isAdmin = true
@@ -118,7 +126,7 @@ func (h *PackageController) GetBySlug(c *gin.Context) {
 		fail(c, http.StatusNotFound, "not found")
 		return
 	}
-	if strings.ToLower(strings.TrimSpace(c.Query("lang"))) == "zh" {
+	if detectLang(c) == "zh" {
 		applyLangZh(&pkg)
 	}
 	ok(c, pkg)
@@ -140,8 +148,8 @@ func (h *PackageController) Create(c *gin.Context) {
 		fail(c, http.StatusBadRequest, "max participants must be at least 1")
 		return
 	}
-	if req.Currency != "IDR" && req.Currency != "USD" && req.Currency != "SGD" && req.Currency != "" {
-		fail(c, http.StatusBadRequest, "currency must be IDR, USD, or SGD")
+	if req.Currency != "" && !IsValidCurrency(normalizeCurrency(req.Currency)) {
+		fail(c, http.StatusBadRequest, "invalid currency")
 		return
 	}
 
@@ -216,8 +224,8 @@ func (h *PackageController) Update(c *gin.Context) {
 		fail(c, http.StatusBadRequest, "max participants must be at least 1")
 		return
 	}
-	if req.Currency != "" && req.Currency != "IDR" && req.Currency != "USD" && req.Currency != "SGD" {
-		fail(c, http.StatusBadRequest, "currency must be IDR, USD, or SGD")
+	if req.Currency != "" && !IsValidCurrency(normalizeCurrency(req.Currency)) {
+		fail(c, http.StatusBadRequest, "invalid currency")
 		return
 	}
 
@@ -330,6 +338,7 @@ func (h *PackageController) Update(c *gin.Context) {
 
 func (h *PackageController) Delete(c *gin.Context) {
 	id := c.Param("id")
+	// Soft delete (DeletedAt) handled automatically by GORM
 	if err := database.Ctx(c).Delete(&models.Package{}, "id = ?", id).Error; err != nil {
 		fail(c, http.StatusInternalServerError, "failed to delete")
 		return
@@ -345,38 +354,33 @@ func (h *PackageController) IncrementView(c *gin.Context) {
 
 // GetOptions returns distinct filter options (categories, destinations, currencies, availability)
 func (h *PackageController) GetOptions(c *gin.Context) {
-	// Non-admin users should only see options from published packages
 	isAdmin := false
 	if role, ok := c.Get("role"); ok && role == "admin" {
 		isAdmin = true
 	}
-
+	lang := detectLang(c)
+	key := "options:" + lang + ":" + strconv.FormatBool(isAdmin)
+	if cached, okc := cache.Get(key); okc {
+		c.JSON(http.StatusOK, gin.H{"success": true, "data": cached, "cached": true})
+		return
+	}
 	base := database.Ctx(c).Model(&models.Package{})
 	if !isAdmin {
 		base = base.Where("status = ?", "published")
 	}
-
-	// Distinct destinations
 	var destinations []string
 	if err := base.Distinct().Where("destination IS NOT NULL AND destination <> ''").Pluck("destination", &destinations).Error; err != nil {
 		destinations = []string{}
 	}
-
-	// Distinct currencies
 	var currencies []string
 	if err := base.Distinct().Where("currency IS NOT NULL AND currency <> ''").Pluck("currency", &currencies).Error; err != nil {
 		currencies = []string{}
 	}
-
-	// Distinct availability
 	var availability []string
 	if err := base.Distinct().Where("availability IS NOT NULL AND availability <> ''").Pluck("availability", &availability).Error; err != nil {
 		availability = []string{}
 	}
-
-	// Aggregate categories from JSON arrays
 	var rows []struct{ Categories models.StringArray }
-	// Normalize empty or NULL categories to JSON array '[]' to avoid scan errors
 	if err := base.Select("COALESCE(NULLIF(categories, ''), '[]') as categories").Find(&rows).Error; err != nil {
 		rows = []struct{ Categories models.StringArray }{}
 	}
@@ -394,25 +398,46 @@ func (h *PackageController) GetOptions(c *gin.Context) {
 	for k := range catSet {
 		categories = append(categories, k)
 	}
-
-	// Simple sort for stable UI
 	sort.Strings(categories)
 	sort.Strings(destinations)
 	sort.Strings(currencies)
 	sort.Strings(availability)
-
-	lang := strings.ToLower(strings.TrimSpace(c.Query("lang")))
 	if lang == "zh" {
-		// For now, if Chinese category translations exist, replace.
-		// We treat CategoriesZh / DestinationZh / AvailabilityZh when present.
-		// (Simplified approach: just pass raw lists; advanced translation mapping can be added later.)
+		var zhRows []struct{ CategoriesZh models.StringArray }
+		if err := base.Select("COALESCE(NULLIF(categories_zh, ''), '[]') as categories_zh").Find(&zhRows).Error; err == nil {
+			zhSet := map[string]struct{}{}
+			for _, r := range zhRows {
+				for _, cat := range r.CategoriesZh {
+					ct := strings.TrimSpace(cat)
+					if ct == "" {
+						continue
+					}
+					zhSet[ct] = struct{}{}
+				}
+			}
+			if len(zhSet) > 0 {
+				catsZh := make([]string, 0, len(zhSet))
+				for k := range zhSet {
+					catsZh = append(catsZh, k)
+				}
+				sort.Strings(catsZh)
+				categories = catsZh
+			}
+		}
+		var destZh []string
+		if err := base.Distinct().Where("destination_zh IS NOT NULL AND destination_zh <> ''").Pluck("destination_zh", &destZh).Error; err == nil && len(destZh) > 0 {
+			destinations = destZh
+			sort.Strings(destinations)
+		}
+		var availZh []string
+		if err := base.Distinct().Where("availability_zh IS NOT NULL AND availability_zh <> ''").Pluck("availability_zh", &availZh).Error; err == nil && len(availZh) > 0 {
+			availability = availZh
+			sort.Strings(availability)
+		}
 	}
-	ok(c, gin.H{
-		"categories":   categories,
-		"destinations": destinations,
-		"currencies":   currencies,
-		"availability": availability,
-	})
+	data := gin.H{"categories": categories, "destinations": destinations, "currencies": currencies, "availability": availability}
+	cache.Set(key, data)
+	ok(c, data)
 }
 
 func choose(v, def string) string {

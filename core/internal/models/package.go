@@ -4,6 +4,8 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"time"
+
+	"gorm.io/gorm"
 )
 
 type Package struct {
@@ -40,6 +42,7 @@ type Package struct {
 	Itinerary          []ItineraryItem `json:"itinerary"`
 	CreatedAt          time.Time       `json:"createdAt"`
 	UpdatedAt          time.Time       `json:"updatedAt"`
+	DeletedAt          gorm.DeletedAt  `gorm:"index" json:"-"`
 }
 
 type PackageImage struct {

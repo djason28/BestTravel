@@ -1,6 +1,7 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useEffect, ReactNode } from 'react';
 import { authApi } from '../services/api';
 import type { User, LoginCredentials } from '../types';
+import { useAppStore } from '../store/appStore';
 
 interface AuthContextType {
   user: User | null;
@@ -25,64 +26,59 @@ interface AuthProviderProps {
 }
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { token, user, setAuth, clearAuth, isLoadingAuth, setLoadingAuth } = useAppStore(state => ({
+    token: state.token,
+    user: state.user as User | null,
+    setAuth: state.setAuth,
+    clearAuth: state.clearAuth,
+    isLoadingAuth: state.isLoadingAuth,
+    setLoadingAuth: state.setLoadingAuth,
+  }));
 
   useEffect(() => {
     checkAuth();
   }, []);
 
   const checkAuth = async () => {
-    const token = localStorage.getItem('auth_token');
-    if (!token) {
-      setIsLoading(false);
+    const existing = token || localStorage.getItem('auth_token');
+    if (!existing) {
+      setLoadingAuth(false);
       return;
     }
 
     try {
       const response = await authApi.getCurrentUser();
       if (response.success && response.data) {
-        setUser(response.data);
+        setAuth(existing, response.data);
       } else {
-        localStorage.removeItem('auth_token');
+        clearAuth();
       }
     } catch (error) {
       console.error('Auth check failed:', error);
-      localStorage.removeItem('auth_token');
+      clearAuth();
     } finally {
-      setIsLoading(false);
+      setLoadingAuth(false);
     }
   };
 
   const login = async (credentials: LoginCredentials) => {
-    try {
-      const response = await authApi.login(credentials);
-      if (response.success && response.token && response.user) {
-        localStorage.setItem('auth_token', response.token);
-        setUser(response.user);
-      } else {
-        throw new Error(response.error || 'Login failed');
-      }
-    } catch (error) {
-      throw error;
+    const response = await authApi.login(credentials);
+    if (response.success && response.token && response.user) {
+      setAuth(response.token, response.user);
+    } else {
+      throw new Error(response.error || 'Login failed');
     }
   };
 
   const logout = async () => {
-    try {
-      await authApi.logout();
-    } catch (error) {
-      console.error('Logout error:', error);
-    } finally {
-      localStorage.removeItem('auth_token');
-      setUser(null);
-    }
+    try { await authApi.logout(); } catch (err) { console.error('Logout error:', err); }
+    clearAuth();
   };
 
   const value: AuthContextType = {
     user,
     isAuthenticated: !!user,
-    isLoading,
+    isLoading: isLoadingAuth,
     login,
     logout,
   };

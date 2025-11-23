@@ -13,8 +13,9 @@ require (
 	golang.org/x/crypto v0.36.0
 	golang.org/x/time v0.5.0
 	gorm.io/driver/mysql v1.5.7
-	gorm.io/gorm v1.25.7
+	gorm.io/gorm v1.30.0
 )
+
 
 require (
 	github.com/bytedance/sonic v1.13.2 // indirect

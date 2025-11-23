@@ -57,16 +57,28 @@ export const PackagesPage: React.FC = () => {
     setIsLoading(true);
     try {
       const payload: FilterOptions = { ...filters, search: searchQuery };
-      const [resEn, resZh] = await Promise.all([
-        packageApi.getAll(payload, 'en'),
-        packageApi.getAll(payload, 'zh'),
-      ]);
-      if (resEn.success) {
-        const zhMap: Record<string, Package> = {};
-        if (resZh.success) {
-          resZh.data.forEach(p => { zhMap[p.id] = p; });
+      let resEn: any;
+      try {
+        resEn = await packageApi.getAll(payload, 'en');
+      } catch (e: any) {
+        // Fallback: retry without explicit lang param (older behavior) if first attempt fails
+        console.warn('[admin] english request failed, retrying without lang=en', e);
+        try {
+          resEn = await packageApi.getAll(payload, undefined);
+        } catch (e2: any) {
+          throw e2; // propagate original failure after fallback attempt
         }
-        const merged = resEn.data.map(p => {
+      }
+      const resZh = await packageApi.getAll(payload, 'zh').catch(e => {
+        console.warn('[admin] zh request failed, continuing without zh overlay', e);
+        return null;
+      });
+      if (resEn && resEn.success) {
+        const zhMap: Record<string, Package> = {};
+        if (resZh && resZh.success) {
+          resZh.data.forEach((p: Package) => { zhMap[p.id] = p; });
+        }
+        const merged = resEn.data.map((p: Package) => {
           const zh = zhMap[p.id];
           if (!zh) return p;
           return {
@@ -80,17 +92,21 @@ export const PackagesPage: React.FC = () => {
             highlightsZh: zh.highlights,
             includedZh: zh.included,
             excludedZh: zh.excluded,
-            itinerary: p.itinerary.map((day, idx) => {
-              const zhDay = (zh.itinerary || [])[idx];
+            itinerary: Array.isArray(p.itinerary) ? p.itinerary.map((day: any, idx: number) => {
+              const zhDay = (zh as any).itinerary ? (zh as any).itinerary[idx] : undefined;
               if (!zhDay) return day;
               return { ...day, titleZh: zhDay.title, descriptionZh: zhDay.description } as any;
-            }),
+            }) : p.itinerary,
           } as any;
         });
         setPackages(merged);
+      } else {
+        throw new Error('English packages response invalid');
       }
     } catch (error) {
-      addToast('Failed to load packages', 'error');
+      console.error('[admin] failed to load packages details:', error?.message, error);
+      const msg = error?.message || 'Failed to load packages';
+      addToast(msg, 'error');
     } finally {
       setIsLoading(false);
     }

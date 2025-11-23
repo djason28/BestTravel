@@ -48,8 +48,8 @@ export const PackagesPage: React.FC = () => {
   const [options, setOptions] = useState<PackageFilterOptions>({ categories: [], destinations: [], currencies: [], availability: [] });
 
   useEffect(() => {
-    // load dynamic filter options once
-    packageApi.getOptions()
+    // load dynamic filter options based on current language
+    packageApi.getOptions(currentLang()==='zh' ? 'zh' : 'en')
       .then((res) => {
         if (res.success && res.data) {
           setOptions(res.data);
@@ -59,7 +59,7 @@ export const PackagesPage: React.FC = () => {
         // non-fatal
         console.warn('Failed to load filter options', e);
       });
-  }, []);
+  }, [currentLang()]);
 
   useEffect(() => {
     loadPackages();
@@ -145,8 +145,6 @@ export const PackagesPage: React.FC = () => {
     (filters.categories && filters.categories.length > 0) ||
     (filters.destination && filters.destination !== '') ||
     (filters.destinations && filters.destinations.length > 0) ||
-    (filters.currencies && filters.currencies.length > 0) ||
-    (filters.currency && filters.currency !== '') ||
     (filters.availability && filters.availability !== '') ||
     filters.featuredOnly || filters.notFeatured
   );
@@ -238,27 +236,6 @@ export const PackagesPage: React.FC = () => {
                   ))}
                 </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">{t('currency')}</label>
-                <div className="grid grid-cols-3 gap-2">
-                  {(options.currencies || []).map((ccy) => (
-                    <label key={ccy} className="inline-flex items-center gap-2 text-sm">
-                      <input
-                        type="checkbox"
-                        checked={!!filters.currencies?.includes(ccy)}
-                        onChange={(e) => {
-                          const current = new Set(filters.currencies || []);
-                          if (e.target.checked) current.add(ccy); else current.delete(ccy);
-                          const arr = Array.from(current);
-                          const nf = { ...filters, currencies: arr, currency: '', page: 1 };
-                          setFilters(nf); syncSearchParams(nf);
-                        }}
-                      />
-                      <span>{ccy}</span>
-                    </label>
-                  ))}
-                </div>
-              </div>
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">{t('availability')}</label>
@@ -266,7 +243,7 @@ export const PackagesPage: React.FC = () => {
                   type="text"
                   value={filters.availability || ''}
                   onChange={(e) => updateFilter('availability', e.target.value)}
-                  placeholder="e.g., year-round, seasonal"
+                  placeholder={currentLang()==='zh' ? '例如: 全年, 季节性' : 'e.g., year-round, seasonal'}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
               </div>
@@ -394,6 +371,8 @@ export const PackagesPage: React.FC = () => {
                     <img
                       src={(Array.isArray(pkg.images) && pkg.images.length > 0 && pkg.images[0]?.url) ? pkg.images[0]?.url : 'https://images.pexels.com/photos/1430676/pexels-photo-1430676.jpeg'}
                       alt={pkg.title}
+                      className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                      loading="lazy"
                       className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
                     />
                     {pkg.featured && (

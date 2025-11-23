@@ -35,10 +35,8 @@ func Setup(cfg *config.Config) *gin.Engine {
 	// Limit multipart form memory to prevent large uploads in memory
 	r.MaxMultipartMemory = (int64(cfg.MaxUploadMB) + 1) * 1024 * 1024
 
-	// Health check
-	r.GET("/health", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"status": "ok"})
-	})
+	// Health check enhanced (uptime + db)
+	r.GET("/health", controllers.Health)
 
 	// Static uploads (no directory listing)
 	r.StaticFS("/uploads", utils.NoListFS{FS: http.Dir(cfg.UploadDir)})
