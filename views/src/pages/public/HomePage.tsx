@@ -6,6 +6,7 @@ import type { Package } from '../../types';
 import { formatPrice, formatCategories } from '../../utils/security';
 import { Card } from '../../components/common/Card';
 import { PackageCardSkeleton } from '../../components/common/Loading';
+import { t, currentLang } from '../../i18n';
 
 export const HomePage: React.FC = () => {
   const [featuredPackages, setFeaturedPackages] = useState<Package[]>([]);
@@ -17,7 +18,7 @@ export const HomePage: React.FC = () => {
 
   const loadFeaturedPackages = async () => {
     try {
-      const response = await packageApi.getAll({ limit: 6, sortBy: 'popular', status: 'published' });
+      const response = await packageApi.getAll({ limit: 6, sortBy: 'popular', status: 'published', lang: currentLang()==='zh' ? 'zh' : 'en' });
       if (response.success) {
         setFeaturedPackages(response.data.slice(0, 6));
       }
@@ -26,6 +27,18 @@ export const HomePage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const localizeUnit = (unit: string) => {
+    if (currentLang() === 'zh') {
+      switch (unit) {
+        case 'days': return '天';
+        case 'nights': return '晚';
+        case 'hours': return '小时';
+        default: return unit;
+      }
+    }
+    return unit;
   };
 
   return (
@@ -37,24 +50,24 @@ export const HomePage: React.FC = () => {
         <div className="relative container mx-auto px-4 h-full flex items-center">
           <div className="max-w-3xl text-white">
             <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
-              Discover Your Next <span className="text-yellow-400">Adventure</span>
+              {t('home_title')}
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-gray-100">
-              Curated travel experiences designed to create memories that last a lifetime
+              {t('home_subtitle')}
             </p>
             <div className="flex flex-wrap gap-4">
               <Link
                 to="/packages"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-yellow-400 text-gray-900 font-semibold rounded-lg hover:bg-yellow-300 transition-all duration-300 hover:scale-105 shadow-lg"
               >
-                Explore Packages
+                {t('explore_packages')}
                 <ArrowRight className="h-5 w-5" />
               </Link>
               <Link
                 to="/contact"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-white text-gray-900 font-semibold rounded-lg hover:bg-gray-100 transition-all duration-300 shadow-lg"
               >
-                Contact Us
+                {t('contact_us')}
               </Link>
             </div>
           </div>
@@ -73,23 +86,23 @@ export const HomePage: React.FC = () => {
             {[
               {
                 icon: <Shield className="h-12 w-12 text-blue-600" />,
-                title: 'Safe & Secure',
-                description: 'Travel with confidence knowing your safety is our priority',
+                title: t('feature_safe_secure_title'),
+                description: t('feature_safe_secure_desc'),
               },
               {
                 icon: <Award className="h-12 w-12 text-blue-600" />,
-                title: 'Best Prices',
-                description: 'Competitive pricing with no hidden fees or surprises',
+                title: t('feature_best_prices_title'),
+                description: t('feature_best_prices_desc'),
               },
               {
                 icon: <Users className="h-12 w-12 text-blue-600" />,
-                title: 'Expert Guides',
-                description: 'Professional local guides with extensive knowledge',
+                title: t('feature_expert_guides_title'),
+                description: t('feature_expert_guides_desc'),
               },
               {
                 icon: <Clock className="h-12 w-12 text-blue-600" />,
-                title: '24/7 Support',
-                description: 'Round-the-clock assistance whenever you need it',
+                title: t('feature_support_title'),
+                description: t('feature_support_desc'),
               },
             ].map((feature, index) => (
               <div key={index} className="text-center p-6 rounded-lg hover:shadow-lg transition-shadow duration-300">
@@ -105,9 +118,9 @@ export const HomePage: React.FC = () => {
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">Featured Packages</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">{t('featured')} {t('packages')}</h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Handpicked destinations and experiences for your perfect getaway
+              {t('home_subtitle')}
             </p>
           </div>
 
@@ -134,7 +147,7 @@ export const HomePage: React.FC = () => {
                       {pkg.featured && (
                         <div className="absolute top-4 right-4 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
                           <Star className="h-4 w-4 fill-current" />
-                          Featured
+                          {t('featured')}
                         </div>
                       )}
                       {/* Categories chips overlay */}
@@ -154,27 +167,27 @@ export const HomePage: React.FC = () => {
                       )}
                     </div>
                     <div className="p-6">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">{pkg.title}</h3>
-                      <p className="text-gray-600 mb-4 line-clamp-2">{pkg.shortDescription}</p>
+                      <h3 className="text-xl font-bold text-gray-900 mb-2">{currentLang()==='zh' ? (pkg.titleZh || pkg.title) : pkg.title}</h3>
+                      <p className="text-gray-600 mb-4 line-clamp-2">{currentLang()==='zh' ? (pkg.shortDescriptionZh || pkg.shortDescription) : pkg.shortDescription}</p>
 
                       <div className="space-y-2 mb-4">
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <MapPin className="h-4 w-4 text-blue-600" />
-                          <span>{pkg.destination}</span>
+                          <span>{currentLang()==='zh' ? (pkg.destinationZh || pkg.destination) : pkg.destination}</span>
                         </div>
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <Calendar className="h-4 w-4 text-blue-600" />
-                          <span>{pkg.duration} {pkg.durationUnit}</span>
+                          <span>{pkg.duration} {localizeUnit(pkg.durationUnit)}</span>
                         </div>
                       </div>
 
                       <div className="flex items-center justify-between pt-4 border-t">
                         <div>
-                          <p className="text-sm text-gray-600">Starting from</p>
+                          <p className="text-sm text-gray-600">{t('starting_from')}</p>
                           <p className="text-2xl font-bold text-blue-600">{formatPrice(pkg.price, pkg.currency)}</p>
                         </div>
                         <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                          View Details
+                          {t('details')}
                         </button>
                       </div>
                     </div>
@@ -190,7 +203,7 @@ export const HomePage: React.FC = () => {
               to="/packages"
               className="inline-flex items-center gap-2 px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
             >
-              View All Packages
+              {t('explore_packages')}
               <ArrowRight className="h-5 w-5" />
             </Link>
           </div>
@@ -200,16 +213,14 @@ export const HomePage: React.FC = () => {
       <section className="py-20 bg-blue-600 text-white">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-4xl font-bold mb-6">Ready to Start Your Journey?</h2>
-            <p className="text-xl mb-8 text-blue-100">
-              Let us help you plan the perfect trip tailored to your dreams and preferences
-            </p>
+            <h2 className="text-4xl font-bold mb-6">{t('home_title')}</h2>
+            <p className="text-xl mb-8 text-blue-100">{t('home_subtitle')}</p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link
                 to="/packages"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors"
               >
-                Browse Packages
+                {t('explore_packages')}
                 <ArrowRight className="h-5 w-5" />
               </Link>
               <a
@@ -218,7 +229,7 @@ export const HomePage: React.FC = () => {
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors"
               >
-                Contact via WhatsApp
+                {t('contact_whatsapp')}
               </a>
             </div>
           </div>

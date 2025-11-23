@@ -7,9 +7,10 @@ import {
   LogOut,
   Menu,
   X,
-  Plane,
   ChevronDown,
 } from 'lucide-react';
+import longLogo from '@/assets/branding/logo panjang.png';
+import shortLogo from '@/assets/branding/logo pendek.png';
 import { useAuth } from '../contexts/AuthContext';
 import { useToast } from '../contexts/ToastContext';
 
@@ -44,9 +45,9 @@ export const AdminLayout: React.FC = () => {
         }`}
       >
         <div className="flex items-center justify-between p-4 border-b border-gray-800">
-          <div className="flex items-center gap-2">
-            <Plane className="h-8 w-8 text-blue-500" />
-            <span className="text-xl font-bold">Best Travel Agency</span>
+          <div className="flex items-center gap-3">
+            <img src={longLogo} alt="Bintan Batam Exclusive Trip" className="h-10 w-auto" />
+            <span className="text-xl font-display font-bold leading-tight bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:via-purple-700 group-hover:to-pink-700 transition-all">Bintan Batam Exclusive Trip</span>
           </div>
           <button onClick={() => setIsSidebarOpen(false)} className="lg:hidden">
             <X className="h-6 w-6" />
@@ -87,6 +88,7 @@ export const AdminLayout: React.FC = () => {
       <div className="lg:ml-64">
         <header className="bg-white shadow-sm sticky top-0 z-40">
           <div className="flex items-center justify-between px-4 py-4">
+            <img src={shortLogo} alt="Bintan Batam Exclusive Trip" className="h-16 w-auto" />
             <button
               onClick={() => setIsSidebarOpen(true)}
               className="lg:hidden text-gray-600 hover:text-gray-900"

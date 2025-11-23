@@ -5,6 +5,7 @@ import { validateEmail, validatePhone, sanitizeInput } from '../../utils/securit
 import { Input, Textarea } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { useToast } from '../../contexts/ToastContext';
+import { t } from '../../i18n';
 
 export const ContactPage: React.FC = () => {
   const { addToast } = useToast();
@@ -30,27 +31,27 @@ export const ContactPage: React.FC = () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+      newErrors.name = t('full_name') + ' ' + 'is required';
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
+      newErrors.email = t('email_address') + ' ' + 'is required';
     } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Invalid email address';
+      newErrors.email = 'Invalid ' + t('email_address');
     }
 
     if (!formData.phone.trim()) {
-      newErrors.phone = 'Phone is required';
+      newErrors.phone = t('phone_number') + ' ' + 'is required';
     } else if (!validatePhone(formData.phone)) {
-      newErrors.phone = 'Invalid phone number';
+      newErrors.phone = 'Invalid ' + t('phone_number');
     }
 
     if (!formData.subject.trim()) {
-      newErrors.subject = 'Subject is required';
+      newErrors.subject = t('subject') + ' ' + 'is required';
     }
 
     if (!formData.message.trim()) {
-      newErrors.message = 'Message is required';
+      newErrors.message = t('message') + ' ' + 'is required';
     }
 
     setErrors(newErrors);
@@ -75,10 +76,10 @@ export const ContactPage: React.FC = () => {
       };
 
       await contactApi.send(sanitizedData);
-      addToast('Message sent successfully! We will get back to you soon.', 'success');
+      addToast(t('send_message') + ' success!', 'success');
       setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
     } catch (error) {
-      addToast('Failed to send message. Please try again.', 'error');
+      addToast('Failed to ' + t('send_message'), 'error');
     } finally {
       setIsSubmitting(false);
     }
@@ -90,8 +91,8 @@ export const ContactPage: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex-1">
-              <h1 className="text-3xl md:text-4xl font-bold mb-3">Contact Us</h1>
-              <p className="text-lg text-blue-100">Get in touch with our travel experts</p>
+              <h1 className="text-3xl md:text-4xl font-bold mb-3">{t('contact_us')}</h1>
+              <p className="text-lg text-blue-100">{t('contact_page_subtitle')}</p>
             </div>
           </div>
         </div>
@@ -101,11 +102,11 @@ export const ContactPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div>
             <div className="bg-white rounded-lg shadow-md p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">Send Us a Message</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('send_us_message')}</h2>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Input
-                    label="Full Name"
+                    label={t('full_name')}
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
@@ -114,7 +115,7 @@ export const ContactPage: React.FC = () => {
                     required
                   />
                   <Input
-                    label="Email Address"
+                    label={t('email_address')}
                     type="email"
                     name="email"
                     value={formData.email}
@@ -127,7 +128,7 @@ export const ContactPage: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Input
-                    label="Phone Number"
+                    label={t('phone_number')}
                     type="tel"
                     name="phone"
                     value={formData.phone}
@@ -137,7 +138,7 @@ export const ContactPage: React.FC = () => {
                     required
                   />
                   <Input
-                    label="Subject"
+                    label={t('subject')}
                     name="subject"
                     value={formData.subject}
                     onChange={handleChange}
@@ -148,7 +149,7 @@ export const ContactPage: React.FC = () => {
                 </div>
 
                 <Textarea
-                  label="Message"
+                  label={t('message')}
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
@@ -160,7 +161,7 @@ export const ContactPage: React.FC = () => {
 
                 <Button type="submit" isLoading={isSubmitting} className="w-full md:w-auto">
                   <Send className="h-4 w-4 mr-2" />
-                  Send Message
+                  {t('send_message')}
                 </Button>
               </form>
             </div>
@@ -168,12 +169,12 @@ export const ContactPage: React.FC = () => {
 
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">Contact Information</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">{t('contact_information')}</h3>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <MapPin className="h-6 w-6 text-blue-600 flex-shrink-0" />
                   <div>
-                    <p className="font-semibold text-gray-900">Address</p>
+                    <p className="font-semibold text-gray-900">{t('address')}</p>
                     <p className="text-gray-600 text-sm">Jl. Raya Senggigi No. 123<br />Lombok, Indonesia 83355</p>
                   </div>
                 </div>
@@ -181,7 +182,7 @@ export const ContactPage: React.FC = () => {
                 <div className="flex items-start gap-3">
                   <Phone className="h-6 w-6 text-blue-600 flex-shrink-0" />
                   <div>
-                    <p className="font-semibold text-gray-900">Phone</p>
+                    <p className="font-semibold text-gray-900">{t('phone')}</p>
                     <a href="tel:+6281234567890" className="text-blue-600 hover:underline text-sm">
                       +62 812-3456-7890
                     </a>
@@ -191,7 +192,7 @@ export const ContactPage: React.FC = () => {
                 <div className="flex items-start gap-3">
                   <Mail className="h-6 w-6 text-blue-600 flex-shrink-0" />
                   <div>
-                    <p className="font-semibold text-gray-900">Email</p>
+                    <p className="font-semibold text-gray-900">{t('email')}</p>
                     <a href="mailto:info@wanderlux.com" className="text-blue-600 hover:underline text-sm">
                       info@wanderlux.com
                     </a>
@@ -201,7 +202,7 @@ export const ContactPage: React.FC = () => {
                 <div className="flex items-start gap-3">
                   <Clock className="h-6 w-6 text-blue-600 flex-shrink-0" />
                   <div>
-                    <p className="font-semibold text-gray-900">Business Hours</p>
+                    <p className="font-semibold text-gray-900">{t('business_hours')}</p>
                     <p className="text-gray-600 text-sm">
                       Monday - Friday: 9:00 AM - 6:00 PM<br />
                       Saturday: 9:00 AM - 4:00 PM<br />
@@ -215,11 +216,9 @@ export const ContactPage: React.FC = () => {
             <div className="bg-green-50 rounded-lg shadow-md p-6 border-2 border-green-200">
               <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
                 <MessageCircle className="h-6 w-6 text-green-600" />
-                Quick Contact
+                {t('quick_contact')}
               </h3>
-              <p className="text-gray-700 mb-4">
-                Need immediate assistance? Chat with us on WhatsApp for instant support!
-              </p>
+              <p className="text-gray-700 mb-4">{t('quick_contact_desc')}</p>
               <a
                 href="https://wa.me/6281234567890?text=Hello! I would like to inquire about travel packages."
                 target="_blank"
@@ -227,12 +226,12 @@ export const ContactPage: React.FC = () => {
                 className="inline-flex items-center gap-2 px-6 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors w-full justify-center"
               >
                 <MessageCircle className="h-5 w-5" />
-                Chat on WhatsApp
+                {t('chat_on_whatsapp')}
               </a>
             </div>
 
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-3">Visit Our Office</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-3">{t('visit_our_office')}</h3>
               <div className="w-full h-48 bg-gray-200 rounded-lg overflow-hidden">
                 <iframe
                   src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3945.7687!2d116.0400!3d-8.4800!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x0%3A0x0!2zOMKwMjgnNDguMCJTIDExNsKwMDInMjQuMCJF!5e0!3m2!1sen!2sid!4v1234567890"

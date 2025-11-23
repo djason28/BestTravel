@@ -20,6 +20,7 @@ import type { Package } from '../../types';
 import { formatPrice, getWhatsAppLink } from '../../utils/security';
 import { Loading } from '../../components/common/Loading';
 import { Button } from '../../components/common/Button';
+import { t, currentLang } from '../../i18n';
 
 export const PackageDetailPage: React.FC = () => {
   const { slug } = useParams<{ slug: string }>();
@@ -37,7 +38,7 @@ export const PackageDetailPage: React.FC = () => {
   const loadPackage = async (slug: string) => {
     setIsLoading(true);
     try {
-      const response = await packageApi.getBySlug(slug);
+      const response = await packageApi.getBySlug(slug, currentLang()==='zh' ? 'zh' : 'en');
       if (response.success && response.data) {
         setPkg(response.data);
         await packageApi.incrementView(response.data.id);
@@ -75,20 +76,32 @@ export const PackageDetailPage: React.FC = () => {
   if (!pkg) {
     return (
       <div className="container mx-auto px-4 py-16 text-center">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4">Package not found</h2>
+        <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('package_not_found')}</h2>
         <Link to="/packages" className="text-blue-600 hover:underline">
-          Browse all packages
+          {t('browse_all_packages')}
         </Link>
       </div>
     );
   }
+
+  const localizeUnit = (unit: string) => {
+    if (currentLang() === 'zh') {
+      switch (unit) {
+        case 'days': return '天';
+        case 'nights': return '晚';
+        case 'hours': return '小时';
+        default: return unit;
+      }
+    }
+    return unit;
+  };
 
   return (
     <div className="bg-gray-50">
       <div className="container mx-auto px-4 py-8">
         <Link to="/packages" className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6">
           <ChevronLeft className="h-4 w-4" />
-          <span>Back to Packages</span>
+          <span>{t('back_to_packages')}</span>
         </Link>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -150,7 +163,10 @@ export const PackageDetailPage: React.FC = () => {
             <div className="bg-white rounded-lg shadow-md p-8 mb-8">
               <div className="flex items-start justify-between mb-6">
                 <div>
-                  <h1 className="text-4xl font-bold text-gray-900 mb-2">{pkg.title}</h1>
+                  <h1 className="text-4xl font-bold text-gray-900 mb-2 relative">
+                    {currentLang()==='zh' ? (pkg.titleZh || pkg.title) : pkg.title}
+                    <span className="block mt-3 h-1 w-24 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded"></span>
+                  </h1>
                   <div className="flex flex-wrap gap-2 mb-4">
                     {pkg.categories && pkg.categories.map((cat, idx) => (
                       <span key={idx} className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
@@ -160,7 +176,7 @@ export const PackageDetailPage: React.FC = () => {
                     {pkg.featured && (
                       <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium flex items-center gap-1">
                         <Star className="h-4 w-4 fill-current" />
-                        Featured
+                        {t('featured')}
                       </span>
                     )}
                   </div>
@@ -171,40 +187,40 @@ export const PackageDetailPage: React.FC = () => {
                 <div className="flex items-center gap-3">
                   <MapPin className="h-6 w-6 text-blue-600" />
                   <div>
-                    <p className="text-sm text-gray-600">Destination</p>
-                    <p className="font-semibold text-gray-900">{pkg.destination}</p>
+                    <p className="text-sm text-gray-600">{t('destination')}</p>
+                    <p className="font-semibold text-gray-900">{currentLang()==='zh' ? (pkg.destinationZh || pkg.destination) : pkg.destination}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Calendar className="h-6 w-6 text-blue-600" />
                   <div>
-                    <p className="text-sm text-gray-600">Duration</p>
-                    <p className="font-semibold text-gray-900">{pkg.duration} {pkg.durationUnit}</p>
+                    <p className="text-sm text-gray-600">{t('duration')}</p>
+                    <p className="font-semibold text-gray-900">{pkg.duration} {localizeUnit(pkg.durationUnit)}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <Users className="h-6 w-6 text-blue-600" />
                   <div>
-                    <p className="text-sm text-gray-600">Group Size</p>
-                    <p className="font-semibold text-gray-900">Max {pkg.maxParticipants}</p>
+                    <p className="text-sm text-gray-600">{t('group_size')}</p>
+                    <p className="font-semibold text-gray-900">{currentLang()==='zh' ? `最多 ${pkg.maxParticipants} 人` : `Max ${pkg.maxParticipants}`}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   <TrendingUp className="h-6 w-6 text-blue-600" />
                   <div>
-                    <p className="text-sm text-gray-600">Views</p>
+                    <p className="text-sm text-gray-600">{t('views')}</p>
                     <p className="font-semibold text-gray-900">{pkg.viewCount}</p>
                   </div>
                 </div>
               </div>
 
               <div className="border-t pt-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">Overview</h2>
-                <p className="text-gray-700 leading-relaxed mb-6">{pkg.description}</p>
+                <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('overview')}</h2>
+                <p className="text-gray-700 leading-relaxed mb-6">{currentLang()==='zh' ? (pkg.descriptionZh || pkg.description) : pkg.description}</p>
 
                 {pkg.highlights.length > 0 && (
                   <div className="mb-6">
-                    <h3 className="text-xl font-semibold text-gray-900 mb-3">Highlights</h3>
+                    <h3 className="text-xl font-semibold text-gray-900 mb-3">{t('highlights')}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {pkg.highlights.map((highlight, index) => (
                         <div key={index} className="flex items-start gap-2">
@@ -220,17 +236,17 @@ export const PackageDetailPage: React.FC = () => {
 
             {pkg.itinerary.length > 0 && (
               <div className="bg-white rounded-lg shadow-md p-8 mb-8">
-                <h2 className="text-2xl font-bold text-gray-900 mb-6">Itinerary</h2>
+                <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('itinerary')}</h2>
                 <div className="space-y-6">
                   {pkg.itinerary.map((day) => (
                     <div key={day.day} className="border-l-4 border-blue-600 pl-6">
                       <div className="flex items-center gap-3 mb-2">
                         <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
-                          Day {day.day}
+                          {currentLang() === 'zh' ? `${t('day_label')}${day.day}天` : `${t('day_label')} ${day.day}`}
                         </span>
-                        <h3 className="text-xl font-semibold text-gray-900">{day.title}</h3>
+                        <h3 className="text-xl font-semibold text-gray-900">{currentLang()==='zh' ? (day.titleZh || day.title) : day.title}</h3>
                       </div>
-                      <p className="text-gray-700 mb-3">{day.description}</p>
+                      <p className="text-gray-700 mb-3">{currentLang()==='zh' ? (day.descriptionZh || day.description) : day.description}</p>
                       {day.activities.length > 0 && (
                         <ul className="list-disc list-inside space-y-1 text-gray-600">
                           {day.activities.map((activity, index) => (
@@ -247,10 +263,12 @@ export const PackageDetailPage: React.FC = () => {
             <div className="bg-white rounded-lg shadow-md p-8">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
                     <CheckCircle className="h-6 w-6 text-green-600" />
-                    What's Included
+                    {t('whats_included')}
                   </h3>
+                  {/* Decorative underline directly under Included subtitle */}
+                  <span className="block mt-2 mb-4 h-1 w-32 bg-gradient-to-r from-green-500 via-blue-600 to-purple-600 rounded" />
                   <ul className="space-y-2">
                     {pkg.included.map((item, index) => (
                       <li key={index} className="flex items-start gap-2 text-gray-700">
@@ -261,10 +279,12 @@ export const PackageDetailPage: React.FC = () => {
                   </ul>
                 </div>
                 <div>
-                  <h3 className="text-xl font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                  <h3 className="text-xl font-semibold text-gray-900 flex items-center gap-2">
                     <XCircle className="h-6 w-6 text-red-600" />
-                    What's Excluded
+                    {t('whats_excluded')}
                   </h3>
+                  {/* Decorative underline directly under Excluded subtitle */}
+                  <span className="block mt-2 mb-4 h-1 w-32 bg-gradient-to-r from-red-500 via-pink-600 to-purple-600 rounded" />
                   <ul className="space-y-2">
                     {pkg.excluded.map((item, index) => (
                       <li key={index} className="flex items-start gap-2 text-gray-700">
@@ -281,9 +301,9 @@ export const PackageDetailPage: React.FC = () => {
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
               <div className="mb-6">
-                <p className="text-sm text-gray-600 mb-1">Starting from</p>
+                <p className="text-sm text-gray-600 mb-1">{t('starting_from')}</p>
                 <p className="text-4xl font-bold text-blue-600">{formatPrice(pkg.price, pkg.currency)}</p>
-                <p className="text-sm text-gray-600 mt-1">per person</p>
+                <p className="text-sm text-gray-600 mt-1">{t('per_person')}</p>
               </div>
 
               <div className="space-y-3 mb-6">
@@ -298,19 +318,19 @@ export const PackageDetailPage: React.FC = () => {
                 className="w-full mb-3 bg-green-500 hover:bg-green-600 flex items-center justify-center gap-2"
               >
                 <MessageCircle className="h-5 w-5" />
-                Book via WhatsApp
+                {t('book_via_whatsapp_cta')}
               </Button>
 
               <Link to="/contact">
                 <Button variant="outline" className="w-full">
-                  Contact Us
+                  {t('contact_us')}
                 </Button>
               </Link>
 
               <div className="mt-6 pt-6 border-t">
-                <h4 className="font-semibold text-gray-900 mb-3">Need Help?</h4>
+                <h4 className="font-semibold text-gray-900 mb-3">{t('need_help')}</h4>
                 <p className="text-sm text-gray-600 mb-4">
-                  Have questions? Our travel experts are here to help you plan the perfect trip.
+                  {t('need_help_desc')}
                 </p>
                 <a
                   href="tel:+6281234567890"

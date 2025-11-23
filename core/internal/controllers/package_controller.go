@@ -21,25 +21,34 @@ type PackageController struct{ cfg *config.Config }
 func NewPackageController(cfg *config.Config) *PackageController { return &PackageController{cfg: cfg} }
 
 type packageForm struct {
-	Title            string                 `json:"title" binding:"required,min=3"`
-	Slug             string                 `json:"slug"`
-	Description      string                 `json:"description"`
-	ShortDescription string                 `json:"shortDescription"`
-	Price            int64                  `json:"price" binding:"gte=0"`
-	Currency         string                 `json:"currency"`
-	Duration         int                    `json:"duration" binding:"gte=0"`
-	DurationUnit     string                 `json:"durationUnit"`
-	Categories       []string               `json:"categories"`
-	Destination      string                 `json:"destination"`
-	Included         []string               `json:"included"`
-	Excluded         []string               `json:"excluded"`
-	Highlights       []string               `json:"highlights"`
-	Availability     string                 `json:"availability"`
-	MaxParticipants  int                    `json:"maxParticipants" binding:"gte=0"`
-	Featured         bool                   `json:"featured"`
-	Status           string                 `json:"status"`
-	Images           []models.PackageImage  `json:"images"`
-	Itinerary        []models.ItineraryItem `json:"itinerary"`
+	Title              string                 `json:"title" binding:"required,min=3"`
+	TitleZh            string                 `json:"titleZh"`
+	Slug               string                 `json:"slug"`
+	Description        string                 `json:"description"`
+	DescriptionZh      string                 `json:"descriptionZh"`
+	ShortDescription   string                 `json:"shortDescription"`
+	ShortDescriptionZh string                 `json:"shortDescriptionZh"`
+	Price              int64                  `json:"price" binding:"gte=0"`
+	Currency           string                 `json:"currency"`
+	Duration           int                    `json:"duration" binding:"gte=0"`
+	DurationUnit       string                 `json:"durationUnit"`
+	Categories         []string               `json:"categories"`
+	CategoriesZh       []string               `json:"categoriesZh"`
+	Destination        string                 `json:"destination"`
+	DestinationZh      string                 `json:"destinationZh"`
+	Included           []string               `json:"included"`
+	IncludedZh         []string               `json:"includedZh"`
+	Excluded           []string               `json:"excluded"`
+	ExcludedZh         []string               `json:"excludedZh"`
+	Highlights         []string               `json:"highlights"`
+	HighlightsZh       []string               `json:"highlightsZh"`
+	Availability       string                 `json:"availability"`
+	AvailabilityZh     string                 `json:"availabilityZh"`
+	MaxParticipants    int                    `json:"maxParticipants" binding:"gte=0"`
+	Featured           bool                   `json:"featured"`
+	Status             string                 `json:"status"`
+	Images             []models.PackageImage  `json:"images"`
+	Itinerary          []models.ItineraryItem `json:"itinerary"`
 }
 
 func (h *PackageController) GetAll(c *gin.Context) {
@@ -66,6 +75,12 @@ func (h *PackageController) GetAll(c *gin.Context) {
 		&total,
 	)
 
+	lang := strings.ToLower(strings.TrimSpace(c.Query("lang")))
+	if lang == "zh" {
+		for i := range items {
+			applyLangZh(&items[i])
+		}
+	}
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"data":    items,
@@ -81,6 +96,9 @@ func (h *PackageController) GetByID(c *gin.Context) {
 	if err := database.Ctx(c).Preload("Images").Preload("Itinerary").First(&pkg, "id = ?", id).Error; err != nil {
 		fail(c, http.StatusNotFound, "not found")
 		return
+	}
+	if strings.ToLower(strings.TrimSpace(c.Query("lang"))) == "zh" {
+		applyLangZh(&pkg)
 	}
 	ok(c, pkg)
 }
@@ -99,6 +117,9 @@ func (h *PackageController) GetBySlug(c *gin.Context) {
 	if err := q.First(&pkg, "slug = ?", slug).Error; err != nil {
 		fail(c, http.StatusNotFound, "not found")
 		return
+	}
+	if strings.ToLower(strings.TrimSpace(c.Query("lang"))) == "zh" {
+		applyLangZh(&pkg)
 	}
 	ok(c, pkg)
 }
@@ -132,24 +153,33 @@ func (h *PackageController) Create(c *gin.Context) {
 	// ensure unique slug
 	slug = ensureUniqueSlug(c, slug)
 	pkg := models.Package{
-		ID:               uuid.NewString(),
-		Title:            req.Title,
-		Slug:             slug,
-		Description:      req.Description,
-		ShortDescription: req.ShortDescription,
-		Price:            req.Price,
-		Currency:         normalizeCurrency(choose(req.Currency, "IDR")),
-		Duration:         req.Duration,
-		DurationUnit:     choose(req.DurationUnit, "days"),
-		Categories:       models.StringArray(req.Categories),
-		Destination:      req.Destination,
-		Included:         models.StringArray(req.Included),
-		Excluded:         models.StringArray(req.Excluded),
-		Highlights:       models.StringArray(req.Highlights),
-		Availability:     req.Availability,
-		MaxParticipants:  req.MaxParticipants,
-		Featured:         req.Featured,
-		Status:           choose(req.Status, "draft"),
+		ID:                 uuid.NewString(),
+		Title:              req.Title,
+		TitleZh:            req.TitleZh,
+		Slug:               slug,
+		Description:        req.Description,
+		DescriptionZh:      req.DescriptionZh,
+		ShortDescription:   req.ShortDescription,
+		ShortDescriptionZh: req.ShortDescriptionZh,
+		Price:              req.Price,
+		Currency:           normalizeCurrency(choose(req.Currency, "IDR")),
+		Duration:           req.Duration,
+		DurationUnit:       choose(req.DurationUnit, "days"),
+		Categories:         models.StringArray(req.Categories),
+		CategoriesZh:       models.StringArray(req.CategoriesZh),
+		Destination:        req.Destination,
+		DestinationZh:      req.DestinationZh,
+		Included:           models.StringArray(req.Included),
+		IncludedZh:         models.StringArray(req.IncludedZh),
+		Excluded:           models.StringArray(req.Excluded),
+		ExcludedZh:         models.StringArray(req.ExcludedZh),
+		Highlights:         models.StringArray(req.Highlights),
+		HighlightsZh:       models.StringArray(req.HighlightsZh),
+		Availability:       req.Availability,
+		AvailabilityZh:     req.AvailabilityZh,
+		MaxParticipants:    req.MaxParticipants,
+		Featured:           req.Featured,
+		Status:             choose(req.Status, "draft"),
 	}
 	for i := range req.Images {
 		req.Images[i].ID = uuid.NewString()
@@ -200,6 +230,9 @@ func (h *PackageController) Update(c *gin.Context) {
 	if req.Title != "" {
 		pkg.Title = req.Title
 	}
+	if req.TitleZh != "" {
+		pkg.TitleZh = req.TitleZh
+	}
 	if req.Slug != "" {
 		newSlug := utils.Slugify(req.Slug)
 		if newSlug != pkg.Slug {
@@ -207,7 +240,13 @@ func (h *PackageController) Update(c *gin.Context) {
 		}
 	}
 	pkg.Description = req.Description
+	if req.DescriptionZh != "" {
+		pkg.DescriptionZh = req.DescriptionZh
+	}
 	pkg.ShortDescription = req.ShortDescription
+	if req.ShortDescriptionZh != "" {
+		pkg.ShortDescriptionZh = req.ShortDescriptionZh
+	}
 	if req.Price != 0 {
 		pkg.Price = req.Price
 	}
@@ -223,20 +262,38 @@ func (h *PackageController) Update(c *gin.Context) {
 	if len(req.Categories) > 0 {
 		pkg.Categories = models.StringArray(req.Categories)
 	}
+	if len(req.CategoriesZh) > 0 {
+		pkg.CategoriesZh = models.StringArray(req.CategoriesZh)
+	}
 	if req.Destination != "" {
 		pkg.Destination = req.Destination
+	}
+	if req.DestinationZh != "" {
+		pkg.DestinationZh = req.DestinationZh
 	}
 	if len(req.Included) > 0 {
 		pkg.Included = models.StringArray(req.Included)
 	}
+	if len(req.IncludedZh) > 0 {
+		pkg.IncludedZh = models.StringArray(req.IncludedZh)
+	}
 	if len(req.Excluded) > 0 {
 		pkg.Excluded = models.StringArray(req.Excluded)
+	}
+	if len(req.ExcludedZh) > 0 {
+		pkg.ExcludedZh = models.StringArray(req.ExcludedZh)
 	}
 	if len(req.Highlights) > 0 {
 		pkg.Highlights = models.StringArray(req.Highlights)
 	}
+	if len(req.HighlightsZh) > 0 {
+		pkg.HighlightsZh = models.StringArray(req.HighlightsZh)
+	}
 	if req.Availability != "" {
 		pkg.Availability = req.Availability
+	}
+	if req.AvailabilityZh != "" {
+		pkg.AvailabilityZh = req.AvailabilityZh
 	}
 	if req.MaxParticipants != 0 {
 		pkg.MaxParticipants = req.MaxParticipants
@@ -344,6 +401,12 @@ func (h *PackageController) GetOptions(c *gin.Context) {
 	sort.Strings(currencies)
 	sort.Strings(availability)
 
+	lang := strings.ToLower(strings.TrimSpace(c.Query("lang")))
+	if lang == "zh" {
+		// For now, if Chinese category translations exist, replace.
+		// We treat CategoriesZh / DestinationZh / AvailabilityZh when present.
+		// (Simplified approach: just pass raw lists; advanced translation mapping can be added later.)
+	}
 	ok(c, gin.H{
 		"categories":   categories,
 		"destinations": destinations,
@@ -481,4 +544,55 @@ func buildPackageFilters(q *gorm.DB, c *gin.Context, isAdmin bool) *gorm.DB {
 		}
 	}
 	return q
+}
+
+// applyLangZh copies *_Zh fields into primary fields for response when Chinese requested.
+// It leaves IDs and numeric fields untouched. Fallback: if zh field empty, keep original.
+func applyLangZh(p *models.Package) {
+	if p.TitleZh != "" {
+		p.Title = p.TitleZh
+	}
+	if p.DescriptionZh != "" {
+		p.Description = p.DescriptionZh
+	}
+	if p.ShortDescriptionZh != "" {
+		p.ShortDescription = p.ShortDescriptionZh
+	}
+	if len(p.CategoriesZh) > 0 {
+		p.Categories = p.CategoriesZh
+	}
+	if p.DestinationZh != "" {
+		p.Destination = p.DestinationZh
+	}
+	if len(p.IncludedZh) > 0 {
+		p.Included = p.IncludedZh
+	}
+	if len(p.ExcludedZh) > 0 {
+		p.Excluded = p.ExcludedZh
+	}
+	if len(p.HighlightsZh) > 0 {
+		p.Highlights = p.HighlightsZh
+	}
+	if p.AvailabilityZh != "" {
+		p.Availability = p.AvailabilityZh
+	}
+	// Itinerary items
+	for i := range p.Itinerary {
+		it := &p.Itinerary[i]
+		if it.TitleZh != "" {
+			it.Title = it.TitleZh
+		}
+		if it.DescriptionZh != "" {
+			it.Description = it.DescriptionZh
+		}
+		if len(it.ActivitiesZh) > 0 {
+			it.Activities = it.ActivitiesZh
+		}
+		if len(it.MealsZh) > 0 {
+			it.Meals = it.MealsZh
+		}
+		if it.AccommodationZh != "" {
+			it.Accommodation = it.AccommodationZh
+		}
+	}
 }

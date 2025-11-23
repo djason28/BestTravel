@@ -39,6 +39,6 @@
   }
 
   body {
-    @apply antialiased;
+    @apply antialiased font-sans;
   }
 }

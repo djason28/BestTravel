@@ -2,68 +2,63 @@ import React from 'react';
 import { Shield, Award, Heart, Users, Target, Globe, TrendingUp, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '../../components/common/Button';
+import { t } from '../../i18n';
 
 export const AboutPage: React.FC = () => {
   return (
     <div className="bg-gray-50">
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
         <div className="container mx-auto px-4">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">About Best Travel Agency</h1>
-          <p className="text-xl text-blue-100">Creating unforgettable travel experiences since 2015</p>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">{t('about_title')}</h1>
+          <p className="text-xl text-blue-100">{t('about_subtitle')}</p>
         </div>
       </div>
 
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto mb-16">
           <div className="bg-white rounded-lg shadow-md p-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6">Our Story</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-6">{t('our_story')}</h2>
             <div className="prose prose-lg max-w-none text-gray-700 space-y-4">
-              <p>
-                Founded in 2015, Best Travel Agency was born from a passion for exploration and a desire to share the beauty of Indonesia with travelers from around the world. What started as a small team of dedicated travel enthusiasts has grown into one of the most trusted travel agencies in the region.
-              </p>
-              <p>
-                We believe that travel is more than just visiting new places—it's about creating meaningful connections, experiencing different cultures, and making memories that last a lifetime. Our mission is to craft personalized travel experiences that go beyond the ordinary, taking you to hidden gems and iconic destinations alike.
-              </p>
-              <p>
-                With over a decade of experience and thousands of satisfied travelers, we continue to innovate and improve our services, ensuring that every journey with us is exceptional. Our deep knowledge of Indonesia's diverse landscapes, rich culture, and warm hospitality allows us to create authentic experiences that truly capture the spirit of each destination.
-              </p>
+              <p>{t('story_p1')}</p>
+              <p>{t('story_p2')}</p>
+              <p>{t('story_p3')}</p>
             </div>
           </div>
         </div>
 
         <div className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">Why Choose Us</h2>
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">{t('why_choose_us')}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
             {[
               {
                 icon: <Shield className="h-12 w-12 text-blue-600" />,
-                title: 'Safe & Secure',
-                description: 'Your safety is our top priority. We partner with certified operators and maintain the highest safety standards in all our tours.',
+                title: t('safe_secure'),
+                description: t('safe_secure_desc'),
               },
               {
                 icon: <Award className="h-12 w-12 text-blue-600" />,
-                title: 'Award-Winning Service',
-                description: 'Recognized for excellence in tourism, we have received multiple awards for our outstanding service and customer satisfaction.',
+                title: t('award_winning'),
+                description: t('award_winning_desc'),
               },
               {
                 icon: <Heart className="h-12 w-12 text-blue-600" />,
-                title: 'Personalized Experiences',
-                description: 'Every traveler is unique. We customize each itinerary to match your interests, preferences, and travel style.',
+                title: t('personalized_exp'),
+                description: t('personalized_exp_desc'),
               },
               {
                 icon: <Users className="h-12 w-12 text-blue-600" />,
-                title: 'Expert Local Guides',
-                description: 'Our professional guides are passionate locals who share their deep knowledge and love for their homeland with every guest.',
+                title: t('expert_guides'),
+                description: t('expert_guides_desc'),
               },
               {
                 icon: <Globe className="h-12 w-12 text-blue-600" />,
-                title: 'Sustainable Tourism',
-                description: 'We are committed to responsible travel practices that benefit local communities and preserve natural environments.',
+                title: t('sustainable_tourism'),
+                description: t('sustainable_tourism_desc'),
               },
               {
                 icon: <TrendingUp className="h-12 w-12 text-blue-600" />,
-                title: 'Best Value',
-                description: 'Competitive pricing without compromising quality. We offer transparent pricing with no hidden fees or surprises.',
+                title: t('best_value'),
+                description: t('best_value_desc'),
               },
             ].map((feature, index) => (
               <div key={index} className="bg-white rounded-lg shadow-md p-6 hover:shadow-xl transition-shadow">
@@ -77,23 +72,23 @@ export const AboutPage: React.FC = () => {
 
         <div className="mb-16">
           <div className="bg-white rounded-lg shadow-md p-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">Our Values</h2>
+            <h2 className="text-3xl font-bold text-gray-900 mb-8 text-center">{t('our_values')}</h2>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
                 {
                   icon: <Target className="h-8 w-8 text-blue-600" />,
-                  title: 'Excellence',
-                  description: 'We strive for perfection in every detail, ensuring each journey exceeds expectations.',
+                  title: t('excellence'),
+                  description: t('excellence_desc'),
                 },
                 {
                   icon: <Heart className="h-8 w-8 text-blue-600" />,
-                  title: 'Passion',
-                  description: 'Our love for travel and Indonesia drives us to create truly exceptional experiences.',
+                  title: t('passion'),
+                  description: t('passion_desc'),
                 },
                 {
                   icon: <Shield className="h-8 w-8 text-blue-600" />,
-                  title: 'Integrity',
-                  description: 'We operate with honesty, transparency, and respect for our clients and partners.',
+                  title: t('integrity'),
+                  description: t('integrity_desc'),
                 },
               ].map((value, index) => (
                 <div key={index} className="text-center">
@@ -107,13 +102,13 @@ export const AboutPage: React.FC = () => {
         </div>
 
         <div className="mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">By the Numbers</h2>
+          <h2 className="text-3xl font-bold text-gray-900 text-center mb-12">{t('by_the_numbers')}</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
             {[
-              { number: '10+', label: 'Years of Experience' },
-              { number: '18,000+', label: 'Happy Travelers' },
-              { number: '50+', label: 'Destinations' },
-              { number: '98%', label: 'Satisfaction Rate' },
+              { number: '10+', label: t('years_experience') },
+              { number: '18,000+', label: t('happy_travelers') },
+              { number: '50+', label: t('destinations') },
+              { number: '98%', label: t('satisfaction_rate') },
             ].map((stat, index) => (
               <div key={index} className="text-center bg-white rounded-lg shadow-md p-6">
                 <p className="text-4xl font-bold text-blue-600 mb-2">{stat.number}</p>
@@ -124,15 +119,15 @@ export const AboutPage: React.FC = () => {
         </div>
 
         <div className="bg-white rounded-lg shadow-md p-8 mb-16">
-          <h2 className="text-3xl font-bold text-gray-900 mb-6">Our Commitment</h2>
+          <h2 className="text-3xl font-bold text-gray-900 mb-6">{t('our_commitment')}</h2>
           <div className="space-y-4">
             {[
-              'Providing authentic, culturally immersive experiences',
-              'Supporting local communities and sustainable tourism',
-              'Maintaining the highest standards of safety and service',
-              'Offering transparent pricing with no hidden costs',
-              'Being available 24/7 for our travelers',
-              'Continuously improving and innovating our offerings',
+              t('commit_1'),
+              t('commit_2'),
+              t('commit_3'),
+              t('commit_4'),
+              t('commit_5'),
+              t('commit_6'),
             ].map((commitment, index) => (
               <div key={index} className="flex items-start gap-3">
                 <CheckCircle className="h-6 w-6 text-green-600 flex-shrink-0 mt-0.5" />
@@ -143,19 +138,17 @@ export const AboutPage: React.FC = () => {
         </div>
 
         <div className="bg-gradient-to-r from-blue-600 to-blue-800 rounded-lg shadow-xl p-12 text-center text-white">
-          <h2 className="text-3xl font-bold mb-4">Ready to Start Your Adventure?</h2>
-          <p className="text-xl mb-8 text-blue-100">
-            Join thousands of satisfied travelers and experience Indonesia like never before
-          </p>
+          <h2 className="text-3xl font-bold mb-4">{t('cta_title')}</h2>
+          <p className="text-xl mb-8 text-blue-100">{t('cta_subtitle')}</p>
           <div className="flex flex-wrap justify-center gap-4">
             <Link to="/packages">
               <Button size="lg" variant="outline" className="bg-blue-600 text-white hover:bg-blue-700">
-                Explore Packages
+                {t('explore_packages')}
               </Button>
             </Link>
             <Link to="/contact">
               <Button size="lg" variant="outline" className="border-white text-white hover:bg-white hover:text-blue-600">
-                Contact Us
+                {t('contact_us')}
               </Button>
             </Link>
           </div>

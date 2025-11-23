@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Lock, Mail, Plane } from 'lucide-react';
+import { Lock, Mail } from 'lucide-react';
+import longLogo from '@/assets/branding/logo pendek.png';
 import { useAuth } from '../../contexts/AuthContext';
 import { useToast } from '../../contexts/ToastContext';
 import { validateEmail, sanitizeInput } from '../../utils/security';
@@ -77,10 +78,9 @@ export const LoginPage: React.FC = () => {
     <div className="min-h-screen bg-gradient-to-br from-blue-600 to-blue-800 flex items-center justify-center p-4">
       <div className="max-w-md w-full">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-white rounded-full mb-4">
-            <Plane className="h-8 w-8 text-blue-600" />
-          </div>
-          <h1 className="text-3xl font-bold text-white mb-2">Best Travel Agency Admin</h1>
+          {/* Logo without white background */}
+          <img src={longLogo} alt="Bintan Batam Exclusive Trip" className="mx-auto mb-6 h-20 w-auto select-none" />
+          <h1 className="text-3xl font-display font-bold text-white mb-2">Bintan Batam Exclusive Trip Admin</h1>
           <p className="text-blue-100">Sign in to manage your travel packages</p>
         </div>
 

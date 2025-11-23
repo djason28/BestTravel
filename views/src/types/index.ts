@@ -1,21 +1,30 @@
 export interface Package {
   id: string;
   title: string;
+  titleZh?: string;
   slug: string;
   description: string;
+  descriptionZh?: string;
   shortDescription: string;
+  shortDescriptionZh?: string;
   price: number;
   currency: string;
   duration: number;
   durationUnit: 'days' | 'nights' | 'hours';
   categories: string[];
+  categoriesZh?: string[];
   destination: string;
+  destinationZh?: string;
   images: PackageImage[];
   itinerary: ItineraryDay[];
   included: string[];
+  includedZh?: string[];
   excluded: string[];
+  excludedZh?: string[];
   highlights: string[];
+  highlightsZh?: string[];
   availability: string;
+  availabilityZh?: string;
   maxParticipants: number;
   featured: boolean;
   status: 'draft' | 'published' | 'archived';
@@ -36,10 +45,15 @@ export interface PackageImage {
 export interface ItineraryDay {
   day: number;
   title: string;
+  titleZh?: string;
   description: string;
+  descriptionZh?: string;
   activities: string[];
+  activitiesZh?: string[];
   meals: string[];
+  mealsZh?: string[];
   accommodation?: string;
+  accommodationZh?: string;
 }
 
 export interface Inquiry {
@@ -82,19 +96,28 @@ export interface DashboardStats {
 
 export interface PackageFormData {
   title: string;
+  titleZh?: string;
   shortDescription: string;
+  shortDescriptionZh?: string;
   description: string;
+  descriptionZh?: string;
   price: number;
   currency: string;
   duration: number;
   durationUnit: 'days' | 'nights' | 'hours';
   categories: string[];
+  categoriesZh?: string[];
   destination: string;
+  destinationZh?: string;
   availability: string;
+  availabilityZh?: string;
   maxParticipants: number;
   highlights: string[];
+  highlightsZh?: string[];
   included: string[];
+  includedZh?: string[];
   excluded: string[];
+  excludedZh?: string[];
   itinerary: ItineraryDay[];
   status: 'draft' | 'published';
   featured: boolean;

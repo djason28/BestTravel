@@ -7,6 +7,7 @@ import { formatPrice, debounce, formatCategories } from '../../utils/security';
 import { Card } from '../../components/common/Card';
 import { PackageCardSkeleton } from '../../components/common/Loading';
 import { Button } from '../../components/common/Button';
+import { t, currentLang } from '../../i18n';
 
 export const PackagesPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -66,7 +67,8 @@ export const PackagesPage: React.FC = () => {
 
   const loadPackages = async () => {
     setIsLoading(true);
-    packageApi.getAll(filters)
+    const lang = currentLang();
+    packageApi.getAll(filters, lang === 'zh' ? 'zh' : 'en')
       .then((response) => {
         if (response.success) {
           setPackages(response.data);
@@ -153,8 +155,11 @@ export const PackagesPage: React.FC = () => {
     <div className="bg-gray-50 min-h-screen">
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
         <div className="container mx-auto px-4">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Explore Our Packages</h1>
-          <p className="text-xl text-blue-100">Discover amazing destinations and unforgettable experiences</p>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">{t('packages_page_title')}</h1>
+          <p className="text-xl text-blue-100 relative">
+            {t('packages_page_subtitle')}
+            <span className="block mt-4 h-1 w-32 bg-gradient-to-r from-white/70 to-blue-200 rounded"></span>
+          </p>
         </div>
       </div>
 
@@ -165,7 +170,7 @@ export const PackagesPage: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
               <input
                 type="text"
-                placeholder="Search packages..."
+                placeholder={t('search_placeholder')}
                 defaultValue={filters.search}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -176,9 +181,9 @@ export const PackagesPage: React.FC = () => {
               className="flex items-center gap-2 px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <SlidersHorizontal className="h-5 w-5" />
-              <span>Filters</span>
+              <span>{t('filters')}</span>
               {hasActiveFilters && (
-                <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">Active</span>
+                <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">{t('active')}</span>
               )}
             </button>
           </div>
@@ -186,7 +191,7 @@ export const PackagesPage: React.FC = () => {
           {showFilters && (
             <div className="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Categories</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('categories')}</label>
                 <div className="grid grid-cols-2 gap-2">
                   {(options.categories || []).map((cat) => (
                     <label key={cat} className="inline-flex items-center gap-2 text-sm">
@@ -200,20 +205,20 @@ export const PackagesPage: React.FC = () => {
                   ))}
                 </div>
                 <div className="mt-2">
-                  <label className="text-sm text-gray-600 mr-3">Match</label>
+                  <label className="text-sm text-gray-600 mr-3">{t('match')}</label>
                   <select
                     value={filters.categoryMode || 'any'}
                     onChange={(e) => updateFilter('categoryMode', e.target.value)}
                     className="px-2 py-1 border rounded"
                   >
-                    <option value="any">Any</option>
-                    <option value="all">All</option>
+                    <option value="any">{t('any')}</option>
+                    <option value="all">{t('all')}</option>
                   </select>
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Destination</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('destination')}</label>
                 <div className="grid grid-cols-2 gap-2">
                   {(options.destinations || []).map((d) => (
                     <label key={d} className="inline-flex items-center gap-2 text-sm">
@@ -234,7 +239,7 @@ export const PackagesPage: React.FC = () => {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('currency')}</label>
                 <div className="grid grid-cols-3 gap-2">
                   {(options.currencies || []).map((ccy) => (
                     <label key={ccy} className="inline-flex items-center gap-2 text-sm">
@@ -256,7 +261,7 @@ export const PackagesPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Availability</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('availability')}</label>
                 <input
                   type="text"
                   value={filters.availability || ''}
@@ -267,25 +272,25 @@ export const PackagesPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('sort_by')}</label>
                 <select
                   value={filters.sortBy}
                   onChange={(e) => updateFilter('sortBy', e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="newest">Newest First</option>
-                  <option value="popular">Most Popular</option>
-                  <option value="price_asc">Price: Low to High</option>
-                  <option value="price_desc">Price: High to Low</option>
-                  <option value="duration_asc">Duration: Short to Long</option>
-                  <option value="duration_desc">Duration: Long to Short</option>
-                  <option value="inquiries_desc">Most Inquiries</option>
-                  <option value="inquiries_asc">Least Inquiries</option>
+                  <option value="newest">{t('newest_first')}</option>
+                  <option value="popular">{t('most_popular')}</option>
+                  <option value="price_asc">{t('price_low_high')}</option>
+                  <option value="price_desc">{t('price_high_low')}</option>
+                  <option value="duration_asc">{t('duration_short_long')}</option>
+                  <option value="duration_desc">{t('duration_long_short')}</option>
+                  <option value="inquiries_desc">{t('inquiries_most')}</option>
+                  <option value="inquiries_asc">{t('inquiries_least')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Featured</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('featured')}</label>
                 <select
                   value={filters.featuredOnly ? 'featured' : filters.notFeatured ? 'not' : 'all'}
                   onChange={(e) => {
@@ -303,14 +308,14 @@ export const PackagesPage: React.FC = () => {
                   }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="all">All</option>
-                  <option value="featured">Featured only</option>
-                  <option value="not">Not featured</option>
+                  <option value="all">{t('all')}</option>
+                  <option value="featured">{t('featured_only')}</option>
+                  <option value="not">{t('not_featured')}</option>
                 </select>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('price_range')}</label>
                 <div className="flex gap-2">
                   <input type="number" min="1" placeholder="Min" className="w-full px-3 py-2 border rounded"
                     value={String(searchParams.get('priceMin') || '')}
@@ -322,7 +327,7 @@ export const PackagesPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Duration (days)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('duration_days')}</label>
                 <div className="flex gap-2">
                   <input type="number" min="1" placeholder="Min" className="w-full px-3 py-2 border rounded"
                     value={String(searchParams.get('durationMin') || '')}
@@ -334,7 +339,7 @@ export const PackagesPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Participants</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">{t('participants')}</label>
                 <div className="flex gap-2">
                   <input type="number" min="1" placeholder="Min" className="w-full px-3 py-2 border rounded"
                     value={String(searchParams.get('participantsMin') || '')}
@@ -352,7 +357,7 @@ export const PackagesPage: React.FC = () => {
                     className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
                   >
                     <X className="h-4 w-4" />
-                    <span>Clear All Filters</span>
+                    <span>{t('clear_all_filters')}</span>
                   </button>
                 </div>
               )}
@@ -362,7 +367,7 @@ export const PackagesPage: React.FC = () => {
 
         <div className="mb-6 flex items-center justify-between">
           <p className="text-gray-600">
-            {isLoading ? 'Loading...' : `${packages.length} packages found`}
+            {isLoading ? t('loading') : `${packages.length} ${t('packages_found_suffix')}`}
           </p>
         </div>
 
@@ -375,8 +380,8 @@ export const PackagesPage: React.FC = () => {
             </>
           ) : packages.length === 0 ? (
             <div className="col-span-full text-center py-16">
-              <p className="text-xl text-gray-600 mb-4">No packages found</p>
-              <Button onClick={clearFilters}>Clear Filters</Button>
+              <p className="text-xl text-gray-600 mb-4">{t('no_packages')}</p>
+              <Button onClick={clearFilters}>{t('clear_filters')}</Button>
             </div>
           ) : (
             packages.map((pkg) => {
@@ -394,7 +399,7 @@ export const PackagesPage: React.FC = () => {
                     {pkg.featured && (
                       <div className="absolute top-4 right-4 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
                         <Star className="h-4 w-4 fill-current" />
-                        Featured
+                        {t('featured')}
                       </div>
                     )}
                     {/* Categories chips overlay */}
@@ -414,27 +419,27 @@ export const PackagesPage: React.FC = () => {
                     )}
                   </div>
                   <div className="p-6">
-                    <h3 className="text-xl font-bold text-gray-900 mb-2">{pkg.title}</h3>
-                    <p className="text-gray-600 mb-4 line-clamp-2">{pkg.shortDescription}</p>
+                    <h3 className="text-xl font-bold text-gray-900 mb-2">{currentLang()==='zh' ? (pkg.titleZh || pkg.title) : pkg.title}</h3>
+                    <p className="text-gray-600 mb-4 line-clamp-2">{currentLang()==='zh' ? (pkg.shortDescriptionZh || pkg.shortDescription) : pkg.shortDescription}</p>
 
                     <div className="space-y-2 mb-4">
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <MapPin className="h-4 w-4 text-blue-600" />
-                        <span>{pkg.destination}</span>
+                        <span>{currentLang()==='zh' ? (pkg.destinationZh || pkg.destination) : pkg.destination}</span>
                       </div>
                       <div className="flex items-center gap-2 text-sm text-gray-600">
                         <Calendar className="h-4 w-4 text-blue-600" />
-                        <span>{pkg.duration} {pkg.durationUnit}</span>
+                        <span>{pkg.duration} {currentLang()==='zh' ? (pkg.durationUnit==='days' ? '天' : pkg.durationUnit==='nights' ? '晚' : pkg.durationUnit==='hours' ? '小时' : pkg.durationUnit) : pkg.durationUnit}</span>
                       </div>
                     </div>
 
                     <div className="flex items-center justify-between pt-4 border-t">
                       <div>
-                        <p className="text-sm text-gray-600">Starting from</p>
+                        <p className="text-sm text-gray-600">{t('starting_from')}</p>
                         <p className="text-2xl font-bold text-blue-600">{formatPrice(pkg.price, pkg.currency)}</p>
                       </div>
                       <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                        Details
+                        {t('details')}
                       </button>
                     </div>
                   </div>
@@ -451,7 +456,7 @@ export const PackagesPage: React.FC = () => {
               disabled={currentPage === 1}
               onClick={() => setFilters({ ...filters, page: currentPage - 1 })}
             >
-              Previous
+              {t('previous')}
             </Button>
             {[...Array(totalPages)].map((_, i) => (
               <Button
@@ -466,7 +471,7 @@ export const PackagesPage: React.FC = () => {
               disabled={currentPage === totalPages}
               onClick={() => setFilters({ ...filters, page: currentPage + 1 })}
             >
-              Next
+              {t('next')}
             </Button>
           </div>
         )}

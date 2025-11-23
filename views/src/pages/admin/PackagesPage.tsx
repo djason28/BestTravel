@@ -35,6 +35,7 @@ export const PackagesPage: React.FC = () => {
     isOpen: false,
     packageId: null,
   });
+  const [viewLang, setViewLang] = useState<'en' | 'zh'>('en');
 
   useEffect(() => {
     loadPackages();
@@ -56,9 +57,37 @@ export const PackagesPage: React.FC = () => {
     setIsLoading(true);
     try {
       const payload: FilterOptions = { ...filters, search: searchQuery };
-      const response = await packageApi.getAll(payload);
-      if (response.success) {
-        setPackages(response.data);
+      const [resEn, resZh] = await Promise.all([
+        packageApi.getAll(payload, 'en'),
+        packageApi.getAll(payload, 'zh'),
+      ]);
+      if (resEn.success) {
+        const zhMap: Record<string, Package> = {};
+        if (resZh.success) {
+          resZh.data.forEach(p => { zhMap[p.id] = p; });
+        }
+        const merged = resEn.data.map(p => {
+          const zh = zhMap[p.id];
+          if (!zh) return p;
+          return {
+            ...p,
+            titleZh: zh.title,
+            shortDescriptionZh: zh.shortDescription,
+            descriptionZh: zh.description,
+            categoriesZh: (zh as any).categories || [],
+            destinationZh: zh.destination,
+            availabilityZh: zh.availability,
+            highlightsZh: zh.highlights,
+            includedZh: zh.included,
+            excludedZh: zh.excluded,
+            itinerary: p.itinerary.map((day, idx) => {
+              const zhDay = (zh.itinerary || [])[idx];
+              if (!zhDay) return day;
+              return { ...day, titleZh: zhDay.title, descriptionZh: zhDay.description } as any;
+            }),
+          } as any;
+        });
+        setPackages(merged);
       }
     } catch (error) {
       addToast('Failed to load packages', 'error');
@@ -146,17 +175,23 @@ export const PackagesPage: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Packages</h1>
-          <p className="text-gray-600 mt-1">Manage your travel packages</p>
+          <p className="text-gray-600 mt-1">Manage your travel packages ({viewLang === 'en' ? 'English' : '中文视图'})</p>
         </div>
-        <Link to="/admin/packages/new">
-          <Button>
-            <Plus className="h-5 w-5 mr-2" />
-            Add Package
-          </Button>
-        </Link>
+        <div className="flex items-center gap-3">
+          <div className="inline-flex rounded-lg overflow-hidden border border-gray-300">
+            <button type="button" onClick={() => setViewLang('en')} className={`px-3 py-1 text-sm font-medium ${viewLang==='en' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>EN</button>
+            <button type="button" onClick={() => setViewLang('zh')} className={`px-3 py-1 text-sm font-medium ${viewLang==='zh' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>中文</button>
+          </div>
+          <Link to="/admin/packages/new">
+            <Button>
+              <Plus className="h-5 w-5 mr-2" />
+              Add Package
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <Card>
@@ -341,14 +376,14 @@ export const PackagesPage: React.FC = () => {
                       <div className="flex items-start justify-between mb-2">
                         <div>
                           <div className="flex items-center gap-2">
-                            <h3 className="text-xl font-bold text-gray-900">{pkg.title}</h3>
+                            <h3 className="text-xl font-bold text-gray-900">{viewLang==='en' ? pkg.title : (pkg as any).titleZh || pkg.title}</h3>
                             {pkg.featured && (
                               <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
                                 <span>⭐</span> Featured
                               </span>
                             )}
                           </div>
-                          <p className="text-gray-600 text-sm mt-1">{pkg.destination}</p>
+                          <p className="text-gray-600 text-sm mt-1">{viewLang==='en' ? pkg.destination : (pkg as any).destinationZh || pkg.destination}</p>
                         </div>
                         <span className={`px-3 py-1 rounded-full text-sm font-semibold ${statusColors[pkg.status]}`}>
                           {pkg.status}
@@ -358,12 +393,12 @@ export const PackagesPage: React.FC = () => {
                       {/* Categories chips */}
                       {visibleCategories.length > 0 && (
                         <div className="flex flex-wrap gap-2 mb-2">
-                          {visibleCategories.map((cat, idx) => (
+                          {(viewLang==='en'?visibleCategories:formatCategories(((pkg as any).categoriesZh||[]),3).visible).map((cat, idx) => (
                             <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
                               {cat}
                             </span>
                           ))}
-                          {remainingCount > 0 && (
+                              {viewLang==='en' && remainingCount > 0 && (
                             <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
                               +{remainingCount}
                             </span>
@@ -371,7 +406,7 @@ export const PackagesPage: React.FC = () => {
                         </div>
                       )}
                       
-                      <p className="text-gray-700 mb-4 line-clamp-2">{pkg.shortDescription}</p>
+                      <p className="text-gray-700 mb-4 line-clamp-2">{viewLang==='en' ? pkg.shortDescription : (pkg as any).shortDescriptionZh || pkg.shortDescription}</p>
                       <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
                         <span>{formatPrice(pkg.price, pkg.currency)}</span>
                         <span>{pkg.duration} {pkg.durationUnit}</span>

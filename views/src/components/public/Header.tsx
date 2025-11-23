@@ -1,17 +1,20 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, MessageCircle } from 'lucide-react';
-import logo from '@/assets/branding/logo pendek.png';
+import logo from '@/assets/branding/logo panjang.png';
+import { toggleLang, currentLang } from '../../i18n';
 
 export const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [tempLang, setTempLang] = useState(currentLang());
   const location = useLocation();
 
+  const lang = currentLang();
   const navLinks = [
-    { path: '/', label: 'Home' },
-    { path: '/packages', label: 'Packages' },
-    { path: '/about', label: 'About' },
-    { path: '/contact', label: 'Contact' },
+    { path: '/', label: lang === 'zh' ? '首页' : 'Home' },
+    { path: '/packages', label: lang === 'zh' ? '套餐' : 'Packages' },
+    { path: '/about', label: lang === 'zh' ? '关于我们' : 'About' },
+    { path: '/contact', label: lang === 'zh' ? '联系我们' : 'Contact' },
   ];
 
   const isActive = (path: string) => location.pathname === path;
@@ -22,7 +25,7 @@ export const Header: React.FC = () => {
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-3 group">
             <img src={logo} alt="Bintan Batam Exclusive Trip Logo" className="h-16 w-auto select-none" draggable={false} />
-            <span className="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:via-purple-700 group-hover:to-pink-700 transition-all">Bintan Batam Exclusive Trip</span>
+            <span className="text-xl md:text-2xl font-display font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:via-purple-700 group-hover:to-pink-700 transition-all">Bintan Batam Exclusive Trip</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-8">
@@ -46,11 +49,44 @@ export const Header: React.FC = () => {
               href="https://wa.me/6281234567890"
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
+              className="flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors w-36"
             >
               <MessageCircle className="h-4 w-4" />
-              <span>WhatsApp</span>
+              <span>{lang === 'zh' ? '微信' : 'WhatsApp'}</span>
             </a>
+            <div className="relative inline-flex items-center bg-gray-200 rounded-full p-1 w-32">
+              <div
+                className={`absolute top-1 bottom-1 w-[calc(50%-0.25rem)] bg-blue-600 rounded-full transition-transform duration-300 ease-in-out ${
+                  tempLang === 'zh' ? 'translate-x-full' : 'translate-x-0'
+                }`}
+              />
+              <button
+                onClick={() => { 
+                  if (tempLang !== 'en') { 
+                    setTempLang('en');
+                    setTimeout(() => { toggleLang(); window.location.reload(); }, 300);
+                  }
+                }}
+                className={`relative z-10 flex-1 px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
+                  tempLang === 'en' ? 'text-white' : 'text-gray-700 hover:text-gray-900'
+                }`}
+              >
+                EN
+              </button>
+              <button
+                onClick={() => { 
+                  if (tempLang !== 'zh') { 
+                    setTempLang('zh');
+                    setTimeout(() => { toggleLang(); window.location.reload(); }, 300);
+                  }
+                }}
+                className={`relative z-10 flex-1 px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
+                  tempLang === 'zh' ? 'text-white' : 'text-gray-700 hover:text-gray-900'
+                }`}
+              >
+                中文
+              </button>
+            </div>
           </div>
 
           <button
@@ -82,11 +118,44 @@ export const Header: React.FC = () => {
                 href="https://wa.me/6281234567890"
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors w-fit"
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors w-36"
               >
                 <MessageCircle className="h-4 w-4" />
-                <span>WhatsApp</span>
+                <span>{lang === 'zh' ? '微信' : 'WhatsApp'}</span>
               </a>
+              <div className="relative inline-flex items-center bg-gray-200 rounded-full p-1 w-32">
+                <div
+                  className={`absolute top-1 bottom-1 w-[calc(50%-0.25rem)] bg-blue-600 rounded-full transition-transform duration-300 ease-in-out ${
+                    tempLang === 'zh' ? 'translate-x-full' : 'translate-x-0'
+                  }`}
+                />
+                <button
+                  onClick={() => { 
+                    if (tempLang !== 'en') { 
+                      setTempLang('en');
+                      setTimeout(() => { toggleLang(); window.location.reload(); }, 300);
+                    }
+                  }}
+                  className={`relative z-10 flex-1 px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
+                    tempLang === 'en' ? 'text-white' : 'text-gray-700 hover:text-gray-900'
+                  }`}
+                >
+                  EN
+                </button>
+                <button
+                  onClick={() => { 
+                    if (tempLang !== 'zh') { 
+                      setTempLang('zh');
+                      setTimeout(() => { toggleLang(); window.location.reload(); }, 300);
+                    }
+                  }}
+                  className={`relative z-10 flex-1 px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
+                    tempLang === 'zh' ? 'text-white' : 'text-gray-700 hover:text-gray-900'
+                  }`}
+                >
+                  中文
+                </button>
+              </div>
             </nav>
           </div>
         )}
