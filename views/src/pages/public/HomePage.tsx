@@ -7,26 +7,40 @@ import { formatPrice, formatCategories } from '../../utils/security';
 import { Card } from '../../components/common/Card';
 import { PackageCardSkeleton } from '../../components/common/Loading';
 import { t, currentLang } from '../../i18n';
+import { useNavigationState } from '../../contexts/NavigationContext';
+import { useDataCache } from '../../contexts/DataCacheContext';
+import { PrefetchLink } from '../../components/common';
+// import { LazySection } from '../../components/common';
 
 export const HomePage: React.FC = () => {
   const [featuredPackages, setFeaturedPackages] = useState<Package[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const { endNavigation } = useNavigationState();
+  const { featured: cachedFeatured, prefetchFeatured } = useDataCache();
+
   useEffect(() => {
+    prefetchFeatured();
     loadFeaturedPackages();
-  }, []);
+  }, [prefetchFeatured]);
 
   const loadFeaturedPackages = async () => {
+    setIsLoading(true);
     try {
-      const langOverride = currentLang()==='zh' ? 'zh' : 'en';
-      const response = await packageApi.getAll({ limit: 6, sortBy: 'popular', status: 'published' }, langOverride);
-      if (response.success) {
-        setFeaturedPackages(response.data.slice(0, 6));
+      if (cachedFeatured) {
+        setFeaturedPackages(cachedFeatured);
+      } else {
+        const langOverride = currentLang() === 'zh' ? 'zh' : 'en';
+        const response = await packageApi.getAll({ limit: 6, sortBy: 'popular', status: 'published' }, langOverride);
+        if (response.success) {
+          setFeaturedPackages(response.data.slice(0, 6));
+        }
       }
     } catch (error) {
       console.error('Failed to load packages:', error);
     } finally {
       setIsLoading(false);
+      endNavigation();
     }
   };
 
@@ -44,39 +58,42 @@ export const HomePage: React.FC = () => {
 
   return (
     <div>
-      <section className="relative h-[600px] bg-gradient-to-r from-blue-600 to-blue-800 overflow-hidden">
-        <div className="absolute inset-0 bg-black opacity-20"></div>
-        <div className="absolute inset-0 bg-[url('https://images.pexels.com/photos/346885/pexels-photo-346885.jpeg')] bg-cover bg-center"></div>
-
+      <section className="relative h-[600px] overflow-hidden bg-blue-900">
+        {/* Image wrapper with skeleton */}
+        <HeroPicture />
+        <div className="absolute inset-0 bg-black/40"></div>
         <div className="relative container mx-auto px-4 h-full flex items-center">
           <div className="max-w-3xl text-white">
-            <h1 className="text-5xl md:text-6xl font-bold mb-6 leading-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 leading-tight">
               {t('home_title')}
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-gray-100">
               {t('home_subtitle')}
             </p>
             <div className="flex flex-wrap gap-4">
-              <Link
+              <PrefetchLink
                 to="/packages"
+                prefetchOn="hover"
+                prefetchEnabled
                 className="inline-flex items-center gap-2 px-8 py-4 bg-yellow-400 text-gray-900 font-semibold rounded-lg hover:bg-yellow-300 transition-all duration-300 hover:scale-105 shadow-lg"
               >
                 {t('explore_packages')}
                 <ArrowRight className="h-5 w-5" />
-              </Link>
-              <Link
+              </PrefetchLink>
+              <PrefetchLink
                 to="/contact"
+                prefetchOn="viewport"
+                prefetchEnabled
                 className="inline-flex items-center gap-2 px-8 py-4 bg-white text-gray-900 font-semibold rounded-lg hover:bg-gray-100 transition-all duration-300 shadow-lg"
               >
                 {t('contact_us')}
-              </Link>
+              </PrefetchLink>
             </div>
           </div>
         </div>
-
-        <div className="absolute bottom-0 left-0 right-0">
+        <div className="pointer-events-none absolute bottom-0 left-0 right-0">
           <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 120L60 105C120 90 240 60 360 45C480 30 600 30 720 37.5C840 45 960 60 1080 67.5C1200 75 1320 75 1380 75L1440 75V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z" fill="white"/>
+            <path d="M0 120L60 105C120 90 240 60 360 45C480 30 600 30 720 37.5C840 45 960 60 1080 67.5C1200 75 1320 75 1380 75L1440 75V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z" fill="white" />
           </svg>
         </div>
       </section>
@@ -237,14 +254,13 @@ export const HomePage: React.FC = () => {
           </div>
         </div>
       </section>
-
-      {/* <section className="py-20 bg-white">
+{/* 
+      <LazySection minHeight={520} className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
             <h2 className="text-4xl font-bold text-gray-900 mb-4">What Our Clients Say</h2>
             <p className="text-xl text-gray-600">Real experiences from real travelers</p>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
             {[
               {
@@ -294,7 +310,40 @@ export const HomePage: React.FC = () => {
             ))}
           </div>
         </div>
-      </section> */}
+      </LazySection> */}
+    </div>
+  );
+};
+
+// Hero picture component using responsive <picture> with WebP/AVIF + skeleton
+const HeroPicture: React.FC = () => {
+  const [loaded, setLoaded] = useState(false);
+  // Remote image variants (pexels) with width hints for srcset
+  const base = 'https://images.pexels.com/photos/346885/pexels-photo-346885.jpeg';
+  // Query params compress & size
+  const params = '?auto=compress&cs=tinysrgb&dl=travel-hero.jpg';
+  return (
+    <div className="absolute inset-0">
+      {!loaded && (
+        <div className="absolute inset-0 bg-gradient-to-r from-blue-700 to-blue-900 animate-pulse" />
+      )}
+      <picture>
+        <source
+          type="image/avif"
+          srcSet={`${base}${params}&w=800 800w, ${base}${params}&w=1200 1200w, ${base}${params}&w=1600 1600w`}
+        />
+        <source
+          type="image/webp"
+          srcSet={`${base}${params}&w=800 800w, ${base}${params}&w=1200 1200w, ${base}${params}&w=1600 1600w`}
+        />
+        <img
+          onLoad={() => setLoaded(true)}
+          loading="eager"
+          src={`${base}${params}&w=1600`}
+          alt={t('home_title')}
+          className={`h-full w-full object-cover transition-opacity duration-700 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+        />
+      </picture>
     </div>
   );
 };

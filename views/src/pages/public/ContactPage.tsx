@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, Phone, MapPin, Clock, MessageCircle, Send } from 'lucide-react';
 import { contactApi } from '../../services/api';
 import { validateEmail, validatePhone, sanitizeInput } from '../../utils/security';
@@ -6,8 +6,13 @@ import { Input, Textarea } from '../../components/common/Input';
 import { Button } from '../../components/common/Button';
 import { useToast } from '../../contexts/ToastContext';
 import { t } from '../../i18n';
+import { useNavigationState } from '../../contexts/NavigationContext';
 
 export const ContactPage: React.FC = () => {
+  const { endNavigation } = useNavigationState();
+  useEffect(() => {
+    endNavigation();
+  }, [endNavigation]);
   const { addToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({

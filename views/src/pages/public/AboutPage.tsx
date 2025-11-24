@@ -1,11 +1,17 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Shield, Award, Heart, Users, Target, Globe, TrendingUp, CheckCircle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '../../components/common/Button';
 import { t } from '../../i18n';
 import { MultiParagraphText } from '../../components/common/MultiParagraphText';
+import { useNavigationState } from '../../contexts/NavigationContext';
 
 export const AboutPage: React.FC = () => {
+  const { endNavigation } = useNavigationState();
+  useEffect(() => {
+    // Static page: end navigation immediately after mount
+    endNavigation();
+  }, [endNavigation]);
   return (
     <div className="bg-gray-50">
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
@@ -16,13 +22,13 @@ export const AboutPage: React.FC = () => {
       </div>
 
       <div className="container mx-auto px-4 py-16">
-        <div className="max-w-4xl mx-auto mb-16">
-          <div className="bg-white rounded-lg shadow-md p-8">
-            <h2 className="text-3xl font-bold text-gray-900 mb-6">{t('our_story')}</h2>
+        <div className="mb-20">
+          <div className="bg-white rounded-xl shadow-md border border-gray-100 p-8 md:p-12 lg:p-14 w-full">
+            <h2 className="text-3xl md:text-4xl font-bold text-center text-gray-900 mb-8 tracking-tight">{t('our_story')}</h2>
             <MultiParagraphText
               mainKey="story_text"
               fallbackKeys={["story_p1", "story_p2", "story_p3"]}
-              className="prose prose-lg max-w-none text-gray-700 space-y-4"
+              className="prose prose-base md:prose-lg max-w-none text-gray-700 space-y-5"
             />
           </div>
         </div>

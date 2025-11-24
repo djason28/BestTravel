@@ -18,7 +18,8 @@ import {
 import { packageApi } from '../../services/api';
 import type { Package } from '../../types';
 import { formatPrice, getWhatsAppLink } from '../../utils/security';
-import { Loading } from '../../components/common/Loading';
+import { ContentLoader } from '../../components/common/ContentLoader';
+import { useNavigationState } from '../../contexts/NavigationContext';
 import { Button } from '../../components/common/Button';
 import { t, currentLang } from '../../i18n';
 
@@ -28,6 +29,7 @@ export const PackageDetailPage: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
+  const { endNavigation } = useNavigationState();
 
   useEffect(() => {
     if (slug) {
@@ -38,7 +40,7 @@ export const PackageDetailPage: React.FC = () => {
   const loadPackage = async (slug: string) => {
     setIsLoading(true);
     try {
-      const response = await packageApi.getBySlug(slug, currentLang()==='zh' ? 'zh' : 'en');
+      const response = await packageApi.getBySlug(slug, currentLang() === 'zh' ? 'zh' : 'en');
       if (response.success && response.data) {
         setPkg(response.data);
         await packageApi.incrementView(response.data.id);
@@ -47,6 +49,7 @@ export const PackageDetailPage: React.FC = () => {
       console.error('Failed to load package:', error);
     } finally {
       setIsLoading(false);
+      endNavigation();
     }
   };
 
@@ -70,7 +73,7 @@ export const PackageDetailPage: React.FC = () => {
   };
 
   if (isLoading) {
-    return <Loading fullScreen />;
+    return <ContentLoader overlay minHeight={500} />;
   }
 
   if (!pkg) {

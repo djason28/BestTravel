@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { PrefetchLink } from '../common';
 import { Mail, Phone, MapPin, Facebook, Instagram, Twitter, Youtube } from 'lucide-react';
 import logo from '@/assets/branding/logo pendek.png';
 import { t } from '../../i18n';
@@ -44,16 +45,16 @@ export const Footer: React.FC = () => {
             <h3 className="text-white font-semibold text-lg mb-4">{t('quick_links')}</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/" className="hover:text-blue-500 transition-colors">{t('home')}</Link>
+                <PrefetchLink to="/" prefetchEnabled prefetchOn="viewport" className="hover:text-blue-500 transition-colors">{t('home')}</PrefetchLink>
               </li>
               <li>
-                <Link to="/packages" className="hover:text-blue-500 transition-colors">{t('packages')}</Link>
+                <PrefetchLink to="/packages" prefetchEnabled prefetchOn="hover" className="hover:text-blue-500 transition-colors">{t('packages')}</PrefetchLink>
               </li>
               <li>
-                <Link to="/about" className="hover:text-blue-500 transition-colors">{t('about_us')}</Link>
+                <PrefetchLink to="/about" prefetchEnabled prefetchOn="hover" className="hover:text-blue-500 transition-colors">{t('about_us')}</PrefetchLink>
               </li>
               <li>
-                <Link to="/contact" className="hover:text-blue-500 transition-colors">{t('contact_us')}</Link>
+                <PrefetchLink to="/contact" prefetchEnabled prefetchOn="hover" className="hover:text-blue-500 transition-colors">{t('contact_us')}</PrefetchLink>
               </li>
             </ul>
           </div>
@@ -62,16 +63,16 @@ export const Footer: React.FC = () => {
             <h3 className="text-white font-semibold text-lg mb-4">{t('popular_destinations')}</h3>
             <ul className="space-y-2">
               <li>
-                <Link to="/packages?destination=bali" className="hover:text-blue-500 transition-colors">{t('dest_bali')}</Link>
+                <PrefetchLink to="/packages?destination=bali" prefetchEnabled prefetchOn="hover" className="hover:text-blue-500 transition-colors">{t('dest_bali')}</PrefetchLink>
               </li>
               <li>
-                <Link to="/packages?destination=lombok" className="hover:text-blue-500 transition-colors">{t('dest_lombok')}</Link>
+                <PrefetchLink to="/packages?destination=lombok" prefetchEnabled prefetchOn="hover" className="hover:text-blue-500 transition-colors">{t('dest_lombok')}</PrefetchLink>
               </li>
               <li>
-                <Link to="/packages?destination=yogyakarta" className="hover:text-blue-500 transition-colors">{t('dest_yogyakarta')}</Link>
+                <PrefetchLink to="/packages?destination=yogyakarta" prefetchEnabled prefetchOn="hover" className="hover:text-blue-500 transition-colors">{t('dest_yogyakarta')}</PrefetchLink>
               </li>
               <li>
-                <Link to="/packages?destination=raja-ampat" className="hover:text-blue-500 transition-colors">{t('dest_raja_ampat')}</Link>
+                <PrefetchLink to="/packages?destination=raja-ampat" prefetchEnabled prefetchOn="hover" className="hover:text-blue-500 transition-colors">{t('dest_raja_ampat')}</PrefetchLink>
               </li>
             </ul>
           </div>
@@ -102,9 +103,9 @@ export const Footer: React.FC = () => {
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm">
           <p>{t('copyright_prefix')} {new Date().getFullYear()} Bintan Batam Exclusive Trip. {t('all_rights_reserved')}</p>
           <div className="flex justify-center gap-6 mt-2">
-            <Link to="/privacy" className="hover:text-blue-500 transition-colors">{t('privacy_policy')}</Link>
-            <Link to="/terms" className="hover:text-blue-500 transition-colors">{t('terms_of_service')}</Link>
-            <Link to="/faq" className="hover:text-blue-500 transition-colors">{t('faq')}</Link>
+            <PrefetchLink to="/privacy" prefetchEnabled prefetchOn="viewport" className="hover:text-blue-500 transition-colors">{t('privacy_policy')}</PrefetchLink>
+            <PrefetchLink to="/terms" prefetchEnabled prefetchOn="viewport" className="hover:text-blue-500 transition-colors">{t('terms_of_service')}</PrefetchLink>
+            <PrefetchLink to="/faq" prefetchEnabled prefetchOn="viewport" className="hover:text-blue-500 transition-colors">{t('faq')}</PrefetchLink>
           </div>
         </div>
       </div>

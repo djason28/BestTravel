@@ -6,10 +6,13 @@ import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { PublicLayout } from './layouts/PublicLayout';
 import { AdminLayout } from './layouts/AdminLayout';
-import { Loading } from './components/common/Loading';
+import { ContentLoader } from './components/common/ContentLoader';
+import { NavigationProvider } from './contexts/NavigationContext';
 
 
-import React, { Suspense, lazy } from 'react';
+import React, { Suspense, lazy, useEffect } from 'react';
+import { DataCacheProvider, useDataCache } from './contexts/DataCacheContext';
+import { IdleTasks } from './components/system/IdleTasks';
 // Wrap named exports so React.lazy gets a default
 const HomePage = lazy(() => import('./pages/public/HomePage').then(m => ({ default: m.HomePage })));
 const PackagesPage = lazy(() => import('./pages/public/PackagesPage').then(m => ({ default: m.PackagesPage })));
@@ -24,14 +27,25 @@ const PackageFormPage = lazy(() => import('./pages/admin/PackageFormPage').then(
 const PackagePreviewPage = lazy(() => import('./pages/admin/PackagePreviewPage').then(m => ({ default: m.PackagePreviewPage })));
 const InquiriesPage = lazy(() => import('./pages/admin/InquiriesPage').then(m => ({ default: m.InquiriesPage })));
 
+const CacheWarm: React.FC = () => {
+  const { prefetchFeatured, prefetchFilterOptions } = useDataCache();
+  useEffect(() => {
+    prefetchFeatured();
+    prefetchFilterOptions();
+  }, [prefetchFeatured, prefetchFilterOptions]);
+  return null;
+};
+
 function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
         <AuthProvider>
+          <DataCacheProvider>
+          <NavigationProvider>
           <ToastProvider>
             <ToastContainer />
-            <Suspense fallback={<Loading fullScreen size="md" />}>
+            <Suspense fallback={<ContentLoader overlay minHeight={400} />}>
             <Routes>
               <Route path="/" element={<PublicLayout />}>
                 <Route index element={<HomePage />} />
@@ -63,7 +77,11 @@ function App() {
               <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
             </Suspense>
+            <CacheWarm />
+            <IdleTasks />
           </ToastProvider>
+          </NavigationProvider>
+          </DataCacheProvider>
         </AuthProvider>
       </BrowserRouter>
     </ErrorBoundary>

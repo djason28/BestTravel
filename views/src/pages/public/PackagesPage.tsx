@@ -9,11 +9,15 @@ import { Card } from '../../components/common/Card';
 import { PackageCardSkeleton } from '../../components/common/Loading';
 import { Button } from '../../components/common/Button';
 import { t, currentLang } from '../../i18n';
+import { useNavigationState } from '../../contexts/NavigationContext';
+import { useDataCache } from '../../contexts/DataCacheContext';
 
 export const PackagesPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const [packages, setPackages] = useState<Package[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [totalItems, setTotalItems] = useState(0);
+    const { endNavigation } = useNavigationState();
   const [showFilters, setShowFilters] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
@@ -24,20 +28,24 @@ export const PackagesPage: React.FC = () => {
   } as FilterOptions);
 
   const [options, setOptions] = useState<PackageFilterOptions>({ categories: [], destinations: [], currencies: [], availability: [] });
+  const { filterOptions: cachedOptions, prefetchFilterOptions } = useDataCache();
 
   useEffect(() => {
-    // load dynamic filter options based on current language
-    packageApi.getOptions(currentLang()==='zh' ? 'zh' : 'en')
-      .then((res) => {
-        if (res.success && res.data) {
-          setOptions(res.data);
-        }
-      })
-      .catch((e) => {
-        // non-fatal
-        console.warn('Failed to load filter options', e);
-      });
-  }, [currentLang()]);
+    prefetchFilterOptions();
+    if (cachedOptions) {
+      setOptions(cachedOptions);
+    } else {
+      packageApi.getOptions(currentLang()==='zh' ? 'zh' : 'en')
+        .then((res) => {
+          if (res.success && res.data) {
+            setOptions(res.data);
+          }
+        })
+        .catch((e) => {
+          console.warn('Failed to load filter options', e);
+        });
+    }
+  }, [cachedOptions, prefetchFilterOptions]);
 
   useEffect(() => {
     loadPackages();
@@ -46,20 +54,20 @@ export const PackagesPage: React.FC = () => {
   const loadPackages = async () => {
     setIsLoading(true);
     const lang = currentLang();
-    packageApi.getAll(filters, lang === 'zh' ? 'zh' : 'en')
-      .then((response) => {
-        if (response.success) {
-          setPackages(response.data);
-          setTotalPages(response.pagination.totalPages);
-          setCurrentPage(response.pagination.page);
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to load packages:', error);
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
+    try {
+      const response = await packageApi.getAll(filters, lang === 'zh' ? 'zh' : 'en');
+      if (response.success) {
+        setPackages(response.data);
+        setTotalPages(response.pagination.totalPages);
+        setCurrentPage(response.pagination.page);
+        setTotalItems(response.pagination.total || response.data.length);
+      }
+    } catch (error) {
+      console.error('Failed to load packages:', error);
+    } finally {
+      setIsLoading(false);
+      endNavigation();
+    }
   };
 
   const handleSearchChange = debounce((value: string) => {
@@ -309,8 +317,12 @@ export const PackagesPage: React.FC = () => {
         </div>
 
         <div className="mb-6 flex items-center justify-between">
-          <p className="text-gray-600">
-            {isLoading ? t('loading') : `${packages.length} ${t('packages_found_suffix')}`}
+          <p className="text-gray-600 text-sm md:text-base">
+            {isLoading ? t('loading') : (
+              currentLang()==='zh'
+                ? `${t('showing')} ${packages.length} / ${totalItems} ${t('packages_label')}` + (totalPages>1?` (第 ${currentPage} / ${totalPages} ${t('pages')})`: '')
+                : `${t('showing')} ${packages.length} ${t('of')} ${totalItems} ${t('packages_label')}` + (totalPages>1?` (${t('page')} ${currentPage} of ${totalPages})`: '')
+            )}
           </p>
         </div>
 

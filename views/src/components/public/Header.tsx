@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { PrefetchLink } from '../common';
 import { Menu, X, MessageCircle } from 'lucide-react';
 import logo from '@/assets/branding/logo pendek.png';
 import { toggleLang, currentLang, t } from '../../i18n';
+import { useNavigationState } from '../../contexts/NavigationContext';
 
 export const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -10,6 +12,7 @@ export const Header: React.FC = () => {
   const location = useLocation();
 
   const lang = currentLang();
+  const { startNavigation } = useNavigationState();
   const navLinks = [
     { path: '/', label: lang === 'zh' ? '首页' : 'Home' },
     { path: '/packages', label: lang === 'zh' ? '套餐' : 'Packages' },
@@ -34,9 +37,12 @@ export const Header: React.FC = () => {
 
           <nav className="hidden md:flex items-center gap-8" aria-label={lang==='zh' ? '主导航' : 'Main navigation'}>
             {navLinks.map((link) => (
-              <Link
+              <PrefetchLink
                 key={link.path}
                 to={link.path}
+                prefetchEnabled
+                prefetchOn={link.path === '/about' || link.path === '/contact' ? 'viewport' : 'hover'}
+                onClick={() => startNavigation()}
                 className={`text-sm font-medium transition-colors ${
                   isActive(link.path)
                     ? 'text-blue-600'
@@ -44,7 +50,7 @@ export const Header: React.FC = () => {
                 }`}
               >
                 {link.label}
-              </Link>
+              </PrefetchLink>
             ))}
           </nav>
 
@@ -108,10 +114,12 @@ export const Header: React.FC = () => {
           <div className="md:hidden py-4 border-t">
             <nav className="flex flex-col gap-4" aria-label={lang==='zh' ? '移动导航' : 'Mobile navigation'}>
               {navLinks.map((link) => (
-                <Link
+                <PrefetchLink
                   key={link.path}
                   to={link.path}
-                  onClick={() => setIsMobileMenuOpen(false)}
+                  prefetchEnabled
+                  prefetchOn={link.path === '/about' || link.path === '/contact' ? 'viewport' : 'focus'}
+                  onClick={() => { setIsMobileMenuOpen(false); startNavigation(); }}
                   className={`text-sm font-medium transition-colors ${
                     isActive(link.path)
                       ? 'text-blue-600'
@@ -119,7 +127,7 @@ export const Header: React.FC = () => {
                   }`}
                 >
                   {link.label}
-                </Link>
+                </PrefetchLink>
               ))}
               <a
                 href={`https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER || '6281234567890'}`}
