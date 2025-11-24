@@ -3,6 +3,7 @@ import { Shield, Award, Heart, Users, Target, Globe, TrendingUp, CheckCircle } f
 import { Link } from 'react-router-dom';
 import { Button } from '../../components/common/Button';
 import { t } from '../../i18n';
+import { MultiParagraphText } from '../../components/common/MultiParagraphText';
 
 export const AboutPage: React.FC = () => {
   return (
@@ -17,14 +18,12 @@ export const AboutPage: React.FC = () => {
       <div className="container mx-auto px-4 py-16">
         <div className="max-w-4xl mx-auto mb-16">
           <div className="bg-white rounded-lg shadow-md p-8">
-                <h2 className="text-3xl font-bold text-gray-900 mb-6">{t('our_story')}</h2>
-                <div className="prose prose-lg max-w-none text-gray-700 space-y-4">
-                  {(t('story_text') || `${t('story_p1')}\n\n${t('story_p2')}\n\n${t('story_p3')}`)
-                    .split(/\n{2,}/)
-                    .map((paragraph, idx) => (
-                      <p key={idx}>{paragraph}</p>
-                    ))}
-            </div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-6">{t('our_story')}</h2>
+            <MultiParagraphText
+              mainKey="story_text"
+              fallbackKeys={["story_p1", "story_p2", "story_p3"]}
+              className="prose prose-lg max-w-none text-gray-700 space-y-4"
+            />
           </div>
         </div>
 

@@ -1,5 +1,7 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
+import logoShort from '../../assets/branding/logo pendek.png';
+import { t } from '../../i18n';
 
 interface LoadingProps {
   fullScreen?: boolean;
@@ -13,15 +15,29 @@ export const Loading: React.FC<LoadingProps> = ({ fullScreen = false, size = 'md
     lg: 'h-16 w-16',
   };
 
+  const spinner = <Loader2 className={`animate-spin text-blue-600 ${sizes[size]}`} />;
+
   const content = (
-    <div className="flex items-center justify-center">
-      <Loader2 className={`animate-spin text-blue-600 ${sizes[size]}`} />
+    <div className="flex flex-col items-center justify-center gap-3">
+      {fullScreen && (
+        <img
+          src={logoShort}
+          alt="Logo"
+          className="w-20 h-20 object-contain animate-[pulse_2.5s_ease-in-out_infinite] select-none"
+          draggable={false}
+        />
+      )}
+      <div className="relative">
+        <div className="absolute inset-0 rounded-full border-4 border-blue-100 animate-[ping_1.8s_linear_infinite]" />
+        {spinner}
+      </div>
+      <p className="text-sm text-gray-600 animate-pulse">{t('loading') || 'Loading...'}</p>
     </div>
   );
 
   if (fullScreen) {
     return (
-      <div className="fixed inset-0 bg-white bg-opacity-90 flex items-center justify-center z-50">
+      <div className="fixed inset-0 bg-white bg-opacity-95 flex items-center justify-center z-50">
         {content}
       </div>
     );

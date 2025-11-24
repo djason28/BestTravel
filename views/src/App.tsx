@@ -6,6 +6,7 @@ import { ProtectedRoute } from './components/common/ProtectedRoute';
 import { ErrorBoundary } from './components/common/ErrorBoundary';
 import { PublicLayout } from './layouts/PublicLayout';
 import { AdminLayout } from './layouts/AdminLayout';
+import { Loading } from './components/common/Loading';
 
 
 import React, { Suspense, lazy } from 'react';
@@ -30,7 +31,7 @@ function App() {
         <AuthProvider>
           <ToastProvider>
             <ToastContainer />
-            <Suspense fallback={<div className="p-10 text-center">Loading...</div>}>
+            <Suspense fallback={<Loading fullScreen size="md" />}>
             <Routes>
               <Route path="/" element={<PublicLayout />}>
                 <Route index element={<HomePage />} />

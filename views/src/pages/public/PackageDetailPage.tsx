@@ -96,6 +96,12 @@ export const PackageDetailPage: React.FC = () => {
     return unit;
   };
 
+  // Normalisasi agar field array yang mungkin datang sebagai null (dari Go: slice nil -> JSON null)
+  const images = pkg?.images || [];
+  const highlights = pkg?.highlights || [];
+  const itinerary = pkg?.itinerary || [];
+  const included = pkg?.included || [];
+  const excluded = pkg?.excluded || [];
   return (
     <div className="bg-gray-50">
       <div className="container mx-auto px-4 py-8">
@@ -109,13 +115,13 @@ export const PackageDetailPage: React.FC = () => {
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-8">
               <div className="relative h-[500px]">
                 <img
-                  src={pkg.images[currentImageIndex]?.url || 'https://images.pexels.com/photos/1430676/pexels-photo-1430676.jpeg'}
+                  src={images[currentImageIndex]?.url || 'https://images.pexels.com/photos/1430676/pexels-photo-1430676.jpeg'}
                   alt={pkg.title}
                   loading="lazy"
                   className="w-full h-full object-cover cursor-pointer"
                   onClick={() => setIsGalleryOpen(true)}
                 />
-                {pkg.images.length > 1 && (
+                {images.length > 1 && (
                   <>
                     <button
                       onClick={prevImage}
@@ -130,7 +136,7 @@ export const PackageDetailPage: React.FC = () => {
                       <ChevronRight className="h-6 w-6" />
                     </button>
                     <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex gap-2">
-                      {pkg.images.map((_, index) => (
+                      {images.map((_, index) => (
                         <button
                           key={index}
                           onClick={() => setCurrentImageIndex(index)}
@@ -143,10 +149,9 @@ export const PackageDetailPage: React.FC = () => {
                   </>
                 )}
               </div>
-
-              {pkg.images.length > 1 && (
+              {images.length > 1 && (
                 <div className="grid grid-cols-4 gap-2 p-4">
-                  {pkg.images.slice(0, 4).map((image, index) => (
+                  {images.slice(0, 4).map((image, index) => (
                     <img
                       key={image.id}
                       src={image.url}
@@ -220,11 +225,11 @@ export const PackageDetailPage: React.FC = () => {
                 <h2 className="text-2xl font-bold text-gray-900 mb-4">{t('overview')}</h2>
                 <p className="text-gray-700 leading-relaxed mb-6">{currentLang()==='zh' ? (pkg.descriptionZh || pkg.description) : pkg.description}</p>
 
-                {pkg.highlights.length > 0 && (
+                {highlights.length > 0 && (
                   <div className="mb-6">
                     <h3 className="text-xl font-semibold text-gray-900 mb-3">{t('highlights')}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {pkg.highlights.map((highlight, index) => (
+                      {highlights.map((highlight, index) => (
                         <div key={index} className="flex items-start gap-2">
                           <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
                           <span className="text-gray-700">{highlight}</span>
@@ -235,12 +240,11 @@ export const PackageDetailPage: React.FC = () => {
                 )}
               </div>
             </div>
-
-            {pkg.itinerary.length > 0 && (
+            {itinerary.length > 0 && (
               <div className="bg-white rounded-lg shadow-md p-8 mb-8">
                 <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('itinerary')}</h2>
                 <div className="space-y-6">
-                  {pkg.itinerary.map((day) => (
+                  {itinerary.map((day) => (
                     <div key={day.day} className="border-l-4 border-blue-600 pl-6">
                       <div className="flex items-center gap-3 mb-2">
                         <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
@@ -249,9 +253,9 @@ export const PackageDetailPage: React.FC = () => {
                         <h3 className="text-xl font-semibold text-gray-900">{currentLang()==='zh' ? (day.titleZh || day.title) : day.title}</h3>
                       </div>
                       <p className="text-gray-700 mb-3">{currentLang()==='zh' ? (day.descriptionZh || day.description) : day.description}</p>
-                      {day.activities.length > 0 && (
+                      {(day.activities || []).length > 0 && (
                         <ul className="list-disc list-inside space-y-1 text-gray-600">
-                          {day.activities.map((activity, index) => (
+                          {(day.activities || []).map((activity, index) => (
                             <li key={index}>{activity}</li>
                           ))}
                         </ul>
@@ -272,7 +276,7 @@ export const PackageDetailPage: React.FC = () => {
                   {/* Decorative underline directly under Included subtitle */}
                   <span className="block mt-2 mb-4 h-1 w-32 bg-gradient-to-r from-green-500 via-blue-600 to-purple-600 rounded" />
                   <ul className="space-y-2">
-                    {pkg.included.map((item, index) => (
+                    {included.map((item, index) => (
                       <li key={index} className="flex items-start gap-2 text-gray-700">
                         <CheckCircle className="h-5 w-5 text-green-600 flex-shrink-0 mt-0.5" />
                         <span>{item}</span>
@@ -288,7 +292,7 @@ export const PackageDetailPage: React.FC = () => {
                   {/* Decorative underline directly under Excluded subtitle */}
                   <span className="block mt-2 mb-4 h-1 w-32 bg-gradient-to-r from-red-500 via-pink-600 to-purple-600 rounded" />
                   <ul className="space-y-2">
-                    {pkg.excluded.map((item, index) => (
+                    {excluded.map((item, index) => (
                       <li key={index} className="flex items-start gap-2 text-gray-700">
                         <XCircle className="h-5 w-5 text-red-600 flex-shrink-0 mt-0.5" />
                         <span>{item}</span>
@@ -374,7 +378,7 @@ export const PackageDetailPage: React.FC = () => {
             className="max-w-[90vw] max-h-[90vh] object-contain"
           />
           <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white">
-            {currentImageIndex + 1} / {pkg.images.length}
+            {currentImageIndex + 1} / {images.length}
           </div>
         </div>
       )}
