@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Search, SlidersHorizontal, MapPin, Calendar, Star, X } from 'lucide-react';
 import { packageApi } from '../../services/api';
@@ -17,7 +17,7 @@ export const PackagesPage: React.FC = () => {
   const [packages, setPackages] = useState<Package[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [totalItems, setTotalItems] = useState(0);
-    const { endNavigation } = useNavigationState();
+    const { endNavigation, startNavigation } = useNavigationState();
   const [showFilters, setShowFilters] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
@@ -53,6 +53,7 @@ export const PackagesPage: React.FC = () => {
 
   const loadPackages = async () => {
     setIsLoading(true);
+    startNavigation();
     const lang = currentLang();
     try {
       const response = await packageApi.getAll(filters, lang === 'zh' ? 'zh' : 'en');
@@ -122,6 +123,26 @@ export const PackagesPage: React.FC = () => {
     (filters.availability && filters.availability !== '') ||
     filters.featuredOnly || filters.notFeatured
   );
+
+  const paginationItems = useMemo<(number | 'ellipsis')[]>(() => {
+    const items: (number | 'ellipsis')[] = [];
+    if (totalPages <= 9) {
+      for (let i = 1; i <= totalPages; i++) items.push(i);
+      return items;
+    }
+    if (currentPage <= 4) {
+      items.push(1, 2, 3, 4, 5, 'ellipsis', totalPages - 1, totalPages);
+      return items;
+    }
+    if (currentPage >= totalPages - 4) {
+      items.push(1, 2, 'ellipsis');
+      for (let i = totalPages - 4; i <= totalPages; i++) items.push(i);
+      return items;
+    }
+    // Middle window
+    items.push(currentPage - 2, currentPage - 1, currentPage, currentPage + 1, currentPage + 2, 'ellipsis', totalPages - 1, totalPages);
+    return items;
+  }, [currentPage, totalPages]);
 
   return (
     <div className="bg-gray-50 min-h-screen">
@@ -407,25 +428,57 @@ export const PackagesPage: React.FC = () => {
         </div>
 
         {totalPages > 1 && (
-          <div className="flex justify-center gap-2">
+          <div className="flex flex-wrap justify-center gap-2" aria-label="Pagination navigation">
+            {/* Previous & First */}
             <Button
               disabled={currentPage === 1}
               onClick={() => setFilters({ ...filters, page: currentPage - 1 })}
             >
               {t('previous')}
             </Button>
-            {[...Array(totalPages)].map((_, i) => (
-              <Button
-                key={i}
-                variant={currentPage === i + 1 ? 'primary' : 'outline'}
-                onClick={() => setFilters({ ...filters, page: i + 1 })}
-              >
-                {i + 1}
-              </Button>
+            <Button
+              disabled={currentPage === 1}
+              onClick={() => setFilters({ ...filters, page: 1 })}
+              variant={currentPage === 1 ? 'primary' : 'outline'}
+              aria-label="First page"
+            >
+              «
+            </Button>
+            {/* Page numbers */}
+            {paginationItems.map((it, idx) => (
+              it === 'ellipsis' ? (
+                <span
+                  key={`e-${idx}`}
+                  aria-hidden="true"
+                  role="presentation"
+                  className="px-3 py-2 text-gray-500 select-none"
+                >
+                  …
+                </span>
+              ) : (
+                <Button
+                  key={it}
+                  variant={currentPage === it ? 'primary' : 'outline'}
+                  aria-current={currentPage === it ? 'page' : undefined}
+                  onClick={() => setFilters({ ...filters, page: it })}
+                >
+                  {it}
+                </Button>
+              )
             ))}
+            {/* Last & Next */}
+            <Button
+              disabled={currentPage === totalPages}
+              onClick={() => setFilters({ ...filters, page: totalPages })}
+              variant={currentPage === totalPages ? 'primary' : 'outline'}
+              aria-label="Last page"
+            >
+              »
+            </Button>
             <Button
               disabled={currentPage === totalPages}
               onClick={() => setFilters({ ...filters, page: currentPage + 1 })}
+              aria-label="Next page"
             >
               {t('next')}
             </Button>

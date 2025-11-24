@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { PrefetchLink } from '../common';
 import { Menu, X, MessageCircle } from 'lucide-react';
@@ -12,7 +12,9 @@ export const Header: React.FC = () => {
   const location = useLocation();
 
   const lang = currentLang();
-  const { startNavigation } = useNavigationState();
+  const { startNavigation, isNavigating } = useNavigationState();
+  const lastNavRef = useRef<{ path: string; ts: number }>({ path: location.pathname, ts: Date.now() });
+  const THROTTLE_MS = 400; // prevent rapid double navigation extending loading state
   const navLinks = [
     { path: '/', label: lang === 'zh' ? '首页' : 'Home' },
     { path: '/packages', label: lang === 'zh' ? '套餐' : 'Packages' },
@@ -42,12 +44,24 @@ export const Header: React.FC = () => {
                 to={link.path}
                 prefetchEnabled
                 prefetchOn={link.path === '/about' || link.path === '/contact' ? 'viewport' : 'hover'}
-                onClick={() => startNavigation()}
+                onClick={(e) => {
+                  const now = Date.now();
+                  // Ignore if already on this path or rapid double click
+                  if (
+                    location.pathname === link.path ||
+                    (now - lastNavRef.current.ts < THROTTLE_MS && lastNavRef.current.path === link.path)
+                  ) {
+                    e.preventDefault();
+                    return;
+                  }
+                  lastNavRef.current = { path: link.path, ts: now };
+                  startNavigation();
+                }}
                 className={`text-sm font-medium transition-colors ${
                   isActive(link.path)
                     ? 'text-blue-600'
                     : 'text-gray-700 hover:text-blue-600'
-                }`}
+                } ${isNavigating ? 'pointer-events-none opacity-50' : ''}`}
               >
                 {link.label}
               </PrefetchLink>
@@ -119,12 +133,25 @@ export const Header: React.FC = () => {
                   to={link.path}
                   prefetchEnabled
                   prefetchOn={link.path === '/about' || link.path === '/contact' ? 'viewport' : 'focus'}
-                  onClick={() => { setIsMobileMenuOpen(false); startNavigation(); }}
+                  onClick={(e) => {
+                    const now = Date.now();
+                    if (
+                      location.pathname === link.path ||
+                      (now - lastNavRef.current.ts < THROTTLE_MS && lastNavRef.current.path === link.path)
+                    ) {
+                      e.preventDefault();
+                      setIsMobileMenuOpen(false);
+                      return;
+                    }
+                    lastNavRef.current = { path: link.path, ts: now };
+                    setIsMobileMenuOpen(false);
+                    startNavigation();
+                  }}
                   className={`text-sm font-medium transition-colors ${
                     isActive(link.path)
                       ? 'text-blue-600'
                       : 'text-gray-700 hover:text-blue-600'
-                  }`}
+                  } ${isNavigating ? 'pointer-events-none opacity-50' : ''}`}
                 >
                   {link.label}
                 </PrefetchLink>

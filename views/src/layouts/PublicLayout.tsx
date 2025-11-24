@@ -13,13 +13,11 @@ export const PublicLayout: React.FC = () => {
     <div className="min-h-screen flex flex-col">
       <Header />
       <main className="flex-1 relative">
-        <div
-          className={`h-full transition-opacity duration-200 ${isNavigating ? 'opacity-40' : 'opacity-100'}`}
-        >
+        <div className="h-full">
           <Outlet />
         </div>
         {isNavigating && (
-          <div className="absolute inset-0 flex items-center justify-center z-30 pointer-events-none">
+          <div className="absolute inset-0 flex items-center justify-center z-30 bg-white/50 backdrop-blur-sm">
             <Loading size="md" />
           </div>
         )}
