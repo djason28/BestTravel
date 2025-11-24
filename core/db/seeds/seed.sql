@@ -10,7 +10,7 @@ INSERT INTO `packages`(
 )
 WITH RECURSIVE seq AS (
   SELECT 1 AS n
-  UNION ALL SELECT n+1 FROM seq WHERE n < 100
+  UNION ALL SELECT n+1 FROM seq WHERE n < 20
 )
 SELECT 
   CONCAT('pkg-demo-', LPAD(n,4,'0')),
@@ -65,7 +65,7 @@ FROM seq;
 
 INSERT INTO `package_images`(`id`,`package_id`,`url`,`alt`,`order`,`is_cover`,`created_at`,`updated_at`)
 WITH RECURSIVE seq AS (
-  SELECT 1 AS n UNION ALL SELECT n+1 FROM seq WHERE n < 100
+  SELECT 1 AS n UNION ALL SELECT n+1 FROM seq WHERE n < 20
 ), imgix AS (
   SELECT 1 AS i UNION ALL SELECT i+1 FROM imgix WHERE i < 3
 )
@@ -83,4 +83,4 @@ SELECT
 FROM seq CROSS JOIN imgix;
 
 -- No itinerary for bulk test; slider & pagination only.
--- After seeding run: SELECT COUNT(*) FROM packages; should be 100.
+-- After seeding run: SELECT COUNT(*) FROM packages; should be 20.
