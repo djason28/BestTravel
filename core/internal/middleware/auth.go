@@ -5,6 +5,8 @@ import (
 	"strings"
 
 	"besttravel/internal/config"
+	"besttravel/internal/database"
+	"besttravel/internal/models"
 	"besttravel/internal/utils"
 
 	"github.com/gin-gonic/gin"
@@ -25,6 +27,15 @@ func AuthRequired(cfg *config.Config) gin.HandlerFunc {
 			return
 		}
 		token := strings.TrimPrefix(auth, "Bearer ")
+
+		// Check blacklist
+		var count int64
+		database.DB.Model(&models.TokenBlacklist{}).Where("token = ?", token).Count(&count)
+		if count > 0 {
+			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"success": false, "error": "token revoked"})
+			return
+		}
+
 		claims, err := utils.ParseJWT(cfg, token)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"success": false, "error": "invalid token"})
@@ -53,6 +64,16 @@ func OptionalAuth(cfg *config.Config) gin.HandlerFunc {
 		auth := c.GetHeader("Authorization")
 		if strings.HasPrefix(auth, "Bearer ") {
 			token := strings.TrimPrefix(auth, "Bearer ")
+
+			// Check blacklist
+			var count int64
+			database.DB.Model(&models.TokenBlacklist{}).Where("token = ?", token).Count(&count)
+			if count > 0 {
+				// Treat as if no token provided
+				c.Next()
+				return
+			}
+
 			claims, err := utils.ParseJWT(cfg, token)
 			if err == nil {
 				c.Set(string(CtxUserID), claims.UserID)

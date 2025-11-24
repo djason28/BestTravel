@@ -76,7 +76,18 @@ func (h *AuthController) Refresh(c *gin.Context) {
 }
 
 func (h *AuthController) Logout(c *gin.Context) {
-	// Stateless JWT: client deletes token
+	auth := c.GetHeader("Authorization")
+	if strings.HasPrefix(auth, "Bearer ") {
+		tokenStr := strings.TrimPrefix(auth, "Bearer ")
+		claims, err := utils.ParseJWT(h.cfg, tokenStr)
+		if err == nil {
+			// Add to blacklist
+			_ = database.DB.Create(&models.TokenBlacklist{
+				Token:     tokenStr,
+				ExpiresAt: claims.ExpiresAt.Time,
+			}).Error
+		}
+	}
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 

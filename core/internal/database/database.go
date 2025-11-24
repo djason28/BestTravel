@@ -55,6 +55,7 @@ func Init(cfg *config.Config) {
 		&models.PackageImage{},
 		&models.ItineraryItem{},
 		&models.Inquiry{},
+		&models.TokenBlacklist{},
 	); err != nil {
 		log.Fatalf("failed to migrate database: %v", err)
 	}
