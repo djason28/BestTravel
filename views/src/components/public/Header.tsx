@@ -26,8 +26,9 @@ export const Header: React.FC = () => {
           <Link to="/" className="flex items-center gap-3 group">
             <img src={logo} alt="Best Tour and Travel Logo" className="h-16 w-auto select-none" draggable={false} />
             <div className="flex flex-col">
-              <span className="text-xl md:text-2xl font-display font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:via-purple-700 group-hover:to-pink-700 transition-all">Best Tour and Travel</span>
-              <span className="text-[11px] md:text-xs text-gray-500 font-medium tracking-wide group-hover:text-gray-600 transition-colors leading-tight">{t('header_subtagline_header')}</span>
+              {/* <span className="text-xl md:text-2xl font-display font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:via-purple-700 group-hover:to-pink-700 transition-all">BEST Tour and Travel</span> */}
+              <span className="text-xl md:text-2xl font-display font-bold bg-gradient-to-r from-red-600 via-yellow-600 to-green-600 bg-clip-text text-transparent group-hover:from-red-700 group-hover:via-yellow-700 group-hover:to-green-700 transition-all">BEST Tour and Travel</span>
+              <span className="text-[11px] md:text-xs text-gray-500 font-medium tracking-wide group-hover:text-black transition-colors leading-tight">{t('header_subtagline_header')}</span>
             </div>
           </Link>
 

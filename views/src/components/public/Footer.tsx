@@ -15,8 +15,10 @@ export const Footer: React.FC = () => {
                 <img src={logo} alt="Bintan Batam Exclusive Trip Logo" className="h-24 w-auto select-none" draggable={false} />
               </Link>
               <div className="flex flex-col justify-center">
-                <h3 className="text-xl font-display font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight">Bintan Batam</h3>
-                <h3 className="text-xl font-display font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight">Exclusive Trip</h3>
+                {/* <h3 className="text-xl font-display font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight">Bintan Batam</h3>
+                <h3 className="text-xl font-display font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight">Exclusive Trip</h3> */}
+                <h3 className="text-xl font-display font-bold bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 bg-clip-text text-transparent leading-tight">Bintan Batam</h3>
+                <h3 className="text-xl font-display font-bold bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 bg-clip-text text-transparent leading-tight">Exclusive Trip</h3>
               </div>
             </div>
             <p className="text-sm leading-relaxed">
