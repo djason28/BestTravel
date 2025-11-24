@@ -42,3 +42,12 @@
     @apply antialiased font-sans;
   }
 }
+
+  /* Ken Burns slow zoom for active fullscreen image */
+  @keyframes kenburns {
+    0% { transform: scale(1) translate3d(0,0,0); }
+    100% { transform: scale(1.08) translate3d(0,0,0); }
+  }
+  .animate-kenburns {
+    animation: kenburns 12s linear forwards;
+  }

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import {
   MapPin,
@@ -28,6 +28,10 @@ export const PackageDetailPage: React.FC = () => {
   const [pkg, setPkg] = useState<Package | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [autoPlay, setAutoPlay] = useState(true); // still pause on hover; button removed
+  const autoPlayInterval = useRef<number | null>(null);
+  const fullScreenInterval = useRef<number | null>(null);
+  const touchStart = useRef<{x:number;y:number}|null>(null);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const { endNavigation } = useNavigationState();
 
@@ -72,6 +76,63 @@ export const PackageDetailPage: React.FC = () => {
     }
   };
 
+  // Autoplay (advance every 5s) unless gallery open or user paused
+  useEffect(() => {
+    if (!pkg || !autoPlay || isGalleryOpen || pkg.images.length < 2) return;
+    autoPlayInterval.current && clearInterval(autoPlayInterval.current);
+    autoPlayInterval.current = window.setInterval(() => {
+      setCurrentImageIndex((prev) => (prev + 1) % pkg.images.length);
+    }, 5000);
+    return () => {
+      autoPlayInterval.current && clearInterval(autoPlayInterval.current);
+    };
+  }, [pkg, autoPlay, isGalleryOpen]);
+
+  // Fullscreen autoplay (independent from main slider autoplay)
+  useEffect(() => {
+    if (!isGalleryOpen || !pkg || pkg.images.length < 2) {
+      fullScreenInterval.current && clearInterval(fullScreenInterval.current);
+      fullScreenInterval.current = null;
+      return;
+    }
+    fullScreenInterval.current && clearInterval(fullScreenInterval.current);
+    fullScreenInterval.current = window.setInterval(() => {
+      setCurrentImageIndex(prev => (prev + 1) % pkg.images.length);
+    }, 6000); // 6s for slower immersive fullscreen
+    return () => {
+      fullScreenInterval.current && clearInterval(fullScreenInterval.current);
+    };
+  }, [isGalleryOpen, pkg]);
+
+  // Close fullscreen on ESC key
+  useEffect(() => {
+    if (!isGalleryOpen) return;
+    const handler = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        setIsGalleryOpen(false);
+      } else if (e.key === 'ArrowRight') {
+        nextImage();
+      } else if (e.key === 'ArrowLeft') {
+        prevImage();
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [isGalleryOpen, pkg]);
+
+  const images = pkg?.images || [];
+  // Lazy preload remaining images once package loaded
+  useEffect(() => {
+    if (!images || images.length < 2) return;
+    const toPreload = images.slice(1);
+    toPreload.forEach(img => {
+      if (img?.url) {
+        const i = new Image();
+        i.src = img.url;
+      }
+    });
+  }, [images]);
+
   if (isLoading) {
     return <ContentLoader overlay minHeight={500} />;
   }
@@ -100,7 +161,7 @@ export const PackageDetailPage: React.FC = () => {
   };
 
   // Normalisasi agar field array yang mungkin datang sebagai null (dari Go: slice nil -> JSON null)
-  const images = pkg?.images || [];
+  // images already defined above for autoplay logic.
   const highlights = pkg?.highlights || [];
   const itinerary = pkg?.itinerary || [];
   const included = pkg?.included || [];
@@ -116,25 +177,49 @@ export const PackageDetailPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-md overflow-hidden mb-8">
-              <div className="relative h-[500px]">
-                <img
-                  src={images[currentImageIndex]?.url || 'https://images.pexels.com/photos/1430676/pexels-photo-1430676.jpeg'}
-                  alt={pkg.title}
-                  loading="lazy"
-                  className="w-full h-full object-cover cursor-pointer"
-                  onClick={() => setIsGalleryOpen(true)}
-                />
+              <div
+                className="relative h-[500px] overflow-hidden group"
+                onMouseEnter={() => setAutoPlay(false)}
+                onMouseLeave={() => setAutoPlay(true)}
+                onTouchStart={e => {
+                  const t = e.touches[0];
+                  touchStart.current = { x: t.clientX, y: t.clientY };
+                }}
+                onTouchEnd={e => {
+                  if (!touchStart.current) return;
+                  const t = e.changedTouches[0];
+                  const dx = t.clientX - touchStart.current.x;
+                  const dy = t.clientY - touchStart.current.y;
+                  const threshold = 40;
+                  if (Math.abs(dx) > threshold && Math.abs(dy) < 80) {
+                    if (dx < 0) nextImage(); else prevImage();
+                    setAutoPlay(false);
+                  }
+                  touchStart.current = null;
+                }}
+              >
+                {images.map((image, i) => (
+                  <img
+                    key={image.id || i}
+                    src={image.url || 'https://images.pexels.com/photos/1430676/pexels-photo-1430676.jpeg'}
+                    alt={image.alt || pkg.title}
+                    loading={i === 0 ? 'eager' : 'lazy'}
+                    className={`absolute inset-0 w-full h-full object-cover cursor-pointer select-none transition-opacity duration-700 ease-in-out ${i === currentImageIndex ? 'opacity-100' : 'opacity-0'} ${i === currentImageIndex ? '' : 'pointer-events-none'}`}
+                    onClick={() => setIsGalleryOpen(true)}
+                    draggable={false}
+                  />
+                ))}
                 {images.length > 1 && (
                   <>
                     <button
                       onClick={prevImage}
-                      className="absolute left-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-90 p-2 rounded-full hover:bg-opacity-100 transition-all"
+                      className="absolute left-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm p-2 rounded-full hover:bg-white shadow transition-colors"
                     >
                       <ChevronLeft className="h-6 w-6" />
                     </button>
                     <button
                       onClick={nextImage}
-                      className="absolute right-4 top-1/2 transform -translate-y-1/2 bg-white bg-opacity-90 p-2 rounded-full hover:bg-opacity-100 transition-all"
+                      className="absolute right-4 top-1/2 -translate-y-1/2 bg-white/80 backdrop-blur-sm p-2 rounded-full hover:bg-white shadow transition-colors"
                     >
                       <ChevronRight className="h-6 w-6" />
                     </button>
@@ -143,8 +228,10 @@ export const PackageDetailPage: React.FC = () => {
                         <button
                           key={index}
                           onClick={() => setCurrentImageIndex(index)}
-                          className={`w-2 h-2 rounded-full transition-all ${
-                            index === currentImageIndex ? 'bg-white w-8' : 'bg-white bg-opacity-50'
+                          className={`h-2 rounded-full transition-all duration-300 ${
+                            index === currentImageIndex
+                              ? 'bg-white w-8'
+                              : 'bg-white/50 w-2 hover:bg-white/70'
                           }`}
                         />
                       ))}
@@ -355,33 +442,76 @@ export const PackageDetailPage: React.FC = () => {
       </div>
 
       {isGalleryOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center">
+        <div
+          className="fixed inset-0 bg-black bg-opacity-95 z-50 flex items-center justify-center overflow-hidden"
+          onTouchStart={e => {
+            const t = e.touches[0];
+            touchStart.current = { x: t.clientX, y: t.clientY };
+          }}
+          onTouchEnd={e => {
+            if (!touchStart.current) return;
+            const t = e.changedTouches[0];
+            const dx = t.clientX - touchStart.current.x;
+            const dy = t.clientY - touchStart.current.y;
+            const threshold = 40;
+            if (Math.abs(dx) > threshold && Math.abs(dy) < 80) {
+              if (dx < 0) nextImage(); else prevImage();
+            }
+            touchStart.current = null;
+          }}
+        >
           <button
             onClick={() => setIsGalleryOpen(false)}
-            className="absolute top-4 right-4 text-white p-2 hover:bg-white hover:bg-opacity-20 rounded-full transition-colors"
+            className="absolute top-4 right-4 text-white p-2 hover:bg-white/20 rounded-full transition-colors"
+            aria-label="Close gallery"
           >
             <X className="h-8 w-8" />
           </button>
-          <button
-            onClick={prevImage}
-            className="absolute left-4 text-white p-2 hover:bg-white hover:bg-opacity-20 rounded-full transition-colors"
-          >
-            <ChevronLeft className="h-8 w-8" />
-          </button>
-          <button
-            onClick={nextImage}
-            className="absolute right-4 text-white p-2 hover:bg-white hover:bg-opacity-20 rounded-full transition-colors"
-          >
-            <ChevronRight className="h-8 w-8" />
-          </button>
-          <img
-            src={pkg.images[currentImageIndex]?.url}
-            alt={pkg.title}
-            loading="lazy"
-            className="max-w-[90vw] max-h-[90vh] object-contain"
-          />
-          <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 text-white">
-            {currentImageIndex + 1} / {images.length}
+          {images.length > 1 && (
+            <>
+              <button
+                onClick={prevImage}
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-white p-2 hover:bg-white/20 rounded-full transition-colors"
+                aria-label="Previous image"
+              >
+                <ChevronLeft className="h-8 w-8" />
+              </button>
+              <button
+                onClick={nextImage}
+                className="absolute right-4 top-1/2 -translate-y-1/2 text-white p-2 hover:bg-white/20 rounded-full transition-colors"
+                aria-label="Next image"
+              >
+                <ChevronRight className="h-8 w-8" />
+              </button>
+            </>
+          )}
+          {/* Fade + Ken Burns */}
+          {images.map((image, i) => (
+            <img
+              key={image.id || i}
+              src={image.url}
+              alt={image.alt || pkg.title}
+              loading={i === 0 ? 'eager' : 'lazy'}
+              className={`absolute max-w-[90vw] max-h-[90vh] object-contain transition-opacity duration-700 ease-in-out ${
+                i === currentImageIndex ? 'opacity-100 animate-kenburns' : 'opacity-0'
+              }`}
+              draggable={false}
+            />
+          ))}
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white flex items-center gap-4 select-none">
+            <span>{currentImageIndex + 1} / {images.length}</span>
+            <div className="flex gap-2">
+              {images.map((_, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setCurrentImageIndex(idx)}
+                  className={`h-2 rounded-full transition-all duration-300 ${
+                    idx === currentImageIndex ? 'bg-white w-6' : 'bg-white/40 w-2 hover:bg-white/60'
+                  }`}
+                  aria-label={`Go to image ${idx+1}`}
+                />
+              ))}
+            </div>
           </div>
         </div>
       )}
