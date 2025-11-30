@@ -41,9 +41,17 @@ type Config struct {
 }
 
 func Load() *Config {
-	// Try loading .env from current and parent directories to allow a single root .env
-	// Ensure .env values override any existing env vars in dev
-	_ = godotenv.Overload(".env", "../.env", "../../.env")
+	// Iteratively attempt to load .env from possible locations.
+	// godotenv.Overload stops on first error, so we call it per-file if the file exists.
+	for _, p := range []string{".env", "../.env", "../../.env"} {
+		if fi, err := os.Stat(p); err == nil && !fi.IsDir() {
+			if err2 := godotenv.Overload(p); err2 != nil {
+				log.Printf("[Config] failed loading %s: %v", p, err2)
+			} else {
+				log.Printf("[Config] loaded env file: %s", p)
+			}
+		}
+	}
 
 	cfg := &Config{
 		Port:                          getEnv("PORT", "8080"),
@@ -79,6 +87,8 @@ func Load() *Config {
 	if cfg.DBDriver != "mysql" {
 		log.Fatalf("unsupported DB_DRIVER '%s' - only 'mysql' is supported now", cfg.DBDriver)
 	}
+
+	log.Printf("[Config] DB user=%s host=%s port=%d name=%s driver=%s", cfg.DBUser, cfg.DBHost, cfg.DBPort, cfg.DBName, cfg.DBDriver)
 
 	// Basic production hardening: require strong JWT secret and non-default admin creds
 	if cfg.Env == "production" {

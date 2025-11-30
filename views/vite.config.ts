@@ -11,12 +11,25 @@ if (existsSync(rootEnv)) {
 }
 
 // https://vitejs.dev/config/
+ function debugPlugin() {
+   return {
+     name: 'debug-log-main',
+     enforce: 'pre' as const,
+     transform(code: string, id: string) {
+       if (id.endsWith('src/main.tsx')) {
+         console.log('[vite debug] transforming main.tsx length=', code.length);
+       }
+       return code;
+     }
+   };
+ }
+
 export default defineConfig({
   plugins: [react()],
-  resolve: {
-    alias: {
-      '@': resolve(__dirname, 'src'),
-    },
+   resolve: {
+     alias: {
+       '@': resolve(__dirname, 'src'),
+     },
   },
   optimizeDeps: {
     exclude: ['lucide-react'],

@@ -27,63 +27,63 @@ Jalankan semua perintah dari folder `views/` (tempat file `package.json` berada)
 # 1) Masuk ke folder frontend
 cd .\views
 
-# 2) Install dependency
+# Frontend (Vite + React)
+
+Development setup for the BestTravel frontend.
+
+## Prerequisites
+- Node.js 18+
+- npm (or pnpm)
+
+## Environment
+- The app reads backend API base from the root repo `.env`:
+	- `VITE_API_URL=http://localhost:8080/api`
+
+## Run (Dev)
+```fish
+cd /data/Coding/Travel/BestTravel/views
 npm install
+npm run dev -- --port 5173 --force
+```
+Open `http://localhost:5173/` in a fresh browser tab.
 
-# 3) Siapkan variabel lingkungan di ROOT repo (BUKAN di views/)
-#    - salin /.env.example -> /.env lalu edit nilainya (VITE_API_URL, dsb)
+If you see a white screen in one browser, try:
+- Hard reload (Ctrl+Shift+R)
+- Incognito window
+- Disable extensions (ad blockers/privacy) that can block local modules
+- Ensure dev server port matches the tab
 
-# 4) Jalankan dev server (default: http://localhost:5173)
-npm run dev
-
-# 5) Build untuk produksi
+## Build + Preview
+```fish
+cd /data/Coding/Travel/BestTravel/views
 npm run build
-
-# 6) Pratinjau hasil build produksi secara lokal
 npm run preview
+# Open http://localhost:4173/
 ```
 
-Jika kamu menjalankan di WSL, jalankan perintah yang sama di lingkungan WSL.
-
-## Konfigurasi .env (root)
-
-Atur `/.env` di root repo. Variabel penting untuk frontend:
-
+## Backend Integration
+Ensure backend is running on port 8080 and CORS allows the dev origin.
+```fish
+cd /data/Coding/Travel/BestTravel/core
+go run ./cmd/server
 ```
-VITE_API_URL=http://localhost:8080/api  # atau /api jika reverse-proxy
-VITE_SUPABASE_URL=                      # opsional
-VITE_SUPABASE_ANON_KEY=                 # opsional
+Root `.env` minimum:
 ```
-
-Catatan:
-- Jika backend berjalan di domain/port terpisah saat development, set `VITE_API_URL` ke URL penuh (misal: `http://localhost:8080/api`).
-- Proyek ini tidak mengatur proxy dev Vite. Tanpa backend aktif, request ke `/api` akan gagal (404/CORS).
-
-## Skrip yang Tersedia
-
-```powershell
-npm run dev        # Menjalankan dev server Vite
-npm run build      # Build produksi ke folder dist
-npm run preview    # Menjalankan server untuk pratinjau hasil build
-npm run lint       # Menjalankan ESLint
-npm run typecheck  # Mengecek tipe TypeScript tanpa menghasilkan file
+CORS_ORIGINS=http://localhost:5173
+VITE_API_URL=http://localhost:8080/api
+DB_DRIVER=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_USER=bestuser
+DB_PASSWORD=PasswordKuat123!
+DB_NAME=besttravel
+DB_PARAMS=parseTime=true&charset=utf8mb4&loc=Local
 ```
-
-## Info Teknis Singkat
-
-- Tooling: Vite 5, React 18, TypeScript 5, Tailwind CSS 3, ESLint 9
-- Kode API: `src/services/api.ts` (membaca `VITE_API_URL`, default `/api`)
-- Supabase: `src/services/supabase.ts` (butuh `VITE_SUPABASE_URL` dan `VITE_SUPABASE_ANON_KEY` jika dipakai)
-- Tidak ada backend di folder `core/` (kosong). Lihat `views/API_DOCUMENTATION.md` untuk spesifikasi endpoint yang diharapkan frontend ini.
 
 ## Troubleshooting
-
-- Error Supabase “Missing Supabase environment variables”: isi `VITE_SUPABASE_URL` dan `VITE_SUPABASE_ANON_KEY`, atau nonaktifkan pemanggilan Supabase yang tidak dipakai.
-- 404/CORS saat memanggil API: pastikan `VITE_API_URL` mengarah ke backend yang berjalan dan CORS mengizinkan asal frontend kamu.
-- Port bentrok: Vite biasanya di 5173. Jika bentrok, Vite akan menawarkan port lain di terminal.
-
-## Kustomisasi Penting
-
+- Dev blank screen: restart dev server, use incognito, or different browser.
+- Lucide source-map warnings: safe to ignore in dev.
+- Port conflicts: stop other dev servers and re-run with `--force`.
 - Nomor WhatsApp ada di beberapa komponen publik (lihat catatan di `PROJECT_OVERVIEW.md`).
 - Ubah branding/warna di `tailwind.config.js` dan konten di halaman `src/pages/public/*`.
 

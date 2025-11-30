@@ -221,6 +221,10 @@ npm run preview  # Preview production build
 npm run lint     # ESLint
 npm run typecheck # TypeScript check
 ```
+#### Dev Tips
+- If the dev tab shows a white screen, close old tabs and restart the dev server with `--force`.
+- Use an incognito/private window to avoid cached module graphs or extension interference.
+- Ensure you're opening the correct port printed by Vite.
 
 ### Docker (from root)
 ```powershell
@@ -257,6 +261,7 @@ docker compose down              # Stop & remove containers
 - Ensure `VITE_API_URL=http://localhost:8080/api` in `.env`
 - Backend must be running on port 8080
 - Check backend logs for CORS errors; verify `CORS_ORIGINS` includes `http://localhost:5173`
+ - Browser shows source map warnings for dependencies (react/lucide): safe to ignore in dev.
 
 ### Docker: "address already in use"
 - Stop local backend/frontend if running manually

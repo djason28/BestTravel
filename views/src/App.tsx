@@ -47,7 +47,7 @@ function App() {
             <ToastContainer />
             <Suspense fallback={<ContentLoader overlay minHeight={400} />}>
             <Routes>
-              <Route path="/" element={<PublicLayout />}>
+              <Route path="/" element={<PublicLayout />}> 
                 <Route index element={<HomePage />} />
                 <Route path="packages" element={<PackagesPage />} />
                 <Route path="packages/:slug" element={<PackageDetailPage />} />
