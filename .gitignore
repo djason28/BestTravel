@@ -12,6 +12,7 @@ bin/
 .env.local
 .env.*.local
 !.env.example
+.dev.vars
 
 # Database
 *.db
@@ -40,6 +41,8 @@ desktop.ini
 
 # Local tooling caches
 .bolt/
+.wrangler/
+.vite/
 
 # Docker
 .dockerignore

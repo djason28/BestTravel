@@ -1,12 +1,16 @@
-import React, { useState, useEffect } from 'react';
-import { Mail, Phone, MapPin, Clock, MessageCircle, Send } from 'lucide-react';
-import { contactApi } from '../../services/api';
-import { validateEmail, validatePhone, sanitizeInput } from '../../utils/security';
-import { Input, Textarea } from '../../components/common/Input';
-import { Button } from '../../components/common/Button';
-import { useToast } from '../../contexts/ToastContext';
-import { t } from '../../i18n';
-import { useNavigationState } from '../../contexts/NavigationContext';
+import React, { useState, useEffect } from "react";
+import { Mail, Phone, MapPin, Clock, MessageCircle, Send } from "lucide-react";
+import { contactApi } from "../../services/api";
+import {
+  validateEmail,
+  validatePhone,
+  sanitizeInput,
+} from "../../utils/security";
+import { Input, Textarea } from "../../components/common/Input";
+import { Button } from "../../components/common/Button";
+import { useToast } from "../../contexts/ToastContext";
+import { t } from "../../i18n";
+import { useNavigationState } from "../../contexts/NavigationContext";
 
 export const ContactPage: React.FC = () => {
   const { endNavigation } = useNavigationState();
@@ -16,19 +20,21 @@ export const ContactPage: React.FC = () => {
   const { addToast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    subject: '',
-    message: '',
+    name: "",
+    email: "",
+    phone: "",
+    subject: "",
+    message: "",
   });
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
     if (errors[name]) {
-      setErrors((prev) => ({ ...prev, [name]: '' }));
+      setErrors((prev) => ({ ...prev, [name]: "" }));
     }
   };
 
@@ -36,27 +42,27 @@ export const ContactPage: React.FC = () => {
     const newErrors: Record<string, string> = {};
 
     if (!formData.name.trim()) {
-      newErrors.name = t('full_name') + ' ' + 'is required';
+      newErrors.name = t("full_name") + " " + "is required";
     }
 
     if (!formData.email.trim()) {
-      newErrors.email = t('email_address') + ' ' + 'is required';
+      newErrors.email = t("email_address") + " " + "is required";
     } else if (!validateEmail(formData.email)) {
-      newErrors.email = 'Invalid ' + t('email_address');
+      newErrors.email = "Invalid " + t("email_address");
     }
 
     if (!formData.phone.trim()) {
-      newErrors.phone = t('phone_number') + ' ' + 'is required';
+      newErrors.phone = t("phone_number") + " " + "is required";
     } else if (!validatePhone(formData.phone)) {
-      newErrors.phone = 'Invalid ' + t('phone_number');
+      newErrors.phone = "Invalid " + t("phone_number");
     }
 
     if (!formData.subject.trim()) {
-      newErrors.subject = t('subject') + ' ' + 'is required';
+      newErrors.subject = t("subject") + " " + "is required";
     }
 
     if (!formData.message.trim()) {
-      newErrors.message = t('message') + ' ' + 'is required';
+      newErrors.message = t("message") + " " + "is required";
     }
 
     setErrors(newErrors);
@@ -81,10 +87,10 @@ export const ContactPage: React.FC = () => {
       };
 
       await contactApi.send(sanitizedData);
-      addToast(t('send_message') + ' success!', 'success');
-      setFormData({ name: '', email: '', phone: '', subject: '', message: '' });
+      addToast(t("send_message") + " success!", "success");
+      setFormData({ name: "", email: "", phone: "", subject: "", message: "" });
     } catch (error) {
-      addToast('Failed to ' + t('send_message'), 'error');
+      addToast("Failed to " + t("send_message"), "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -96,8 +102,12 @@ export const ContactPage: React.FC = () => {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex-1">
-              <h1 className="text-3xl md:text-4xl font-bold mb-3">{t('contact_us')}</h1>
-              <p className="text-lg text-blue-100">{t('contact_page_subtitle')}</p>
+              <h1 className="text-3xl md:text-4xl font-bold mb-3">
+                {t("contact_us")}
+              </h1>
+              <p className="text-lg text-blue-100">
+                {t("contact_page_subtitle")}
+              </p>
             </div>
           </div>
         </div>
@@ -107,11 +117,13 @@ export const ContactPage: React.FC = () => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           <div>
             <div className="bg-white rounded-lg shadow-md p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">{t('send_us_message')}</h2>
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                {t("send_us_message")}
+              </h2>
               <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Input
-                    label={t('full_name')}
+                    label={t("full_name")}
                     name="name"
                     value={formData.name}
                     onChange={handleChange}
@@ -120,7 +132,7 @@ export const ContactPage: React.FC = () => {
                     required
                   />
                   <Input
-                    label={t('email_address')}
+                    label={t("email_address")}
                     type="email"
                     name="email"
                     value={formData.email}
@@ -133,17 +145,17 @@ export const ContactPage: React.FC = () => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <Input
-                    label={t('phone_number')}
+                    label={t("phone_number")}
                     type="tel"
                     name="phone"
                     value={formData.phone}
                     onChange={handleChange}
                     error={errors.phone}
-                    placeholder="+62 812-3456-7890"
+                    placeholder="+62-852-8391-8338"
                     required
                   />
                   <Input
-                    label={t('subject')}
+                    label={t("subject")}
                     name="subject"
                     value={formData.subject}
                     onChange={handleChange}
@@ -154,7 +166,7 @@ export const ContactPage: React.FC = () => {
                 </div>
 
                 <Textarea
-                  label={t('message')}
+                  label={t("message")}
                   name="message"
                   value={formData.message}
                   onChange={handleChange}
@@ -164,9 +176,13 @@ export const ContactPage: React.FC = () => {
                   required
                 />
 
-                <Button type="submit" isLoading={isSubmitting} className="w-full md:w-auto">
+                <Button
+                  type="submit"
+                  isLoading={isSubmitting}
+                  className="w-full md:w-auto"
+                >
                   <Send className="h-4 w-4 mr-2" />
-                  {t('send_message')}
+                  {t("send_message")}
                 </Button>
               </form>
             </div>
@@ -174,22 +190,29 @@ export const ContactPage: React.FC = () => {
 
           <div className="space-y-6">
             <div className="bg-white rounded-lg shadow-md p-6">
-              <h3 className="text-xl font-bold text-gray-900 mb-4">{t('contact_information')}</h3>
+              <h3 className="text-xl font-bold text-gray-900 mb-4">
+                {t("contact_information")}
+              </h3>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <MapPin className="h-6 w-6 text-blue-600 flex-shrink-0" />
                   <div>
-                    <p className="font-semibold text-gray-900">{t('address')}</p>
-                    <p className="text-gray-600 text-sm">Jl. Raya Senggigi No. 123<br />Lombok, Indonesia 83355</p>
+                    <p className="font-semibold text-gray-900">
+                      {t("address")}
+                    </p>
+                    <p className="text-gray-600 text-sm">Bintan - Indonesia</p>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
                   <Phone className="h-6 w-6 text-blue-600 flex-shrink-0" />
                   <div>
-                    <p className="font-semibold text-gray-900">{t('phone')}</p>
-                    <a href="tel:+6281234567890" className="text-blue-600 hover:underline text-sm">
-                      +62 812-3456-7890
+                    <p className="font-semibold text-gray-900">{t("phone")}</p>
+                    <a
+                      href="tel:+6285283918338"
+                      className="text-blue-600 hover:underline text-sm"
+                    >
+                      +62-852-8391-8338
                     </a>
                   </div>
                 </div>
@@ -197,9 +220,12 @@ export const ContactPage: React.FC = () => {
                 <div className="flex items-start gap-3">
                   <Mail className="h-6 w-6 text-blue-600 flex-shrink-0" />
                   <div>
-                    <p className="font-semibold text-gray-900">{t('email')}</p>
-                    <a href="mailto:info@wanderlux.com" className="text-blue-600 hover:underline text-sm">
-                      info@wanderlux.com
+                    <p className="font-semibold text-gray-900">{t("email")}</p>
+                    <a
+                      href="mailto:info@besttravel.com"
+                      className="text-blue-600 hover:underline text-sm"
+                    >
+                      info@besttravel.com
                     </a>
                   </div>
                 </div>
@@ -207,10 +233,14 @@ export const ContactPage: React.FC = () => {
                 <div className="flex items-start gap-3">
                   <Clock className="h-6 w-6 text-blue-600 flex-shrink-0" />
                   <div>
-                    <p className="font-semibold text-gray-900">{t('business_hours')}</p>
+                    <p className="font-semibold text-gray-900">
+                      {t("business_hours")}
+                    </p>
                     <p className="text-gray-600 text-sm">
-                      Monday - Friday: 9:00 AM - 6:00 PM<br />
-                      Saturday: 9:00 AM - 4:00 PM<br />
+                      Monday - Friday: 9:00 AM - 6:00 PM
+                      <br />
+                      Saturday: 9:00 AM - 4:00 PM
+                      <br />
                       Sunday: Closed
                     </p>
                   </div>
@@ -221,21 +251,21 @@ export const ContactPage: React.FC = () => {
             <div className="bg-green-50 rounded-lg shadow-md p-6 border-2 border-green-200">
               <h3 className="text-xl font-bold text-gray-900 mb-3 flex items-center gap-2">
                 <MessageCircle className="h-6 w-6 text-green-600" />
-                {t('quick_contact')}
+                {t("quick_contact")}
               </h3>
-              <p className="text-gray-700 mb-4">{t('quick_contact_desc')}</p>
+              <p className="text-gray-700 mb-4">{t("quick_contact_desc")}</p>
               <a
-                href="https://wa.me/6281234567890?text=Hello! I would like to inquire about travel packages."
+                href="https://wa.me/6285283918338?text=Hello! I would like to inquire about travel packages."
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-6 py-3 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors w-full justify-center"
               >
                 <MessageCircle className="h-5 w-5" />
-                {t('chat_on_whatsapp')}
+                {t("chat_on_whatsapp")}
               </a>
             </div>
 
-            <div className="bg-white rounded-lg shadow-md p-6">
+            {/* <div className="bg-white rounded-lg shadow-md p-6">
               <h3 className="text-xl font-bold text-gray-900 mb-3">{t('visit_our_office')}</h3>
               <div className="w-full h-48 bg-gray-200 rounded-lg overflow-hidden">
                 <iframe
@@ -248,7 +278,7 @@ export const ContactPage: React.FC = () => {
                   referrerPolicy="no-referrer-when-downgrade"
                 ></iframe>
               </div>
-            </div>
+            </div> */}
           </div>
         </div>
       </div>

@@ -1,15 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { ArrowRight, MapPin, Calendar, Shield, Award, Clock, Star } from 'lucide-react';
-import { packageApi } from '../../services/api';
-import type { Package } from '../../types';
-import { formatPrice, formatCategories } from '../../utils/security';
-import { Card } from '../../components/common/Card';
-import { PackageCardSkeleton } from '../../components/common/Loading';
-import { t, currentLang } from '../../i18n';
-import { useNavigationState } from '../../contexts/NavigationContext';
-import { useDataCache } from '../../contexts/DataCacheContext';
-import { PrefetchLink } from '../../components/common';
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  ArrowRight,
+  MapPin,
+  Calendar,
+  Shield,
+  Award,
+  Clock,
+  Star,
+} from "lucide-react";
+import { packageApi } from "../../services/api";
+import type { Package } from "../../types";
+import { formatPrice, formatCategories } from "../../utils/security";
+import { Card } from "../../components/common/Card";
+import { PackageCardSkeleton } from "../../components/common/Loading";
+import { t, currentLang } from "../../i18n";
+import { useNavigationState } from "../../contexts/NavigationContext";
+import { useDataCache } from "../../contexts/DataCacheContext";
+import { PrefetchLink } from "../../components/common";
 // import { LazySection } from '../../components/common';
 
 export const HomePage: React.FC = () => {
@@ -30,14 +38,17 @@ export const HomePage: React.FC = () => {
       if (cachedFeatured) {
         setFeaturedPackages(cachedFeatured);
       } else {
-        const langOverride = currentLang() === 'zh' ? 'zh' : 'en';
-        const response = await packageApi.getAll({ limit: 6, sortBy: 'popular', status: 'published' }, langOverride);
+        const langOverride = currentLang() === "zh" ? "zh" : "en";
+        const response = await packageApi.getAll(
+          { limit: 6, sortBy: "popular", status: "published" },
+          langOverride,
+        );
         if (response.success) {
           setFeaturedPackages(response.data.slice(0, 6));
         }
       }
     } catch (error) {
-      console.error('Failed to load packages:', error);
+      console.error("Failed to load packages:", error);
     } finally {
       setIsLoading(false);
       endNavigation();
@@ -45,12 +56,16 @@ export const HomePage: React.FC = () => {
   };
 
   const localizeUnit = (unit: string) => {
-    if (currentLang() === 'zh') {
+    if (currentLang() === "zh") {
       switch (unit) {
-        case 'days': return '天';
-        case 'nights': return '晚';
-        case 'hours': return '小时';
-        default: return unit;
+        case "days":
+          return "天";
+        case "nights":
+          return "晚";
+        case "hours":
+          return "小时";
+        default:
+          return unit;
       }
     }
     return unit;
@@ -65,10 +80,10 @@ export const HomePage: React.FC = () => {
         <div className="relative container mx-auto px-4 h-full flex items-center">
           <div className="max-w-3xl text-white">
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-bold mb-6 leading-tight">
-              {t('home_title')}
+              {t("home_title")}
             </h1>
             <p className="text-xl md:text-2xl mb-8 text-gray-100">
-              {t('home_subtitle')}
+              {t("home_subtitle")}
             </p>
             <div className="flex flex-wrap gap-4">
               <PrefetchLink
@@ -77,7 +92,7 @@ export const HomePage: React.FC = () => {
                 prefetchEnabled
                 className="inline-flex items-center gap-2 px-8 py-4 bg-yellow-400 text-gray-900 font-semibold rounded-lg hover:bg-yellow-300 transition-all duration-300 hover:scale-105 shadow-lg"
               >
-                {t('explore_packages')}
+                {t("explore_packages")}
                 <ArrowRight className="h-5 w-5" />
               </PrefetchLink>
               <PrefetchLink
@@ -86,14 +101,21 @@ export const HomePage: React.FC = () => {
                 prefetchEnabled
                 className="inline-flex items-center gap-2 px-8 py-4 bg-white text-gray-900 font-semibold rounded-lg hover:bg-gray-100 transition-all duration-300 shadow-lg"
               >
-                {t('contact_us')}
+                {t("contact_us")}
               </PrefetchLink>
             </div>
           </div>
         </div>
         <div className="pointer-events-none absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M0 120L60 105C120 90 240 60 360 45C480 30 600 30 720 37.5C840 45 960 60 1080 67.5C1200 75 1320 75 1380 75L1440 75V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z" fill="white" />
+          <svg
+            viewBox="0 0 1440 120"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+          >
+            <path
+              d="M0 120L60 105C120 90 240 60 360 45C480 30 600 30 720 37.5C840 45 960 60 1080 67.5C1200 75 1320 75 1380 75L1440 75V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z"
+              fill="white"
+            />
           </svg>
         </div>
       </section>
@@ -104,28 +126,33 @@ export const HomePage: React.FC = () => {
             {[
               {
                 icon: <Shield className="h-12 w-12 text-blue-600" />,
-                title: t('feature_safe_secure_title'),
-                description: t('feature_safe_secure_desc'),
+                title: t("feature_safe_secure_title"),
+                description: t("feature_safe_secure_desc"),
               },
               {
                 icon: <Award className="h-12 w-12 text-blue-600" />,
-                title: t('feature_best_prices_title'),
-                description: t('feature_best_prices_desc'),
+                title: t("feature_best_prices_title"),
+                description: t("feature_best_prices_desc"),
               },
               {
                 icon: <Calendar className="h-12 w-12 text-blue-600" />,
-                title: t('feature_expert_guides_title'),
-                description: t('feature_expert_guides_desc'),
+                title: t("feature_expert_guides_title"),
+                description: t("feature_expert_guides_desc"),
               },
               {
                 icon: <Clock className="h-12 w-12 text-blue-600" />,
-                title: t('feature_support_title'),
-                description: t('feature_support_desc'),
+                title: t("feature_support_title"),
+                description: t("feature_support_desc"),
               },
             ].map((feature, index) => (
-              <div key={index} className="text-center p-6 rounded-lg hover:shadow-lg transition-shadow duration-300">
+              <div
+                key={index}
+                className="text-center p-6 rounded-lg hover:shadow-lg transition-shadow duration-300"
+              >
                 <div className="flex justify-center mb-4">{feature.icon}</div>
-                <h3 className="text-xl font-semibold mb-2 text-gray-900">{feature.title}</h3>
+                <h3 className="text-xl font-semibold mb-2 text-gray-900">
+                  {feature.title}
+                </h3>
                 <p className="text-gray-600">{feature.description}</p>
               </div>
             ))}
@@ -136,9 +163,11 @@ export const HomePage: React.FC = () => {
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">{t('featured')} {t('packages')}</h2>
+            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+              {t("featured")} {t("packages")}
+            </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              {t('home_subtitle')}
+              {t("home_subtitle")}
             </p>
           </div>
 
@@ -151,67 +180,95 @@ export const HomePage: React.FC = () => {
               </>
             ) : (
               featuredPackages.map((pkg) => {
-                const { visible: visibleCategories, remaining: remainingCount } = formatCategories(pkg.categories || [], 3);
-                
+                const {
+                  visible: visibleCategories,
+                  remaining: remainingCount,
+                } = formatCategories(pkg.categories || [], 3);
+
                 return (
-                <Link key={pkg.id} to={`/packages/${pkg.slug}`}>
-                  <Card hover className="h-full">
-                    <div className="relative h-64 overflow-hidden">
-                      <img
-                        src={pkg.images[0]?.url || 'https://images.pexels.com/photos/1430676/pexels-photo-1430676.jpeg'}
-                        alt={pkg.title}
-                        loading="lazy"
-                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
-                      />
-                      {pkg.featured && (
-                        <div className="absolute top-4 right-4 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
-                          <Star className="h-4 w-4 fill-current" />
-                          {t('featured')}
-                        </div>
-                      )}
-                      {/* Categories chips overlay */}
-                      {visibleCategories.length > 0 && (
-                        <div className="absolute top-4 left-4 flex flex-wrap gap-2 max-w-[calc(100%-8rem)]">
-                          {visibleCategories.map((cat, idx) => (
-                            <span key={idx} className="px-2 py-1 bg-white/90 backdrop-blur-sm text-gray-900 rounded-full text-xs font-semibold shadow-sm">
-                              {cat}
-                            </span>
-                          ))}
-                          {remainingCount > 0 && (
-                            <span className="px-2 py-1 bg-white/90 backdrop-blur-sm text-gray-700 rounded-full text-xs font-semibold shadow-sm">
-                              +{remainingCount}
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                    <div className="p-6">
-                      <h3 className="text-xl font-bold text-gray-900 mb-2">{currentLang()==='zh' ? (pkg.titleZh || pkg.title) : pkg.title}</h3>
-                      <p className="text-gray-600 mb-4 line-clamp-2">{currentLang()==='zh' ? (pkg.shortDescriptionZh || pkg.shortDescription) : pkg.shortDescription}</p>
+                  <Link key={pkg.id} to={`/packages/${pkg.slug}`}>
+                    <Card hover className="h-full">
+                      <div className="relative h-64 overflow-hidden">
+                        <img
+                          src={
+                            Array.isArray(pkg.images) && pkg.images[0]?.url
+                              ? pkg.images[0]?.url
+                              : "https://images.pexels.com/photos/1430676/pexels-photo-1430676.jpeg"
+                          }
+                          alt={pkg.title}
+                          loading="lazy"
+                          className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                        />
+                        {pkg.featured && (
+                          <div className="absolute top-4 right-4 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+                            <Star className="h-4 w-4 fill-current" />
+                            {t("featured")}
+                          </div>
+                        )}
+                        {/* Categories chips overlay */}
+                        {visibleCategories.length > 0 && (
+                          <div className="absolute top-4 left-4 flex flex-wrap gap-2 max-w-[calc(100%-8rem)]">
+                            {visibleCategories.map((cat, idx) => (
+                              <span
+                                key={idx}
+                                className="px-2 py-1 bg-white/90 backdrop-blur-sm text-gray-900 rounded-full text-xs font-semibold shadow-sm"
+                              >
+                                {cat}
+                              </span>
+                            ))}
+                            {remainingCount > 0 && (
+                              <span className="px-2 py-1 bg-white/90 backdrop-blur-sm text-gray-700 rounded-full text-xs font-semibold shadow-sm">
+                                +{remainingCount}
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                      <div className="p-6">
+                        <h3 className="text-xl font-bold text-gray-900 mb-2">
+                          {currentLang() === "zh"
+                            ? pkg.titleZh || pkg.title
+                            : pkg.title}
+                        </h3>
+                        <p className="text-gray-600 mb-4 line-clamp-2">
+                          {currentLang() === "zh"
+                            ? pkg.shortDescriptionZh || pkg.shortDescription
+                            : pkg.shortDescription}
+                        </p>
 
-                      <div className="space-y-2 mb-4">
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <MapPin className="h-4 w-4 text-blue-600" />
-                          <span>{currentLang()==='zh' ? (pkg.destinationZh || pkg.destination) : pkg.destination}</span>
+                        <div className="space-y-2 mb-4">
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <MapPin className="h-4 w-4 text-blue-600" />
+                            <span>
+                              {currentLang() === "zh"
+                                ? pkg.destinationZh || pkg.destination
+                                : pkg.destination}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm text-gray-600">
+                            <Calendar className="h-4 w-4 text-blue-600" />
+                            <span>
+                              {pkg.duration} {localizeUnit(pkg.durationUnit)}
+                            </span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2 text-sm text-gray-600">
-                          <Calendar className="h-4 w-4 text-blue-600" />
-                          <span>{pkg.duration} {localizeUnit(pkg.durationUnit)}</span>
+
+                        <div className="flex items-center justify-between pt-4 border-t">
+                          <div>
+                            <p className="text-sm text-gray-600">
+                              {t("starting_from")}
+                            </p>
+                            <p className="text-2xl font-bold text-blue-600">
+                              {formatPrice(pkg.price, pkg.currency)}
+                            </p>
+                          </div>
+                          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                            {t("details")}
+                          </button>
                         </div>
                       </div>
-
-                      <div className="flex items-center justify-between pt-4 border-t">
-                        <div>
-                          <p className="text-sm text-gray-600">{t('starting_from')}</p>
-                          <p className="text-2xl font-bold text-blue-600">{formatPrice(pkg.price, pkg.currency)}</p>
-                        </div>
-                        <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                          {t('details')}
-                        </button>
-                      </div>
-                    </div>
-                  </Card>
-                </Link>
+                    </Card>
+                  </Link>
                 );
               })
             )}
@@ -222,7 +279,7 @@ export const HomePage: React.FC = () => {
               to="/packages"
               className="inline-flex items-center gap-2 px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
             >
-              {t('explore_packages')}
+              {t("explore_packages")}
               <ArrowRight className="h-5 w-5" />
             </Link>
           </div>
@@ -232,29 +289,29 @@ export const HomePage: React.FC = () => {
       <section className="py-20 bg-blue-600 text-white">
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-4xl font-bold mb-6">{t('home_title')}</h2>
-            <p className="text-xl mb-8 text-blue-100">{t('home_subtitle')}</p>
+            <h2 className="text-4xl font-bold mb-6">{t("home_title")}</h2>
+            <p className="text-xl mb-8 text-blue-100">{t("home_subtitle")}</p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link
                 to="/packages"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors"
               >
-                {t('explore_packages')}
+                {t("explore_packages")}
                 <ArrowRight className="h-5 w-5" />
               </Link>
               <a
-                href={`https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER || '6281234567890'}?text=${encodeURIComponent('Hello! I would like to inquire about travel packages.')}`}
+                href={`https://wa.me/${import.meta.env.VITE_WHATSAPP_NUMBER || "6285283918338"}?text=${encodeURIComponent("Hello! I would like to inquire about travel packages.")}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-2 px-8 py-4 bg-green-500 text-white font-semibold rounded-lg hover:bg-green-600 transition-colors"
               >
-                {t('contact_whatsapp')}
+                {t("contact_whatsapp")}
               </a>
             </div>
           </div>
         </div>
       </section>
-{/* 
+      {/* 
       <LazySection minHeight={520} className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
@@ -319,9 +376,10 @@ export const HomePage: React.FC = () => {
 const HeroPicture: React.FC = () => {
   const [loaded, setLoaded] = useState(false);
   // Remote image variants (pexels) with width hints for srcset
-  const base = 'https://images.pexels.com/photos/346885/pexels-photo-346885.jpeg';
+  const base =
+    "https://images.pexels.com/photos/346885/pexels-photo-346885.jpeg";
   // Query params compress & size
-  const params = '?auto=compress&cs=tinysrgb&dl=travel-hero.jpg';
+  const params = "?auto=compress&cs=tinysrgb&dl=travel-hero.jpg";
   return (
     <div className="absolute inset-0">
       {!loaded && (
@@ -340,8 +398,8 @@ const HeroPicture: React.FC = () => {
           onLoad={() => setLoaded(true)}
           loading="eager"
           src={`${base}${params}&w=1600`}
-          alt={t('home_title')}
-          className={`h-full w-full object-cover transition-opacity duration-700 ${loaded ? 'opacity-100' : 'opacity-0'}`}
+          alt={t("home_title")}
+          className={`h-full w-full object-cover transition-opacity duration-700 ${loaded ? "opacity-100" : "opacity-0"}`}
         />
       </picture>
     </div>

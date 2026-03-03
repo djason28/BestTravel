@@ -31,7 +31,12 @@ go run ./cmd/server
 # Server: http://localhost:8080
 # Uploads statis: http://localhost:8080/uploads
 
+
 CompileDaemon --build="go build -o ..\bin\server.exe .\cmd\server" --command="..\bin\server.exe" --pattern="\.go$" --exclude-dir=bin,vendor --color=true
+
+##Linux
+set -gx PATH $PATH (go env GOPATH)/bin
+CompileDaemon --build="go build -o ../bin/server ./cmd/server" --command="../bin/server" --pattern='\.go$' --exclude-dir=bin,vendor --color=true
 ```
 
 ## Environment Variables (root /.env)

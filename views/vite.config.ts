@@ -1,50 +1,55 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
-import { config as dotenvConfig } from 'dotenv';
-import { existsSync } from 'fs';
-import { resolve } from 'path';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
+import { config as dotenvConfig } from "dotenv";
+import { existsSync } from "fs";
+import { resolve } from "path";
 
 // Load root .env if present to centralize environment variables
-const rootEnv = resolve(__dirname, '..', '.env');
+const rootEnv = resolve(__dirname, "..", ".env");
 if (existsSync(rootEnv)) {
   dotenvConfig({ path: rootEnv });
 }
 
 // https://vitejs.dev/config/
- function debugPlugin() {
-   return {
-     name: 'debug-log-main',
-     enforce: 'pre' as const,
-     transform(code: string, id: string) {
-       if (id.endsWith('src/main.tsx')) {
-         console.log('[vite debug] transforming main.tsx length=', code.length);
-       }
-       return code;
-     }
-   };
- }
+function debugPlugin() {
+  return {
+    name: "debug-log-main",
+    enforce: "pre" as const,
+    transform(code: string, id: string) {
+      if (id.endsWith("src/main.tsx")) {
+        console.log("[vite debug] transforming main.tsx length=", code.length);
+      }
+      return code;
+    },
+  };
+}
 
 export default defineConfig({
   plugins: [react()],
-   resolve: {
-     alias: {
-       '@': resolve(__dirname, 'src'),
-     },
+  resolve: {
+    alias: {
+      "@": resolve(__dirname, "src"),
+    },
   },
   optimizeDeps: {
-    exclude: ['lucide-react'],
+    exclude: ["lucide-react"],
   },
   server: {
     // bind to all network interfaces so dev server is accessible from other devices on the same LAN
     host: true,
     port: 5173,
     proxy: {
-      '/api': {
-        target: 'http://localhost:8080',
+      "/api": {
+        target: "http://localhost:8787", // Cloudflare Worker Local Dev
         changeOrigin: true,
       },
-      '/uploads': {
-        target: 'http://localhost:8080',
+      "/images": {
+        target: "http://localhost:8787",
+        changeOrigin: true,
+      },
+      "/uploads": {
+        // Jika menggunakan R2 langsung, proxy ini mungkin tidak diperlukan
+        target: "http://localhost:8787",
         changeOrigin: true,
       },
     },

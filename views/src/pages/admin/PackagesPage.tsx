@@ -1,42 +1,63 @@
-import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Plus, Edit, Trash2, Eye, Search, SlidersHorizontal, X } from 'lucide-react';
-import { packageApi } from '../../services/api';
-import type { Package, FilterOptions, PackageFilterOptions } from '../../types';
-import { formatPrice, formatDate, debounce, formatCategories } from '../../utils/security';
-import { buildFilterQuery } from '../../utils/query';
-import { Button } from '../../components/common/Button';
-import { Card } from '../../components/common/Card';
-import { Loading } from '../../components/common/Loading';
-import { ConfirmModal } from '../../components/common/Modal';
-import { useToast } from '../../contexts/ToastContext';
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import {
+  Plus,
+  Edit,
+  Trash2,
+  Eye,
+  Search,
+  SlidersHorizontal,
+  X,
+} from "lucide-react";
+import { packageApi } from "../../services/api";
+import type { Package, FilterOptions, PackageFilterOptions } from "../../types";
+import {
+  formatPrice,
+  formatDate,
+  debounce,
+  formatCategories,
+} from "../../utils/security";
+import { buildFilterQuery } from "../../utils/query";
+import { Button } from "../../components/common/Button";
+import { Card } from "../../components/common/Card";
+import { Loading } from "../../components/common/Loading";
+import { ConfirmModal } from "../../components/common/Modal";
+import { useToast } from "../../contexts/ToastContext";
 
 export const PackagesPage: React.FC = () => {
   const { addToast } = useToast();
   const [packages, setPackages] = useState<Package[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
   const [filters, setFilters] = useState<FilterOptions>({
-    search: '',
+    search: "",
     categories: [],
-    categoryMode: 'any',
+    categoryMode: "any",
     destinations: [],
     currencies: [],
-    availability: '',
+    availability: "",
     featuredOnly: false,
     notFeatured: false,
     status: undefined,
-    sortBy: 'newest',
+    sortBy: "newest",
     page: 1,
     limit: 100,
   });
-  const [options, setOptions] = useState<PackageFilterOptions>({ categories: [], destinations: [], currencies: [], availability: [] });
-  const [deleteModal, setDeleteModal] = useState<{ isOpen: boolean; packageId: string | null }>({
+  const [options, setOptions] = useState<PackageFilterOptions>({
+    categories: [],
+    destinations: [],
+    currencies: [],
+    availability: [],
+  });
+  const [deleteModal, setDeleteModal] = useState<{
+    isOpen: boolean;
+    packageId: string | null;
+  }>({
     isOpen: false,
     packageId: null,
   });
-  const [viewLang, setViewLang] = useState<'en' | 'zh'>('en');
+  const [viewLang, setViewLang] = useState<"en" | "zh">("en");
 
   useEffect(() => {
     loadPackages();
@@ -49,7 +70,7 @@ export const PackagesPage: React.FC = () => {
         if (res.success && res.data) setOptions(res.data);
       } catch (e) {
         // non-fatal for admin list
-        console.warn('Failed to load filter options', e);
+        console.warn("Failed to load filter options", e);
       }
     })();
   }, []);
@@ -60,24 +81,32 @@ export const PackagesPage: React.FC = () => {
       const payload: FilterOptions = { ...filters, search: searchQuery };
       let resEn: any;
       try {
-        resEn = await packageApi.getAll(payload, 'en');
+        resEn = await packageApi.getAll(payload, "en");
       } catch (e: any) {
         // Fallback: retry without explicit lang param (older behavior) if first attempt fails
-        console.warn('[admin] english request failed, retrying without lang=en', e);
+        console.warn(
+          "[admin] english request failed, retrying without lang=en",
+          e,
+        );
         try {
           resEn = await packageApi.getAll(payload, undefined);
         } catch (e2: any) {
           throw e2; // propagate original failure after fallback attempt
         }
       }
-      const resZh = await packageApi.getAll(payload, 'zh').catch(e => {
-        console.warn('[admin] zh request failed, continuing without zh overlay', e);
+      const resZh = await packageApi.getAll(payload, "zh").catch((e) => {
+        console.warn(
+          "[admin] zh request failed, continuing without zh overlay",
+          e,
+        );
         return null;
       });
       if (resEn && resEn.success) {
         const zhMap: Record<string, Package> = {};
         if (resZh && resZh.success) {
-          resZh.data.forEach((p: Package) => { zhMap[p.id] = p; });
+          resZh.data.forEach((p: Package) => {
+            zhMap[p.id] = p;
+          });
         }
         const merged = resEn.data.map((p: Package) => {
           const zh = zhMap[p.id];
@@ -93,21 +122,33 @@ export const PackagesPage: React.FC = () => {
             highlightsZh: zh.highlights,
             includedZh: zh.included,
             excludedZh: zh.excluded,
-            itinerary: Array.isArray(p.itinerary) ? p.itinerary.map((day: any, idx: number) => {
-              const zhDay = (zh as any).itinerary ? (zh as any).itinerary[idx] : undefined;
-              if (!zhDay) return day;
-              return { ...day, titleZh: zhDay.title, descriptionZh: zhDay.description } as any;
-            }) : p.itinerary,
+            itinerary: Array.isArray(p.itinerary)
+              ? p.itinerary.map((day: any, idx: number) => {
+                  const zhDay = (zh as any).itinerary
+                    ? (zh as any).itinerary[idx]
+                    : undefined;
+                  if (!zhDay) return day;
+                  return {
+                    ...day,
+                    titleZh: zhDay.title,
+                    descriptionZh: zhDay.description,
+                  } as any;
+                })
+              : p.itinerary,
           } as any;
         });
         setPackages(merged);
       } else {
-        throw new Error('English packages response invalid');
+        throw new Error("English packages response invalid");
       }
     } catch (error) {
-      console.error('[admin] failed to load packages details:', error?.message, error);
-      const msg = error?.message || 'Failed to load packages';
-      addToast(msg, 'error');
+      console.error(
+        "[admin] failed to load packages details:",
+        error?.message,
+        error,
+      );
+      const msg = error?.message || "Failed to load packages";
+      addToast(msg, "error");
     } finally {
       setIsLoading(false);
     }
@@ -115,10 +156,11 @@ export const PackagesPage: React.FC = () => {
 
   // Create debounced search function once (outside render)
   const debouncedSearch = React.useMemo(
-    () => debounce((value: string) => {
-      setSearchQuery(value);
-    }, 500),
-    []
+    () =>
+      debounce((value: string) => {
+        setSearchQuery(value);
+      }, 500),
+    [],
   );
 
   const handleSearch = (value: string) => {
@@ -136,39 +178,57 @@ export const PackagesPage: React.FC = () => {
   const updateCategories = (cat: string, checked: boolean) => {
     setFilters((prev) => {
       const current = new Set(prev.categories || []);
-      if (checked) current.add(cat); else current.delete(cat);
-      return { ...prev, categories: Array.from(current), category: '', page: 1 };
+      if (checked) current.add(cat);
+      else current.delete(cat);
+      return {
+        ...prev,
+        categories: Array.from(current),
+        category: "",
+        page: 1,
+      };
     });
   };
 
   const updateDestinations = (d: string, checked: boolean) => {
     setFilters((prev) => {
       const current = new Set(prev.destinations || []);
-      if (checked) current.add(d); else current.delete(d);
-      return { ...prev, destinations: Array.from(current), destination: '', page: 1 };
+      if (checked) current.add(d);
+      else current.delete(d);
+      return {
+        ...prev,
+        destinations: Array.from(current),
+        destination: "",
+        page: 1,
+      };
     });
   };
 
   const updateCurrencies = (ccy: string, checked: boolean) => {
     setFilters((prev) => {
       const current = new Set(prev.currencies || []);
-      if (checked) current.add(ccy); else current.delete(ccy);
-      return { ...prev, currencies: Array.from(current), currency: '', page: 1 };
+      if (checked) current.add(ccy);
+      else current.delete(ccy);
+      return {
+        ...prev,
+        currencies: Array.from(current),
+        currency: "",
+        page: 1,
+      };
     });
   };
 
   const clearFilters = () => {
     setFilters({
-      search: '',
+      search: "",
       categories: [],
-      categoryMode: 'any',
+      categoryMode: "any",
       destinations: [],
       currencies: [],
-      availability: '',
+      availability: "",
       featuredOnly: false,
       notFeatured: false,
       status: undefined,
-      sortBy: 'newest',
+      sortBy: "newest",
       page: 1,
       limit: 100,
     });
@@ -179,19 +239,19 @@ export const PackagesPage: React.FC = () => {
 
     try {
       await packageApi.delete(deleteModal.packageId);
-      addToast('Package deleted successfully', 'success');
+      addToast("Package deleted successfully", "success");
       loadPackages();
     } catch (error) {
-      addToast('Failed to delete package', 'error');
+      addToast("Failed to delete package", "error");
     } finally {
       setDeleteModal({ isOpen: false, packageId: null });
     }
   };
 
   const statusColors = {
-    published: 'bg-green-100 text-green-800',
-    draft: 'bg-yellow-100 text-yellow-800',
-    archived: 'bg-gray-100 text-gray-800',
+    published: "bg-green-100 text-green-800",
+    draft: "bg-yellow-100 text-yellow-800",
+    archived: "bg-gray-100 text-gray-800",
   };
 
   return (
@@ -199,12 +259,27 @@ export const PackagesPage: React.FC = () => {
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Packages</h1>
-          <p className="text-gray-600 mt-1">Manage your travel packages ({viewLang === 'en' ? 'English' : '中文视图'})</p>
+          <p className="text-gray-600 mt-1">
+            Manage your travel packages (
+            {viewLang === "en" ? "English" : "中文视图"})
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <div className="inline-flex rounded-lg overflow-hidden border border-gray-300">
-            <button type="button" onClick={() => setViewLang('en')} className={`px-3 py-1 text-sm font-medium ${viewLang==='en' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>EN</button>
-            <button type="button" onClick={() => setViewLang('zh')} className={`px-3 py-1 text-sm font-medium ${viewLang==='zh' ? 'bg-blue-600 text-white' : 'bg-white text-gray-700 hover:bg-gray-50'}`}>中文</button>
+            <button
+              type="button"
+              onClick={() => setViewLang("en")}
+              className={`px-3 py-1 text-sm font-medium ${viewLang === "en" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"}`}
+            >
+              EN
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewLang("zh")}
+              className={`px-3 py-1 text-sm font-medium ${viewLang === "zh" ? "bg-blue-600 text-white" : "bg-white text-gray-700 hover:bg-gray-50"}`}
+            >
+              中文
+            </button>
           </div>
           <Link to="/admin/packages/new">
             <Button>
@@ -239,18 +314,38 @@ export const PackagesPage: React.FC = () => {
           {showFilters && (
             <div className="pt-4 border-t grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Categories</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Categories
+                </label>
                 <div className="grid grid-cols-2 gap-2">
                   {(options.categories || []).map((cat) => (
-                    <label key={cat} className="inline-flex items-center gap-2 text-sm">
-                      <input type="checkbox" checked={!!filters.categories?.includes(cat)} onChange={(e) => updateCategories(cat, e.target.checked)} />
+                    <label
+                      key={cat}
+                      className="inline-flex items-center gap-2 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={!!filters.categories?.includes(cat)}
+                        onChange={(e) =>
+                          updateCategories(cat, e.target.checked)
+                        }
+                      />
                       <span className="capitalize">{cat}</span>
                     </label>
                   ))}
                 </div>
                 <div className="mt-2">
                   <label className="text-sm text-gray-600 mr-3">Match</label>
-                  <select value={filters.categoryMode || 'any'} onChange={(e) => updateFilter('categoryMode', e.target.value as FilterOptions['categoryMode'])} className="px-2 py-1 border rounded">
+                  <select
+                    value={filters.categoryMode || "any"}
+                    onChange={(e) =>
+                      updateFilter(
+                        "categoryMode",
+                        e.target.value as FilterOptions["categoryMode"],
+                      )
+                    }
+                    className="px-2 py-1 border rounded"
+                  >
                     <option value="any">Any</option>
                     <option value="all">All</option>
                   </select>
@@ -258,23 +353,45 @@ export const PackagesPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Destinations</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Destinations
+                </label>
                 <div className="grid grid-cols-2 gap-2">
                   {(options.destinations || []).map((d) => (
-                    <label key={d} className="inline-flex items-center gap-2 text-sm">
-                      <input type="checkbox" checked={!!filters.destinations?.includes(d)} onChange={(e) => updateDestinations(d, e.target.checked)} />
-                      <span className="capitalize">{d.replace('-', ' ')}</span>
+                    <label
+                      key={d}
+                      className="inline-flex items-center gap-2 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={!!filters.destinations?.includes(d)}
+                        onChange={(e) =>
+                          updateDestinations(d, e.target.checked)
+                        }
+                      />
+                      <span className="capitalize">{d.replace("-", " ")}</span>
                     </label>
                   ))}
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Currency</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Currency
+                </label>
                 <div className="grid grid-cols-3 gap-2">
                   {(options.currencies || []).map((ccy) => (
-                    <label key={ccy} className="inline-flex items-center gap-2 text-sm">
-                      <input type="checkbox" checked={!!filters.currencies?.includes(ccy)} onChange={(e) => updateCurrencies(ccy, e.target.checked)} />
+                    <label
+                      key={ccy}
+                      className="inline-flex items-center gap-2 text-sm"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={!!filters.currencies?.includes(ccy)}
+                        onChange={(e) =>
+                          updateCurrencies(ccy, e.target.checked)
+                        }
+                      />
                       <span>{ccy}</span>
                     </label>
                   ))}
@@ -282,19 +399,53 @@ export const PackagesPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Availability</label>
-                <input type="text" value={filters.availability || ''} onChange={(e) => updateFilter('availability', e.target.value)} placeholder="e.g., year-round, seasonal" className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Availability
+                </label>
+                <input
+                  type="text"
+                  value={filters.availability || ""}
+                  onChange={(e) => updateFilter("availability", e.target.value)}
+                  placeholder="e.g., year-round, seasonal"
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Featured</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Featured
+                </label>
                 <select
-                  value={filters.featuredOnly ? 'featured' : filters.notFeatured ? 'not' : 'all'}
+                  value={
+                    filters.featuredOnly
+                      ? "featured"
+                      : filters.notFeatured
+                        ? "not"
+                        : "all"
+                  }
                   onChange={(e) => {
                     const val = e.target.value;
-                    if (val === 'featured') setFilters((p) => ({ ...p, featuredOnly: true, notFeatured: false, page: 1 }));
-                    else if (val === 'not') setFilters((p) => ({ ...p, featuredOnly: false, notFeatured: true, page: 1 }));
-                    else setFilters((p) => ({ ...p, featuredOnly: false, notFeatured: false, page: 1 }));
+                    if (val === "featured")
+                      setFilters((p) => ({
+                        ...p,
+                        featuredOnly: true,
+                        notFeatured: false,
+                        page: 1,
+                      }));
+                    else if (val === "not")
+                      setFilters((p) => ({
+                        ...p,
+                        featuredOnly: false,
+                        notFeatured: true,
+                        page: 1,
+                      }));
+                    else
+                      setFilters((p) => ({
+                        ...p,
+                        featuredOnly: false,
+                        notFeatured: false,
+                        page: 1,
+                      }));
                   }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
@@ -305,10 +456,14 @@ export const PackagesPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Status
+                </label>
                 <select
-                  value={filters.status || ''}
-                  onChange={(e) => updateFilter('status', e.target.value || undefined)}
+                  value={filters.status || ""}
+                  onChange={(e) =>
+                    updateFilter("status", e.target.value || undefined)
+                  }
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">All</option>
@@ -319,32 +474,110 @@ export const PackagesPage: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Price Range</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Price Range
+                </label>
                 <div className="flex gap-2">
-                  <input type="number" min={1} placeholder="Min" className="w-full px-3 py-2 border rounded" onChange={(e) => updateFilter('priceMin', e.target.value ? Number(e.target.value) : undefined)} />
-                  <input type="number" min={1} placeholder="Max" className="w-full px-3 py-2 border rounded" onChange={(e) => updateFilter('priceMax', e.target.value ? Number(e.target.value) : undefined)} />
+                  <input
+                    type="number"
+                    min={1}
+                    placeholder="Min"
+                    className="w-full px-3 py-2 border rounded"
+                    onChange={(e) =>
+                      updateFilter(
+                        "priceMin",
+                        e.target.value ? Number(e.target.value) : undefined,
+                      )
+                    }
+                  />
+                  <input
+                    type="number"
+                    min={1}
+                    placeholder="Max"
+                    className="w-full px-3 py-2 border rounded"
+                    onChange={(e) =>
+                      updateFilter(
+                        "priceMax",
+                        e.target.value ? Number(e.target.value) : undefined,
+                      )
+                    }
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Duration (days)</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Duration (days)
+                </label>
                 <div className="flex gap-2">
-                  <input type="number" min={1} placeholder="Min" className="w-full px-3 py-2 border rounded" onChange={(e) => updateFilter('durationMin', e.target.value ? Number(e.target.value) : undefined)} />
-                  <input type="number" min={1} placeholder="Max" className="w-full px-3 py-2 border rounded" onChange={(e) => updateFilter('durationMax', e.target.value ? Number(e.target.value) : undefined)} />
+                  <input
+                    type="number"
+                    min={1}
+                    placeholder="Min"
+                    className="w-full px-3 py-2 border rounded"
+                    onChange={(e) =>
+                      updateFilter(
+                        "durationMin",
+                        e.target.value ? Number(e.target.value) : undefined,
+                      )
+                    }
+                  />
+                  <input
+                    type="number"
+                    min={1}
+                    placeholder="Max"
+                    className="w-full px-3 py-2 border rounded"
+                    onChange={(e) =>
+                      updateFilter(
+                        "durationMax",
+                        e.target.value ? Number(e.target.value) : undefined,
+                      )
+                    }
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Participants</label>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Participants
+                </label>
                 <div className="flex gap-2">
-                  <input type="number" min={1} placeholder="Min" className="w-full px-3 py-2 border rounded" onChange={(e) => updateFilter('participantsMin', e.target.value ? Number(e.target.value) : undefined)} />
-                  <input type="number" min={1} placeholder="Max" className="w-full px-3 py-2 border rounded" onChange={(e) => updateFilter('participantsMax', e.target.value ? Number(e.target.value) : undefined)} />
+                  <input
+                    type="number"
+                    min={1}
+                    placeholder="Min"
+                    className="w-full px-3 py-2 border rounded"
+                    onChange={(e) =>
+                      updateFilter(
+                        "participantsMin",
+                        e.target.value ? Number(e.target.value) : undefined,
+                      )
+                    }
+                  />
+                  <input
+                    type="number"
+                    min={1}
+                    placeholder="Max"
+                    className="w-full px-3 py-2 border rounded"
+                    onChange={(e) =>
+                      updateFilter(
+                        "participantsMax",
+                        e.target.value ? Number(e.target.value) : undefined,
+                      )
+                    }
+                  />
                 </div>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">Sort By</label>
-                <select value={filters.sortBy} onChange={(e) => updateFilter('sortBy', e.target.value)} className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Sort By
+                </label>
+                <select
+                  value={filters.sortBy}
+                  onChange={(e) => updateFilter("sortBy", e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
                   <option value="newest">Newest First</option>
                   <option value="popular">Most Popular</option>
                   <option value="price_asc">Price: Low to High</option>
@@ -357,7 +590,10 @@ export const PackagesPage: React.FC = () => {
               </div>
 
               <div className="md:col-span-3 flex justify-end">
-                <button onClick={clearFilters} className="flex items-center gap-2 text-blue-600 hover:text-blue-700">
+                <button
+                  onClick={clearFilters}
+                  className="flex items-center gap-2 text-blue-600 hover:text-blue-700"
+                >
                   <X className="h-4 w-4" />
                   <span>Clear All Filters</span>
                 </button>
@@ -382,87 +618,123 @@ export const PackagesPage: React.FC = () => {
             </Card>
           ) : (
             packages.map((pkg) => {
-              const { visible: visibleCategories, remaining: remainingCount } = formatCategories(pkg.categories || [], 3);
-              
+              const { visible: visibleCategories, remaining: remainingCount } =
+                formatCategories(pkg.categories || [], 3);
+
               return (
-              <Card key={pkg.id}>
-                <div className="p-6">
-                  <div className="flex items-start gap-4">
-                    <img
-                      src={pkg.images[0]?.url || 'https://images.pexels.com/photos/1430676/pexels-photo-1430676.jpeg'}
-                      alt={pkg.title}
-                      className="w-32 h-32 object-cover rounded-lg"
-                    />
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between mb-2">
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="text-xl font-bold text-gray-900">{viewLang==='en' ? pkg.title : (pkg as any).titleZh || pkg.title}</h3>
-                            {pkg.featured && (
-                              <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
-                                <span>⭐</span> Featured
+                <Card key={pkg.id}>
+                  <div className="p-6">
+                    <div className="flex items-start gap-4">
+                      <img
+                        src={
+                          Array.isArray(pkg.images) && pkg.images[0]?.url
+                            ? pkg.images[0]?.url
+                            : "https://images.pexels.com/photos/1430676/pexels-photo-1430676.jpeg"
+                        }
+                        alt={pkg.title}
+                        className="w-32 h-32 object-cover rounded-lg"
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-start justify-between mb-2">
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h3 className="text-xl font-bold text-gray-900">
+                                {viewLang === "en"
+                                  ? pkg.title
+                                  : (pkg as any).titleZh || pkg.title}
+                              </h3>
+                              {pkg.featured && (
+                                <span className="inline-flex items-center gap-1 px-2 py-1 bg-yellow-100 text-yellow-800 rounded-full text-xs font-semibold">
+                                  <span>⭐</span> Featured
+                                </span>
+                              )}
+                            </div>
+                            <p className="text-gray-600 text-sm mt-1">
+                              {viewLang === "en"
+                                ? pkg.destination
+                                : (pkg as any).destinationZh || pkg.destination}
+                            </p>
+                          </div>
+                          <span
+                            className={`px-3 py-1 rounded-full text-sm font-semibold ${statusColors[pkg.status]}`}
+                          >
+                            {pkg.status}
+                          </span>
+                        </div>
+
+                        {/* Categories chips */}
+                        {visibleCategories.length > 0 && (
+                          <div className="flex flex-wrap gap-2 mb-2">
+                            {(viewLang === "en"
+                              ? visibleCategories
+                              : formatCategories(
+                                  (pkg as any).categoriesZh || [],
+                                  3,
+                                ).visible
+                            ).map((cat, idx) => (
+                              <span
+                                key={idx}
+                                className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium"
+                              >
+                                {cat}
+                              </span>
+                            ))}
+                            {viewLang === "en" && remainingCount > 0 && (
+                              <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
+                                +{remainingCount}
                               </span>
                             )}
                           </div>
-                          <p className="text-gray-600 text-sm mt-1">{viewLang==='en' ? pkg.destination : (pkg as any).destinationZh || pkg.destination}</p>
+                        )}
+
+                        <p className="text-gray-700 mb-4 line-clamp-2">
+                          {viewLang === "en"
+                            ? pkg.shortDescription
+                            : (pkg as any).shortDescriptionZh ||
+                              pkg.shortDescription}
+                        </p>
+                        <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
+                          <span>{formatPrice(pkg.price, pkg.currency)}</span>
+                          <span>
+                            {pkg.duration} {pkg.durationUnit}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Eye className="h-4 w-4" />
+                            {pkg.viewCount} views
+                          </span>
+                          <span>Created: {formatDate(pkg.createdAt)}</span>
                         </div>
-                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${statusColors[pkg.status]}`}>
-                          {pkg.status}
-                        </span>
-                      </div>
-                      
-                      {/* Categories chips */}
-                      {visibleCategories.length > 0 && (
-                        <div className="flex flex-wrap gap-2 mb-2">
-                          {(viewLang==='en'?visibleCategories:formatCategories(((pkg as any).categoriesZh||[]),3).visible).map((cat, idx) => (
-                            <span key={idx} className="px-2 py-1 bg-blue-100 text-blue-800 rounded-full text-xs font-medium">
-                              {cat}
-                            </span>
-                          ))}
-                              {viewLang==='en' && remainingCount > 0 && (
-                            <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-full text-xs font-medium">
-                              +{remainingCount}
-                            </span>
-                          )}
+                        <div className="flex gap-2">
+                          <Link to={`/admin/packages/${pkg.id}/preview`}>
+                            <Button variant="outline" size="sm">
+                              <Eye className="h-4 w-4 mr-1" />
+                              Preview
+                            </Button>
+                          </Link>
+                          <Link to={`/admin/packages/${pkg.id}/edit`}>
+                            <Button variant="outline" size="sm">
+                              <Edit className="h-4 w-4 mr-1" />
+                              Edit
+                            </Button>
+                          </Link>
+                          <Button
+                            variant="danger"
+                            size="sm"
+                            onClick={() =>
+                              setDeleteModal({
+                                isOpen: true,
+                                packageId: pkg.id,
+                              })
+                            }
+                          >
+                            <Trash2 className="h-4 w-4 mr-1" />
+                            Delete
+                          </Button>
                         </div>
-                      )}
-                      
-                      <p className="text-gray-700 mb-4 line-clamp-2">{viewLang==='en' ? pkg.shortDescription : (pkg as any).shortDescriptionZh || pkg.shortDescription}</p>
-                      <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
-                        <span>{formatPrice(pkg.price, pkg.currency)}</span>
-                        <span>{pkg.duration} {pkg.durationUnit}</span>
-                        <span className="flex items-center gap-1">
-                          <Eye className="h-4 w-4" />
-                          {pkg.viewCount} views
-                        </span>
-                        <span>Created: {formatDate(pkg.createdAt)}</span>
-                      </div>
-                      <div className="flex gap-2">
-                        <Link to={`/admin/packages/${pkg.id}/preview`}>
-                          <Button variant="outline" size="sm">
-                            <Eye className="h-4 w-4 mr-1" />
-                            Preview
-                          </Button>
-                        </Link>
-                        <Link to={`/admin/packages/${pkg.id}/edit`}>
-                          <Button variant="outline" size="sm">
-                            <Edit className="h-4 w-4 mr-1" />
-                            Edit
-                          </Button>
-                        </Link>
-                        <Button
-                          variant="danger"
-                          size="sm"
-                          onClick={() => setDeleteModal({ isOpen: true, packageId: pkg.id })}
-                        >
-                          <Trash2 className="h-4 w-4 mr-1" />
-                          Delete
-                        </Button>
                       </div>
                     </div>
                   </div>
-                </div>
-              </Card>
+                </Card>
               );
             })
           )}

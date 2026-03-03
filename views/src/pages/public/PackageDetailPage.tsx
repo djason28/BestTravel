@@ -60,7 +60,7 @@ export const PackageDetailPage: React.FC = () => {
   const handleWhatsAppClick = () => {
     if (!pkg) return;
     const message = `Hello! I'm interested in the "${pkg.title}" package.\n\nPackage Details:\n- Duration: ${pkg.duration} ${pkg.durationUnit}\n- Price: ${formatPrice(pkg.price, pkg.currency)}\n- Destination: ${pkg.destination}\n\nI would like to know more details and availability.`;
-    const link = getWhatsAppLink('6281234567890', message);
+      const link = getWhatsAppLink('6285283918338', message);
     window.open(link, '_blank');
   };
 
@@ -106,13 +106,13 @@ export const PackageDetailPage: React.FC = () => {
 
   // Close fullscreen on ESC key
   useEffect(() => {
-    if (!isGalleryOpen) return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        setIsGalleryOpen(false);
-      } else if (e.key === 'ArrowRight') {
-        nextImage();
-      } else if (e.key === 'ArrowLeft') {
+                  <a
+                    href="tel:+6285283918338"
+                    className="text-sm text-blue-600 hover:underline flex items-center gap-2"
+                  >
+                    <Phone className="h-4 w-4" />
+                    +62-852-8391-8338
+                  </a>
         prevImage();
       }
     };
@@ -429,11 +429,11 @@ export const PackageDetailPage: React.FC = () => {
                   {t('need_help_desc')}
                 </p>
                 <a
-                  href="tel:+6281234567890"
+                  href="tel:+6285283918338"
                   className="text-sm text-blue-600 hover:underline flex items-center gap-2"
                 >
                   <Phone className="h-4 w-4" />
-                  +62 812-3456-7890
+                  +62-852-8391-8338
                 </a>
               </div>
             </div>

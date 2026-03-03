@@ -73,6 +73,22 @@ cd core
 CompileDaemon --build="go build -o ..\bin\server.exe .\cmd\server" --command="..\bin\server.exe" --pattern="\.go$" --exclude-dir=bin,vendor --color=true
 ```
 
+**Linux/macOS (fish shell):**
+```fish
+cd core
+# First time: add Go bin to PATH
+set -U fish_user_paths $fish_user_paths ~/go/bin
+
+# Run with live reload (use single quotes for pattern to avoid $ expansion)
+CompileDaemon --build="go build -o ../bin/server ./cmd/server" --command="../bin/server" --pattern='\.go$' --exclude-dir=bin,vendor --color=true
+```
+
+**Linux/macOS (bash/zsh):**
+```bash
+cd core
+CompileDaemon --build="go build -o ../bin/server ./cmd/server" --command="../bin/server" --pattern="\.go$" --exclude-dir=bin,vendor --color=true
+```
+
 **Option B: Standard go run**
 
 ```powershell
