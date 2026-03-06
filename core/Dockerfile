@@ -2,15 +2,6 @@
 # Stage 1: Builder
 FROM golang:1.23 AS builder
 
-# Install build dependencies
-RUN apt-get update && apt-get install -y \
-    gcc \
-    g++ \
-    make \
-    sqlite3 \
-    libsqlite3-dev \
-    && rm -rf /var/lib/apt/lists/*
-
 WORKDIR /app
 
 # Copy go mod files
@@ -21,7 +12,7 @@ RUN go mod download
 COPY . .
 
 # Build the application
-RUN CGO_ENABLED=1 go build -o server ./cmd/server
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o server ./cmd/server
 
 # Stage 2: Production
 FROM debian:bookworm-slim
@@ -29,7 +20,7 @@ FROM debian:bookworm-slim
 # Install runtime dependencies
 RUN apt-get update && apt-get install -y \
     ca-certificates \
-    sqlite3 \
+    curl \
     tzdata \
     && rm -rf /var/lib/apt/lists/*
 
@@ -49,7 +40,11 @@ EXPOSE 8080
 
 # Set environment variables
 ENV GIN_MODE=release
-ENV DB_PATH=/app/besttravel.db
+ENV PORT=8080
 
 # Run the application
 CMD ["./server"]
+
+# Healthcheck
+HEALTHCHECK --interval=30s --timeout=5s --retries=3 \
+    CMD curl -fsS http://localhost:${PORT}/health || exit 1

@@ -17,7 +17,7 @@ type Config struct {
 	JWTSecret     string
 	JWTTTLMinutes int
 	// DB
-	DBDriver       string // mysql (only)
+	DBDriver       string // mysql | turso
 	DBDSN          string // optional DSN override (mysql)
 	DBHost         string
 	DBPort         int
@@ -25,6 +25,14 @@ type Config struct {
 	DBPassword     string
 	DBName         string
 	DBParams       string
+	TursoURL       string
+	TursoAuthToken string
+	// R2 storage
+	R2AccountID       string
+	R2AccessKeyID     string
+	R2SecretAccessKey string
+	R2Bucket          string
+	R2PublicBaseURL   string
 	UploadDir      string
 	MaxUploadMB    int64
 	AdminEmail     string
@@ -59,7 +67,7 @@ func Load() *Config {
 		CorsOrigins:                   splitAndTrim(getEnv("CORS_ORIGINS", "http://localhost:5173")),
 		JWTSecret:                     getEnv("JWT_SECRET", "change-this-in-production"),
 		JWTTTLMinutes:                 getEnvAsInt("JWT_TTL_MINUTES", 30),
-		DBDriver:                      strings.ToLower(getEnv("DB_DRIVER", "mysql")),
+		DBDriver:                      strings.ToLower(getEnv("DB_DRIVER", "turso")),
 		DBDSN:                         getEnv("DB_DSN", ""),
 		DBHost:                        getEnv("DB_HOST", "127.0.0.1"),
 		DBPort:                        getEnvAsInt("DB_PORT", 3306),
@@ -67,6 +75,13 @@ func Load() *Config {
 		DBPassword:                    getEnv("DB_PASSWORD", ""),
 		DBName:                        getEnv("DB_NAME", "besttravel"),
 		DBParams:                      getEnv("DB_PARAMS", "parseTime=true&charset=utf8mb4&loc=Local"),
+		TursoURL:                      getEnv("TURSO_DATABASE_URL", ""),
+		TursoAuthToken:                getEnv("TURSO_AUTH_TOKEN", ""),
+		R2AccountID:                   getEnv("R2_ACCOUNT_ID", ""),
+		R2AccessKeyID:                 getEnv("R2_ACCESS_KEY_ID", ""),
+		R2SecretAccessKey:             getEnv("R2_SECRET_ACCESS_KEY", ""),
+		R2Bucket:                      getEnv("R2_BUCKET", ""),
+		R2PublicBaseURL:               strings.TrimRight(getEnv("R2_PUBLIC_BASE_URL", ""), "/"),
 		UploadDir:                     getEnv("UPLOAD_DIR", "./uploads"),
 		MaxUploadMB:                   int64(getEnvAsInt("MAX_UPLOAD_MB", 5)),
 		AdminEmail:                    getEnv("ADMIN_EMAIL", "admin@example.com"),
@@ -80,15 +95,23 @@ func Load() *Config {
 		PackagesOptionsTimeoutSeconds: getEnvAsInt("REQUEST_TIMEOUT_PACKAGES_OPTIONS_SECONDS", 5),
 	}
 
-	if err := os.MkdirAll(cfg.UploadDir, 0755); err != nil {
-		log.Fatalf("failed to create upload dir: %v", err)
+	switch cfg.DBDriver {
+	case "mysql":
+		if err := os.MkdirAll(cfg.UploadDir, 0755); err != nil {
+			log.Fatalf("failed to create upload dir: %v", err)
+		}
+		log.Printf("[Config] DB user=%s host=%s port=%d name=%s driver=%s", cfg.DBUser, cfg.DBHost, cfg.DBPort, cfg.DBName, cfg.DBDriver)
+	case "turso":
+		if cfg.TursoURL == "" || cfg.TursoAuthToken == "" {
+			log.Fatalf("TURSO_DATABASE_URL and TURSO_AUTH_TOKEN are required when DB_DRIVER=turso")
+		}
+		if cfg.R2Bucket == "" || cfg.R2AccessKeyID == "" || cfg.R2SecretAccessKey == "" || cfg.R2AccountID == "" {
+			log.Printf("[Config] R2 credentials missing; uploads will fail unless R2_* vars are set")
+		}
+		log.Printf("[Config] DB driver=%s", cfg.DBDriver)
+	default:
+		log.Fatalf("unsupported DB_DRIVER '%s' - use 'mysql' or 'turso'", cfg.DBDriver)
 	}
-	// Enforce MySQL only
-	if cfg.DBDriver != "mysql" {
-		log.Fatalf("unsupported DB_DRIVER '%s' - only 'mysql' is supported now", cfg.DBDriver)
-	}
-
-	log.Printf("[Config] DB user=%s host=%s port=%d name=%s driver=%s", cfg.DBUser, cfg.DBHost, cfg.DBPort, cfg.DBName, cfg.DBDriver)
 
 	// Basic production hardening: require strong JWT secret and non-default admin creds
 	if cfg.Env == "production" {

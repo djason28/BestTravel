@@ -694,7 +694,16 @@ export const PackagesPage: React.FC = () => {
                               pkg.shortDescription}
                         </p>
                         <div className="flex items-center gap-6 text-sm text-gray-600 mb-4">
-                          <span>{formatPrice(pkg.price, pkg.currency)}</span>
+                          <span>
+                            {(pkg.prices?.length
+                              ? pkg.prices
+                              : [{ amount: pkg.price, currency: pkg.currency }]
+                            )
+                              .map((p: any) =>
+                                formatPrice(p.amount, p.currency),
+                              )
+                              .join(" · ")}
+                          </span>
                           <span>
                             {pkg.duration} {pkg.durationUnit}
                           </span>

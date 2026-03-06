@@ -3,7 +3,7 @@ package controllers
 // Centralized validation helpers to reduce duplication in controllers.
 
 var allowedCurrencies = map[string]struct{}{"IDR": {}, "USD": {}, "SGD": {}}
-var allowedStatuses = map[string]struct{}{"draft": {}, "published": {}}
+var allowedStatuses = map[string]struct{}{"draft": {}, "published": {}, "archived": {}}
 
 func IsValidCurrency(s string) bool {
 	_, ok := allowedCurrencies[s]

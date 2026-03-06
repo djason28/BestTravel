@@ -33,8 +33,7 @@ type packageForm struct {
 	DescriptionZh      string                 `json:"descriptionZh"`
 	ShortDescription   string                 `json:"shortDescription"`
 	ShortDescriptionZh string                 `json:"shortDescriptionZh"`
-	Price              int64                  `json:"price" binding:"gte=0"`
-	Currency           string                 `json:"currency"`
+	Prices             []models.PricePair     `json:"prices"`
 	Duration           int                    `json:"duration" binding:"gte=0"`
 	DurationUnit       string                 `json:"durationUnit"`
 	Categories         []string               `json:"categories"`
@@ -49,6 +48,7 @@ type packageForm struct {
 	HighlightsZh       []string               `json:"highlightsZh"`
 	Availability       string                 `json:"availability"`
 	AvailabilityZh     string                 `json:"availabilityZh"`
+	MinParticipants    int                    `json:"minParticipants" binding:"gte=0"`
 	MaxParticipants    int                    `json:"maxParticipants" binding:"gte=0"`
 	Featured           bool                   `json:"featured"`
 	Status             string                 `json:"status"`
@@ -66,6 +66,7 @@ type PackageDTO struct {
 	Description      string                `json:"description"`
 	Price            int64                 `json:"price"`
 	Currency         string                `json:"currency"`
+	Prices           models.PriceList      `json:"prices"`
 	Duration         int                   `json:"duration"`
 	DurationUnit     string                `json:"durationUnit"`
 	Categories       models.StringArray    `json:"categories"`
@@ -74,13 +75,14 @@ type PackageDTO struct {
 	Excluded         models.StringArray    `json:"excluded"`
 	Highlights       models.StringArray    `json:"highlights"`
 	Availability     string                `json:"availability"`
+	MinParticipants  int                   `json:"minParticipants"`
 	MaxParticipants  int                   `json:"maxParticipants"`
 	Featured         bool                  `json:"featured"`
 	Status           string                `json:"status"`
 	ViewCount        int64                 `json:"viewCount"`
 	InquiryCount     int64                 `json:"inquiryCount"`
 	Images           []models.PackageImage `json:"images"`
-	// Itinerary only included in detail endpoints; left empty for list (can expand later).
+	// Itinerary only included in detail endpoints; left empty for list.
 	Itinerary []models.ItineraryItem `json:"itinerary,omitempty"`
 }
 
@@ -99,6 +101,18 @@ type PackageListResponse struct {
 }
 
 func toDTO(p models.Package, includeDetail bool) PackageDTO {
+	images := p.Images
+	if len(images) == 0 && p.ImageURL != "" {
+		images = models.ImageList{
+			{
+				ID:      "",
+				URL:     p.ImageURL,
+				Alt:     p.Title,
+				Order:   0,
+				IsCover: true,
+			},
+		}
+	}
 	dto := PackageDTO{
 		ID:               p.ID,
 		Title:            p.Title,
@@ -106,7 +120,8 @@ func toDTO(p models.Package, includeDetail bool) PackageDTO {
 		ShortDescription: p.ShortDescription,
 		Description:      p.Description,
 		Price:            p.Price,
-		Currency:         p.Currency,
+			Currency:         p.Currency,
+			Prices:           p.Prices,
 		Duration:         p.Duration,
 		DurationUnit:     p.DurationUnit,
 		Categories:       p.Categories,
@@ -115,12 +130,13 @@ func toDTO(p models.Package, includeDetail bool) PackageDTO {
 		Excluded:         p.Excluded,
 		Highlights:       p.Highlights,
 		Availability:     p.Availability,
+		MinParticipants:  p.MinParticipants,
 		MaxParticipants:  p.MaxParticipants,
 		Featured:         p.Featured,
 		Status:           p.Status,
 		ViewCount:        p.ViewCount,
 		InquiryCount:     p.InquiryCount,
-		Images:           p.Images,
+		Images:           images,
 	}
 	if includeDetail {
 		dto.Itinerary = p.Itinerary
@@ -148,13 +164,11 @@ func (h *PackageController) GetAll(c *gin.Context) {
 		return
 	}
 
-	// Build stable cache key from essential query params
 	rawKey := c.Request.URL.RawQuery + "|admin=" + strconv.FormatBool(isAdmin) + "|lang=" + detectLang(c) + "|page=" + strconv.Itoa(page) + "|limit=" + strconv.Itoa(limit) + "|sort=" + sortBy
 	sum := sha1.Sum([]byte(rawKey))
 	cacheKey := "pkg:list:" + hex.EncodeToString(sum[:])
 	if cachedRaw, ok := cache.GetPackageList(cacheKey); ok {
 		if cachedResp, ok2 := cachedRaw.(PackageListResponse); ok2 {
-			// Fast path: return cached response
 			c.JSON(http.StatusOK, gin.H{"success": true, "data": cachedResp.Data, "pagination": cachedResp.Pagination, "sortBy": cachedResp.SortBy, "cached": true})
 			return
 		}
@@ -163,8 +177,7 @@ func (h *PackageController) GetAll(c *gin.Context) {
 	utils.ParallelCountAndList(
 		qBase,
 		func(db *gorm.DB) *gorm.DB {
-			// Only preload Images for listing to avoid N+1 / heavy payload
-			return db.Preload("Images").Offset((page - 1) * limit).Limit(limit).Order(sortBy)
+			return db.Offset((page - 1) * limit).Limit(limit).Order(sortBy)
 		},
 		&items,
 		&total,
@@ -194,7 +207,7 @@ func (h *PackageController) GetByID(c *gin.Context) {
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
 	var pkg models.Package
-	if err := database.DB.WithContext(ctx).Preload("Images").Preload("Itinerary").First(&pkg, "id = ?", id).Error; err != nil {
+	if err := database.DB.WithContext(ctx).First(&pkg, "id = ?", id).Error; err != nil {
 		fail(c, http.StatusNotFound, "not found")
 		return
 	}
@@ -208,7 +221,7 @@ func (h *PackageController) GetBySlug(c *gin.Context) {
 	slug := c.Param("slug")
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
 	defer cancel()
-	q := database.DB.WithContext(ctx).Preload("Images").Preload("Itinerary")
+	q := database.DB.WithContext(ctx)
 	isAdmin := false
 	if role, ok := c.Get("role"); ok && role == "admin" {
 		isAdmin = true
@@ -234,81 +247,107 @@ func (h *PackageController) Create(c *gin.Context) {
 		return
 	}
 
-	// Validation
-	if req.Price < 1 {
+	if len(req.Prices) == 0 {
+		fail(c, http.StatusBadRequest, "at least one price is required")
+		return
+	}
+	if primaryPrice(req.Prices) < 1 {
 		fail(c, http.StatusBadRequest, "price must be at least 1")
 		return
+	}
+	for _, p := range req.Prices {
+		if !IsValidCurrency(normalizeCurrency(p.Currency)) {
+			fail(c, http.StatusBadRequest, "invalid currency: "+p.Currency)
+			return
+		}
 	}
 	if req.MaxParticipants < 1 {
 		fail(c, http.StatusBadRequest, "max participants must be at least 1")
 		return
 	}
-	if req.Currency != "" && !IsValidCurrency(normalizeCurrency(req.Currency)) {
-		fail(c, http.StatusBadRequest, "invalid currency")
-		return
-	}
 
-	// Note: do not log incoming categories to avoid leaking request data in logs
 	slug := req.Slug
 	if slug == "" {
 		slug = utils.Slugify(req.Title)
 	}
-	// ensure unique slug
-	slug = ensureUniqueSlug(c, slug)
-	// Begin transaction for atomic create
-	err := database.DB.Transaction(func(tx *gorm.DB) error {
-		pkg := models.Package{
-			ID:                 uuid.NewString(),
-			Title:              req.Title,
-			TitleZh:            req.TitleZh,
-			Slug:               slug,
-			Description:        req.Description,
-			DescriptionZh:      req.DescriptionZh,
-			ShortDescription:   req.ShortDescription,
-			ShortDescriptionZh: req.ShortDescriptionZh,
-			Price:              req.Price,
-			Currency:           normalizeCurrency(choose(req.Currency, "IDR")),
-			Duration:           req.Duration,
-			DurationUnit:       choose(req.DurationUnit, "days"),
-			Categories:         models.StringArray(req.Categories),
-			CategoriesZh:       models.StringArray(req.CategoriesZh),
-			Destination:        req.Destination,
-			DestinationZh:      req.DestinationZh,
-			Included:           models.StringArray(req.Included),
-			IncludedZh:         models.StringArray(req.IncludedZh),
-			Excluded:           models.StringArray(req.Excluded),
-			ExcludedZh:         models.StringArray(req.ExcludedZh),
-			Highlights:         models.StringArray(req.Highlights),
-			HighlightsZh:       models.StringArray(req.HighlightsZh),
-			Availability:       req.Availability,
-			AvailabilityZh:     req.AvailabilityZh,
-			MaxParticipants:    req.MaxParticipants,
-			Featured:           req.Featured,
-			Status:             choose(req.Status, models.StatusDraft),
+	baseSlug := slug
+	firstSlug := ensureUniqueSlug(c, baseSlug)
+	var createdPkg models.Package
+	var lastErr error
+	for attempt := 0; attempt < 5; attempt++ {
+		slugCandidate := firstSlug
+		if attempt > 0 {
+			slugCandidate = baseSlug + "-" + strconv.Itoa(attempt+1)
 		}
-		for i := range req.Images {
-			req.Images[i].ID = uuid.NewString()
-			req.Images[i].PackageID = pkg.ID
+		lastErr = database.DB.Transaction(func(tx *gorm.DB) error {
+			imageURL := ""
+			if len(req.Images) > 0 {
+				coverIdx := 0
+				for i := range req.Images {
+					if req.Images[i].ID == "" {
+						req.Images[i].ID = uuid.NewString()
+					}
+					if req.Images[i].IsCover {
+						coverIdx = i
+					}
+				}
+				imageURL = req.Images[coverIdx].URL
+			}
+			for i := range req.Itinerary {
+				if req.Itinerary[i].ID == "" {
+					req.Itinerary[i].ID = uuid.NewString()
+				}
+			}
+			createdPkg = models.Package{
+				ID:                 uuid.NewString(),
+				Title:              req.Title,
+				TitleZh:            req.TitleZh,
+				Slug:               slugCandidate,
+				Description:        req.Description,
+				DescriptionZh:      req.DescriptionZh,
+				ShortDescription:   req.ShortDescription,
+				ShortDescriptionZh: req.ShortDescriptionZh,
+						Price:              primaryPrice(req.Prices),
+						Currency:           primaryCurrency(req.Prices),
+						Prices:             models.PriceList(req.Prices),
+				Duration:           req.Duration,
+				DurationUnit:       choose(req.DurationUnit, "days"),
+				Categories:         models.StringArray(req.Categories),
+				CategoriesZh:       models.StringArray(req.CategoriesZh),
+				Destination:        req.Destination,
+				DestinationZh:      req.DestinationZh,
+				Included:           models.StringArray(req.Included),
+				IncludedZh:         models.StringArray(req.IncludedZh),
+				Excluded:           models.StringArray(req.Excluded),
+				ExcludedZh:         models.StringArray(req.ExcludedZh),
+				Highlights:         models.StringArray(req.Highlights),
+				HighlightsZh:       models.StringArray(req.HighlightsZh),
+				Availability:       req.Availability,
+				AvailabilityZh:     req.AvailabilityZh,
+				MinParticipants:    req.MinParticipants,
+				MaxParticipants:    req.MaxParticipants,
+				Featured:           req.Featured,
+				Status:             choose(req.Status, models.StatusDraft),
+				ImageURL:           imageURL,
+				Images:             req.Images,
+				Itinerary:          req.Itinerary,
+			}
+			if err := tx.Create(&createdPkg).Error; err != nil {
+				return err
+			}
+			return nil
+		})
+		if lastErr == nil {
+			cache.InvalidateOptions()
+			cache.InvalidatePackages()
+			created(c, toDTO(createdPkg, true))
+			return
 		}
-		for i := range req.Itinerary {
-			req.Itinerary[i].ID = uuid.NewString()
-			req.Itinerary[i].PackageID = pkg.ID
+		if !isSlugConflict(lastErr) {
+			break
 		}
-		pkg.Images = req.Images
-		pkg.Itinerary = req.Itinerary
-		if err := tx.Create(&pkg).Error; err != nil {
-			return err
-		}
-		// Invalidate caches (options + list)
-		cache.InvalidateOptions()
-		cache.InvalidatePackages()
-		created(c, toDTO(pkg, true))
-		return nil
-	})
-	if err != nil {
-		fail(c, http.StatusInternalServerError, "failed to create")
-		return
 	}
+	fail(c, http.StatusInternalServerError, "failed to create")
 }
 
 func (h *PackageController) Update(c *gin.Context) {
@@ -319,23 +358,23 @@ func (h *PackageController) Update(c *gin.Context) {
 		return
 	}
 
-	// Validation
-	if req.Price != 0 && req.Price < 1 {
+	if len(req.Prices) > 0 && primaryPrice(req.Prices) < 1 {
 		fail(c, http.StatusBadRequest, "price must be at least 1")
 		return
+	}
+	for _, p := range req.Prices {
+		if !IsValidCurrency(normalizeCurrency(p.Currency)) {
+			fail(c, http.StatusBadRequest, "invalid currency: "+p.Currency)
+			return
+		}
 	}
 	if req.MaxParticipants != 0 && req.MaxParticipants < 1 {
 		fail(c, http.StatusBadRequest, "max participants must be at least 1")
 		return
 	}
-	if req.Currency != "" && !IsValidCurrency(normalizeCurrency(req.Currency)) {
-		fail(c, http.StatusBadRequest, "invalid currency")
-		return
-	}
 
-	// Note: do not log incoming categories to avoid leaking request data in logs
 	var pkg models.Package
-	if err := database.Ctx(c).Preload("Images").Preload("Itinerary").First(&pkg, "id = ?", id).Error; err != nil {
+	if err := database.Ctx(c).First(&pkg, "id = ?", id).Error; err != nil {
 		fail(c, http.StatusNotFound, "not found")
 		return
 	}
@@ -359,11 +398,10 @@ func (h *PackageController) Update(c *gin.Context) {
 	if req.ShortDescriptionZh != "" {
 		pkg.ShortDescriptionZh = req.ShortDescriptionZh
 	}
-	if req.Price != 0 {
-		pkg.Price = req.Price
-	}
-	if req.Currency != "" {
-		pkg.Currency = normalizeCurrency(req.Currency)
+	if len(req.Prices) > 0 {
+		pkg.Price = primaryPrice(req.Prices)
+		pkg.Currency = primaryCurrency(req.Prices)
+		pkg.Prices = models.PriceList(req.Prices)
 	}
 	if req.Duration != 0 {
 		pkg.Duration = req.Duration
@@ -407,6 +445,9 @@ func (h *PackageController) Update(c *gin.Context) {
 	if req.AvailabilityZh != "" {
 		pkg.AvailabilityZh = req.AvailabilityZh
 	}
+	if req.MinParticipants != 0 {
+		pkg.MinParticipants = req.MinParticipants
+	}
 	if req.MaxParticipants != 0 {
 		pkg.MaxParticipants = req.MaxParticipants
 	}
@@ -419,27 +460,34 @@ func (h *PackageController) Update(c *gin.Context) {
 	}
 	pkg.Featured = req.Featured
 
-	// Replace associations if provided
 	if req.Images != nil {
-		database.Ctx(c).Where("package_id = ?", pkg.ID).Delete(&models.PackageImage{})
 		for i := range req.Images {
-			req.Images[i].ID = uuid.NewString()
-			req.Images[i].PackageID = pkg.ID
+			if req.Images[i].ID == "" {
+				req.Images[i].ID = uuid.NewString()
+			}
 		}
 		pkg.Images = req.Images
+		if len(req.Images) > 0 {
+			coverIdx := 0
+			for i := range req.Images {
+				if req.Images[i].IsCover {
+					coverIdx = i
+				}
+			}
+			pkg.ImageURL = req.Images[coverIdx].URL
+		}
 	}
 	if req.Itinerary != nil {
-		database.Ctx(c).Where("package_id = ?", pkg.ID).Delete(&models.ItineraryItem{})
 		for i := range req.Itinerary {
-			req.Itinerary[i].ID = uuid.NewString()
-			req.Itinerary[i].PackageID = pkg.ID
+			if req.Itinerary[i].ID == "" {
+				req.Itinerary[i].ID = uuid.NewString()
+			}
 		}
 		pkg.Itinerary = req.Itinerary
 	}
 
-	// Transaction for update with association replacement
 	err := database.DB.Transaction(func(tx *gorm.DB) error {
-		if err := tx.Session(&gorm.Session{FullSaveAssociations: true}).Save(&pkg).Error; err != nil {
+		if err := tx.Save(&pkg).Error; err != nil {
 			return err
 		}
 		cache.InvalidateOptions()
@@ -455,7 +503,6 @@ func (h *PackageController) Update(c *gin.Context) {
 
 func (h *PackageController) Delete(c *gin.Context) {
 	id := c.Param("id")
-	// Soft delete (DeletedAt) handled automatically by GORM
 	if err := database.Ctx(c).Delete(&models.Package{}, "id = ?", id).Error; err != nil {
 		fail(c, http.StatusInternalServerError, "failed to delete")
 		return
@@ -500,7 +547,7 @@ func (h *PackageController) GetOptions(c *gin.Context) {
 		availability = []string{}
 	}
 	var rows []struct{ Categories models.StringArray }
-	if err := base.Select("COALESCE(NULLIF(categories, ''), '[]') as categories").Find(&rows).Error; err != nil {
+	if err := base.Select("COALESCE(NULLIF(categories_json, ''), '[]') as categories").Find(&rows).Error; err != nil {
 		rows = []struct{ Categories models.StringArray }{}
 	}
 	catSet := map[string]struct{}{}
@@ -523,7 +570,7 @@ func (h *PackageController) GetOptions(c *gin.Context) {
 	sort.Strings(availability)
 	if lang == "zh" {
 		var zhRows []struct{ CategoriesZh models.StringArray }
-		if err := base.Select("COALESCE(NULLIF(categories_zh, ''), '[]') as categories_zh").Find(&zhRows).Error; err == nil {
+		if err := base.Select("COALESCE(NULLIF(categories_zh_json, ''), '[]') as categories_zh").Find(&zhRows).Error; err == nil {
 			zhSet := map[string]struct{}{}
 			for _, r := range zhRows {
 				for _, cat := range r.CategoriesZh {
@@ -583,11 +630,9 @@ func ensureUniqueSlug(c *gin.Context, base string) string {
 
 // buildPackageFilters applies query string filters to the base query in a reusable way
 func buildPackageFilters(q *gorm.DB, c *gin.Context, isAdmin bool) *gorm.DB {
-	// Respect explicit status query param (e.g., status=published from frontend)
 	if statusParam := c.Query("status"); statusParam != "" {
 		q = q.Where("status = ?", statusParam)
 	} else if !isAdmin {
-		// Default: non-admin sees only published
 		q = q.Where("status = ?", "published")
 	}
 
@@ -595,47 +640,40 @@ func buildPackageFilters(q *gorm.DB, c *gin.Context, isAdmin bool) *gorm.DB {
 		like := "%" + strings.ToLower(s) + "%"
 		q = q.Where("lower(title) LIKE ? OR lower(description) LIKE ?", like, like)
 	}
-	// Category filters: support single category and multiple categories with any/all mode
 	cats := utils.QueryStringSlice(c, "categories")
 	if len(cats) > 0 {
 		mode := strings.ToLower(strings.TrimSpace(c.Query("categoryMode")))
 		if mode == "all" {
-			// all categories must be present (AND)
 			for _, cat := range cats {
-				q = q.Where("categories LIKE ?", "%\""+cat+"\"%")
+				q = q.Where("categories_json LIKE ?", "%\""+cat+"\"%")
 			}
 		} else {
-			// default: any (OR)
-			// build OR clauses
 			or := q
 			first := true
 			for _, cat := range cats {
 				like := "%\"" + cat + "\"%"
 				if first {
-					or = or.Where("categories LIKE ?", like)
+					or = or.Where("categories_json LIKE ?", like)
 					first = false
 				} else {
-					or = or.Or("categories LIKE ?", like)
+					or = or.Or("categories_json LIKE ?", like)
 				}
 			}
 			q = or
 		}
 	} else if v := c.Query("category"); v != "" {
-		// categories stored as JSON array in TEXT; match by token
-		q = q.Where("categories LIKE ?", "%\""+v+"\"%")
+		q = q.Where("categories_json LIKE ?", "%\""+v+"\"%")
 	}
+
 	if v := c.Query("destination"); v != "" {
 		q = q.Where("destination = ?", v)
 	}
-	// Multi-destination support (OR)
 	if dests := utils.QueryStringSlice(c, "destinations"); len(dests) > 0 {
 		q = q.Where("destination IN ?", dests)
 	}
-	// Additional filters
 	if v := c.Query("currency"); v != "" {
 		q = q.Where("currency = ?", strings.ToUpper(strings.TrimSpace(v)))
 	}
-	// Multi-currency support (OR)
 	if currs := utils.QueryStringSlice(c, "currencies"); len(currs) > 0 {
 		up := make([]string, 0, len(currs))
 		for _, ccy := range currs {
@@ -646,7 +684,6 @@ func buildPackageFilters(q *gorm.DB, c *gin.Context, isAdmin bool) *gorm.DB {
 	if v := c.Query("availability"); v != "" {
 		q = q.Where("availability = ?", v)
 	}
-	// Featured filters: featuredOnly / notFeatured shortcuts, then generic featured
 	if b, ok := utils.QueryBool(c, "featuredOnly"); ok && b {
 		q = q.Where("featured = ?", true)
 	} else if b, ok := utils.QueryBool(c, "notFeatured"); ok && b {
@@ -691,7 +728,6 @@ func buildPackageFilters(q *gorm.DB, c *gin.Context, isAdmin bool) *gorm.DB {
 }
 
 // applyLangZh copies *_Zh fields into primary fields for response when Chinese requested.
-// It leaves IDs and numeric fields untouched. Fallback: if zh field empty, keep original.
 func applyLangZh(p *models.Package) {
 	if p.TitleZh != "" {
 		p.Title = p.TitleZh
@@ -720,7 +756,6 @@ func applyLangZh(p *models.Package) {
 	if p.AvailabilityZh != "" {
 		p.Availability = p.AvailabilityZh
 	}
-	// Itinerary items
 	for i := range p.Itinerary {
 		it := &p.Itinerary[i]
 		if it.TitleZh != "" {
@@ -739,4 +774,11 @@ func applyLangZh(p *models.Package) {
 			it.Accommodation = it.AccommodationZh
 		}
 	}
+}
+
+func isSlugConflict(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "UNIQUE constraint failed: packages.slug")
 }

@@ -2,13 +2,11 @@ package router
 
 import (
 	"log"
-	"net/http"
 	"time"
 
 	"besttravel/internal/config"
 	"besttravel/internal/controllers"
 	"besttravel/internal/middleware"
-	"besttravel/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
@@ -37,9 +35,6 @@ func Setup(cfg *config.Config) *gin.Engine {
 
 	// Health check enhanced (uptime + db)
 	r.GET("/health", controllers.Health)
-
-	// Static uploads (no directory listing)
-	r.StaticFS("/uploads", utils.NoListFS{FS: http.Dir(cfg.UploadDir)})
 
 	api := r.Group("/api")
 	{
@@ -95,6 +90,7 @@ func Setup(cfg *config.Config) *gin.Engine {
 
 		// Upload
 		upload := controllers.NewUploadController(cfg)
+		r.GET("/images/*filepath", upload.ServeImage)
 		adminUpload := api.Group("/upload")
 		adminUpload.Use(middleware.AuthRequired(cfg), middleware.AdminOnly())
 		{

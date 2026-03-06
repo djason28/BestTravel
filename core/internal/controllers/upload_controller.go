@@ -1,24 +1,39 @@
 package controllers
 
 import (
+	"context"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"net/http"
-	"os"
-	"path/filepath"
+	"net/url"
 	"strings"
 	"time"
 
 	"besttravel/internal/config"
 
+	"github.com/aws/aws-sdk-go-v2/aws"
+	awsconfig "github.com/aws/aws-sdk-go-v2/config"
+	"github.com/aws/aws-sdk-go-v2/credentials"
+	"github.com/aws/aws-sdk-go-v2/service/s3"
 	"github.com/gin-gonic/gin"
 )
 
-type UploadController struct{ cfg *config.Config }
+type UploadController struct {
+	cfg *config.Config
+	r2  *s3.Client
+}
 
-func NewUploadController(cfg *config.Config) *UploadController { return &UploadController{cfg: cfg} }
+func NewUploadController(cfg *config.Config) *UploadController {
+	client := newR2Client(cfg)
+	return &UploadController{cfg: cfg, r2: client}
+}
 
 func (h *UploadController) UploadImage(c *gin.Context) {
+	if h.r2 == nil {
+		fail(c, http.StatusServiceUnavailable, "R2 is not configured")
+		return
+	}
 	file, err := c.FormFile("file")
 	if err != nil {
 		fail(c, http.StatusBadRequest, "file is required")
@@ -44,31 +59,37 @@ func (h *UploadController) UploadImage(c *gin.Context) {
 		return
 	}
 
-	dir := filepath.Join(h.cfg.UploadDir, folder)
-	_ = os.MkdirAll(dir, 0755)
-	name := strings.ReplaceAll(time.Now().Format("20060102_150405.000000000"), ":", "") + "_" + filepath.Base(file.Filename)
-	path := filepath.Join(dir, name)
-	// Ensure final path stays under upload dir
-	base := filepath.Clean(h.cfg.UploadDir) + string(os.PathSeparator)
-	final := filepath.Clean(path)
-	if !strings.HasPrefix(final, base) {
-		fail(c, http.StatusBadRequest, "invalid path")
+	safeFolder := sanitizeFilename(folder)
+	safeName := sanitizeFilename(file.Filename)
+	key := fmt.Sprintf("%s/%d-%s", safeFolder, time.Now().UnixMilli(), safeName)
+
+	opened, err := file.Open()
+	if err != nil {
+		fail(c, http.StatusInternalServerError, "failed to read file")
 		return
 	}
-	if err := c.SaveUploadedFile(file, path); err != nil {
-		fail(c, http.StatusInternalServerError, "failed to save file")
+	defer opened.Close()
+
+	_, err = h.r2.PutObject(c.Request.Context(), &s3.PutObjectInput{
+		Bucket:      aws.String(h.cfg.R2Bucket),
+		Key:         aws.String(key),
+		Body:        opened,
+		ContentType: aws.String(file.Header.Get("Content-Type")),
+	})
+	if err != nil {
+		fail(c, http.StatusInternalServerError, "failed to upload file")
 		return
 	}
-	// Build absolute URL
-	scheme := "http"
-	if xfp := c.Request.Header.Get("X-Forwarded-Proto"); xfp != "" {
-		scheme = xfp
-	}
-	url := scheme + "://" + c.Request.Host + "/uploads/" + folder + "/" + name
+
+	url := "/images/" + key
 	ok(c, gin.H{"url": url})
 }
 
 func (h *UploadController) DeleteImage(c *gin.Context) {
+	if h.r2 == nil {
+		fail(c, http.StatusServiceUnavailable, "R2 is not configured")
+		return
+	}
 	var req struct {
 		URL string `json:"url" binding:"required,url"`
 	}
@@ -76,23 +97,46 @@ func (h *UploadController) DeleteImage(c *gin.Context) {
 		fail(c, http.StatusBadRequest, "invalid url")
 		return
 	}
-	// Convert URL to file path under upload dir
-	idx := strings.Index(req.URL, "/uploads/")
-	if idx == -1 {
+	key := extractR2Key(req.URL, h.cfg.R2PublicBaseURL)
+	if key == "" {
 		fail(c, http.StatusBadRequest, "invalid url")
 		return
 	}
-	rel := req.URL[idx+len("/uploads/"):]
-	path := filepath.Join(h.cfg.UploadDir, rel)
-	if !strings.HasPrefix(filepath.Clean(path), filepath.Clean(h.cfg.UploadDir)) {
-		fail(c, http.StatusBadRequest, "invalid path")
-		return
-	}
-	if err := os.Remove(path); err != nil {
+	_, err := h.r2.DeleteObject(c.Request.Context(), &s3.DeleteObjectInput{
+		Bucket: aws.String(h.cfg.R2Bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
 		fail(c, http.StatusInternalServerError, "failed to delete")
 		return
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true})
+}
+
+func (h *UploadController) ServeImage(c *gin.Context) {
+	if h.r2 == nil {
+		c.String(http.StatusServiceUnavailable, "R2 is not configured")
+		return
+	}
+	key := strings.TrimPrefix(c.Param("filepath"), "/")
+	if key == "" {
+		c.String(http.StatusBadRequest, "Invalid filename")
+		return
+	}
+	obj, err := h.r2.GetObject(c.Request.Context(), &s3.GetObjectInput{
+		Bucket: aws.String(h.cfg.R2Bucket),
+		Key:    aws.String(key),
+	})
+	if err != nil {
+		c.String(http.StatusNotFound, "Image not found")
+		return
+	}
+	defer obj.Body.Close()
+	if obj.ContentType != nil {
+		c.Header("Content-Type", *obj.ContentType)
+	}
+	c.Header("Cache-Control", "public, max-age=31536000, immutable")
+	_, _ = io.Copy(c.Writer, obj.Body)
 }
 
 func isImage(f *multipart.FileHeader) bool {
@@ -116,4 +160,66 @@ func isImage(f *multipart.FileHeader) bool {
 	default:
 		return false
 	}
+}
+
+func sanitizeFilename(input string) string {
+	cleaned := strings.TrimSpace(input)
+	if cleaned == "" {
+		return ""
+	}
+	cleaned = strings.ReplaceAll(cleaned, "\\", "/")
+	parts := strings.Split(cleaned, "/")
+	cleaned = parts[len(parts)-1]
+	return strings.Map(func(r rune) rune {
+		switch {
+		case r >= 'a' && r <= 'z':
+			return r
+		case r >= 'A' && r <= 'Z':
+			return r
+		case r >= '0' && r <= '9':
+			return r
+		case r == '.' || r == '_' || r == '-':
+			return r
+		default:
+			return '_'
+		}
+	}, cleaned)
+}
+
+func extractR2Key(rawURL, publicBase string) string {
+	if publicBase != "" && strings.HasPrefix(rawURL, publicBase+"/") {
+		return strings.TrimPrefix(rawURL, publicBase+"/")
+	}
+	if u, err := url.Parse(rawURL); err == nil {
+		if strings.HasPrefix(u.Path, "/images/") {
+			return strings.TrimPrefix(u.Path, "/images/")
+		}
+	}
+	if idx := strings.Index(rawURL, "/images/"); idx != -1 {
+		return strings.TrimPrefix(rawURL[idx:], "/images/")
+	}
+	return ""
+}
+
+func newR2Client(cfg *config.Config) *s3.Client {
+	if cfg.R2Bucket == "" || cfg.R2AccountID == "" || cfg.R2AccessKeyID == "" || cfg.R2SecretAccessKey == "" {
+		return nil
+	}
+	endpoint := fmt.Sprintf("https://%s.r2.cloudflarestorage.com", cfg.R2AccountID)
+	awsCfg, err := awsconfig.LoadDefaultConfig(
+		context.Background(),
+		awsconfig.WithRegion("auto"),
+		awsconfig.WithCredentialsProvider(credentials.NewStaticCredentialsProvider(cfg.R2AccessKeyID, cfg.R2SecretAccessKey, "")),
+		awsconfig.WithEndpointResolverWithOptions(aws.EndpointResolverWithOptionsFunc(
+			func(service, region string, options ...interface{}) (aws.Endpoint, error) {
+				return aws.Endpoint{URL: endpoint, HostnameImmutable: true}, nil
+			},
+		)),
+	)
+	if err != nil {
+		return nil
+	}
+	return s3.NewFromConfig(awsCfg, func(o *s3.Options) {
+		o.UsePathStyle = true
+	})
 }

@@ -277,7 +277,7 @@ export const PackagePreviewPage: React.FC = () => {
                   <div>
                     <p className="text-sm text-gray-600">Max Group</p>
                     <p className="font-semibold text-gray-900">
-                      {pkg.maxParticipants} people
+                      {pkg.minParticipants || 1} - {pkg.maxParticipants} people
                     </p>
                   </div>
                 </div>
@@ -540,9 +540,21 @@ export const PackagePreviewPage: React.FC = () => {
                 <div className="p-6">
                   <div className="mb-6">
                     <p className="text-sm text-gray-600 mb-1">Starting from</p>
-                    <p className="text-4xl font-bold text-blue-600">
-                      {formatPrice(pkg.price, pkg.currency)}
-                    </p>
+                    {(pkg.prices?.length
+                      ? pkg.prices
+                      : [{ amount: pkg.price, currency: pkg.currency }]
+                    ).map((p: any, i: number) => (
+                      <p
+                        key={i}
+                        className={
+                          i === 0
+                            ? "text-4xl font-bold text-blue-600"
+                            : "text-xl font-semibold text-gray-600 mt-1"
+                        }
+                      >
+                        {formatPrice(p.amount, p.currency)}
+                      </p>
+                    ))}
                     <p className="text-sm text-gray-600 mt-1">per person</p>
                   </div>
 
@@ -554,9 +566,10 @@ export const PackagePreviewPage: React.FC = () => {
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Max Participants</span>
+                      <span className="text-gray-600">Group Size</span>
                       <span className="font-semibold text-gray-900">
-                        {pkg.maxParticipants} people
+                        {pkg.minParticipants || 1} - {pkg.maxParticipants}{" "}
+                        people
                       </span>
                     </div>
                     <div className="flex justify-between text-sm">

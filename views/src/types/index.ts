@@ -1,3 +1,8 @@
+export interface PricePair {
+  amount: number;
+  currency: string;
+}
+
 export interface Package {
   id: string;
   title: string;
@@ -9,8 +14,9 @@ export interface Package {
   shortDescriptionZh?: string;
   price: number;
   currency: string;
+  prices: PricePair[];
   duration: number;
-  durationUnit: 'days' | 'nights' | 'hours';
+  durationUnit: "days" | "nights" | "hours";
   categories: string[];
   categoriesZh?: string[];
   destination: string;
@@ -25,9 +31,10 @@ export interface Package {
   highlightsZh?: string[];
   availability: string;
   availabilityZh?: string;
+  minParticipants: number;
   maxParticipants: number;
   featured: boolean;
-  status: 'draft' | 'published' | 'archived';
+  status: "draft" | "published" | "archived";
   viewCount: number;
   inquiryCount: number;
   createdAt: string;
@@ -67,8 +74,8 @@ export interface Inquiry {
   message: string;
   participants: number;
   preferredDate?: string;
-  status: 'new' | 'contacted' | 'converted' | 'closed';
-  source: 'whatsapp' | 'form' | 'phone' | 'contact';
+  status: "new" | "contacted" | "converted" | "closed";
+  source: "whatsapp" | "form" | "phone" | "contact";
   createdAt: string;
   updatedAt: string;
 }
@@ -77,7 +84,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
-  role: 'admin' | 'editor' | 'viewer';
+  role: "admin" | "editor" | "viewer";
   avatar?: string;
   createdAt: string;
   lastLogin?: string;
@@ -103,14 +110,16 @@ export interface PackageFormData {
   descriptionZh?: string;
   price: number;
   currency: string;
+  prices: PricePair[];
   duration: number;
-  durationUnit: 'days' | 'nights' | 'hours';
+  durationUnit: "days" | "nights" | "hours";
   categories: string[];
   categoriesZh?: string[];
   destination: string;
   destinationZh?: string;
   availability: string;
   availabilityZh?: string;
+  minParticipants: number;
   maxParticipants: number;
   highlights: string[];
   highlightsZh?: string[];
@@ -119,7 +128,7 @@ export interface PackageFormData {
   excluded: string[];
   excludedZh?: string[];
   itinerary: ItineraryDay[];
-  status: 'draft' | 'published';
+  status: "draft" | "published";
   featured: boolean;
 }
 
@@ -153,12 +162,12 @@ export interface FilterOptions {
   search?: string;
   destination?: string;
   destinations?: string[]; // multi-destination
-  status?: 'draft' | 'published' | 'archived';
+  status?: "draft" | "published" | "archived";
 
   // categories: support multiple with mode any/all
   category?: string; // backward compat (single)
   categories?: string[]; // preferred multi
-  categoryMode?: 'any' | 'all';
+  categoryMode?: "any" | "all";
 
   // featured shortcuts
   featured?: boolean;
@@ -178,20 +187,20 @@ export interface FilterOptions {
 
   // sorting
   sortBy?:
-    | 'newest'
-    | 'popular'
-    | 'price_asc'
-    | 'price_desc'
-    | 'duration_asc'
-    | 'duration_desc'
-    | 'inquiries_asc'
-    | 'inquiries_desc';
+    | "newest"
+    | "popular"
+    | "price_asc"
+    | "price_desc"
+    | "duration_asc"
+    | "duration_desc"
+    | "inquiries_asc"
+    | "inquiries_desc";
 
   // pagination
   page?: number;
   limit?: number;
   // language override (frontend convenience, passed separately in API layer)
-  lang?: 'en' | 'zh';
+  lang?: "en" | "zh";
 }
 
 export interface ContactFormData {
@@ -216,7 +225,7 @@ export interface AuthResponse {
 
 export interface ToastMessage {
   id: string;
-  type: 'success' | 'error' | 'warning' | 'info';
+  type: "success" | "error" | "warning" | "info";
   message: string;
   duration?: number;
 }

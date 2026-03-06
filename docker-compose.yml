@@ -1,5 +1,4 @@
 services:
-  # Backend API
   backend:
     build:
       context: ./core
@@ -8,54 +7,24 @@ services:
     restart: unless-stopped
     ports:
       - "8080:8080"
+    env_file:
+      - .env
     environment:
-      - GIN_MODE=release
-      - DB_PATH=/app/data/besttravel.db
-      - JWT_SECRET=${JWT_SECRET:-your-super-secret-jwt-key-change-in-production}
       - PORT=8080
-    volumes:
-      # Persistent database
-      - ./data:/app/data
-      # Persistent uploads
-      - ./uploads:/app/uploads
-    networks:
-      - besttravel-network
+      - APP_ENV=production
+      - DB_DRIVER=turso
+      - GIN_MODE=release
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:8080/health"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--quiet",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8080/health",
+        ]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-
-  # Caddy Reverse Proxy
-  caddy:
-    image: caddy:2-alpine
-    container_name: besttravel-caddy
-    restart: unless-stopped
-    ports:
-      - "80:80"
-      - "443:443"
-      - "443:443/udp" # HTTP/3
-    volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile
-      - ./views/dist:/usr/share/caddy
-      - caddy_data:/data
-      - caddy_config:/config
-      # Mount uploads to serve static files
-      - ./uploads:/usr/share/caddy/uploads
-    networks:
-      - besttravel-network
-    depends_on:
-      - backend
-    environment:
-      - DOMAIN=${DOMAIN:-localhost}
-
-networks:
-  besttravel-network:
-    driver: bridge
-
-volumes:
-  caddy_data:
-    driver: local
-  caddy_config:
-    driver: local

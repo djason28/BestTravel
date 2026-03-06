@@ -40,16 +40,16 @@ export default defineConfig({
     port: 5173,
     proxy: {
       "/api": {
-        target: "http://localhost:8787", // Cloudflare Worker Local Dev
+        target: "http://localhost:8080", // Core backend dev
         changeOrigin: true,
       },
       "/images": {
-        target: "http://localhost:8787",
+        target: "http://localhost:8080",
         changeOrigin: true,
       },
       "/uploads": {
         // Jika menggunakan R2 langsung, proxy ini mungkin tidak diperlukan
-        target: "http://localhost:8787",
+        target: "http://localhost:8080",
         changeOrigin: true,
       },
     },
