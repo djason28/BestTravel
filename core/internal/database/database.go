@@ -75,6 +75,7 @@ func Init(cfg *config.Config) {
 	if err := DB.AutoMigrate(
 		&models.User{},
 		&models.Package{},
+		&models.Car{},
 		&models.Inquiry{},
 		&models.TokenBlacklist{},
 	); err != nil {

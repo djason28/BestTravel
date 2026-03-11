@@ -76,6 +76,20 @@ func Setup(cfg *config.Config) *gin.Engine {
 			adminInq.PATCH(":id/status", inq.UpdateStatus)
 		}
 
+		// Cars
+		car := controllers.NewCarController(cfg)
+		api.GET("/cars", car.GetAll)
+		api.GET("/cars/:id", car.GetByID)
+		api.GET("/cars/slug/:slug", car.GetBySlug)
+		api.POST("/cars/:id/view", car.IncrementView)
+		adminCars := api.Group("/cars")
+		adminCars.Use(middleware.AuthRequired(cfg), middleware.AdminOnly())
+		{
+			adminCars.POST("", car.Create)
+			adminCars.PUT(":id", car.Update)
+			adminCars.DELETE(":id", car.Delete)
+		}
+
 		// Dashboard
 		dash := controllers.NewDashboardController(cfg)
 		adminDash := api.Group("/dashboard")
