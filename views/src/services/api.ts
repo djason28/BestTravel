@@ -10,54 +10,60 @@ import type {
   PackageFilterOptions,
   ContactFormData,
   LoginCredentials,
-  AuthResponse
-} from '../types';
+  AuthResponse,
+} from "../types";
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || '/api';
+const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
 const langParam = () => {
   // Prefer cookie
   const match = document.cookie.match(/(?:^|; )lang=([^;]+)/);
   const cookieLang = match ? decodeURIComponent(match[1]) : null;
-  const localLang = localStorage.getItem('lang');
+  const localLang = localStorage.getItem("lang");
   const lang = cookieLang || localLang;
-  return lang === 'zh' ? 'lang=zh' : '';
+  return lang === "zh" ? "lang=zh" : "";
 };
 
 export class ApiError extends Error {
   status: number;
   validationErrors?: Record<string, string>;
 
-  constructor(message: string, status: number, validationErrors?: Record<string, string>) {
+  constructor(
+    message: string,
+    status: number,
+    validationErrors?: Record<string, string>,
+  ) {
     super(message);
     this.status = status;
     this.validationErrors = validationErrors;
-    this.name = 'ApiError';
+    this.name = "ApiError";
   }
 }
 
 const getAuthHeaders = (): HeadersInit => {
-  const token = localStorage.getItem('auth_token');
+  const token = localStorage.getItem("auth_token");
   return {
-    'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` }),
+    "Content-Type": "application/json",
+    ...(token && { Authorization: `Bearer ${token}` }),
   };
 };
 
 const handleResponse = async <T>(response: Response): Promise<T> => {
   if (!response.ok) {
-    const data = await response.json().catch(() => ({ error: 'Network error' }));
+    const data = await response
+      .json()
+      .catch(() => ({ error: "Network error" }));
     let message = data.error || `HTTP error! status: ${response.status}`;
-    
+
     if (data.errors) {
-      const details = Object.values(data.errors).join(', ');
+      const details = Object.values(data.errors).join(", ");
       if (details) {
-         // If the main error message is generic, replace it or append
-         if (message === 'invalid request body' || !message) {
-             message = details;
-         } else {
-             message = `${message}: ${details}`;
-         }
+        // If the main error message is generic, replace it or append
+        if (message === "invalid request body" || !message) {
+          message = details;
+        } else {
+          message = `${message}: ${details}`;
+        }
       }
     }
     throw new ApiError(message, response.status, data.errors);
@@ -66,68 +72,94 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
 };
 
 export const packageApi = {
-  getAll: async (filters?: FilterOptions, langOverride?: 'en' | 'zh'): Promise<PaginatedResponse<Package>> => {
+  getAll: async (
+    filters?: FilterOptions,
+    langOverride?: "en" | "zh",
+  ): Promise<PaginatedResponse<Package>> => {
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
         if (value === undefined || value === null) return;
         if (Array.isArray(value)) {
-          if (value.length > 0) params.append(key, value.join(','));
+          if (value.length > 0) params.append(key, value.join(","));
           return;
         }
-        if (typeof value === 'boolean') {
-          if (value) params.append(key, 'true');
+        if (typeof value === "boolean") {
+          if (value) params.append(key, "true");
           return;
         }
         const v = String(value);
-        if (v !== '') params.append(key, v);
+        if (v !== "") params.append(key, v);
       });
     }
-    const lp = langOverride ? `lang=${langOverride}` : '';
+    const lp = langOverride ? `lang=${langOverride}` : "";
     const query = params.toString();
-    const sep = query ? '&' : '';
-    const response = await fetch(`${API_BASE_URL}/packages?${query}${lp ? sep + lp : ''}`, {
-      headers: getAuthHeaders(),
-    });
+    const sep = query ? "&" : "";
+    const response = await fetch(
+      `${API_BASE_URL}/packages?${query}${lp ? sep + lp : ""}`,
+      {
+        headers: getAuthHeaders(),
+      },
+    );
     return handleResponse<PaginatedResponse<Package>>(response);
   },
 
-  getById: async (id: string, langOverride?: 'en' | 'zh'): Promise<ApiResponse<Package>> => {
-    const lp = langOverride ? `lang=${langOverride}` : '';
-    const response = await fetch(`${API_BASE_URL}/packages/${id}${lp ? `?${lp}` : ''}`, {
-      headers: getAuthHeaders(),
-    });
+  getById: async (
+    id: string,
+    langOverride?: "en" | "zh",
+  ): Promise<ApiResponse<Package>> => {
+    const lp = langOverride ? `lang=${langOverride}` : "";
+    const response = await fetch(
+      `${API_BASE_URL}/packages/${id}${lp ? `?${lp}` : ""}`,
+      {
+        headers: getAuthHeaders(),
+      },
+    );
     return handleResponse<ApiResponse<Package>>(response);
   },
 
-  getBySlug: async (slug: string, langOverride?: 'en' | 'zh'): Promise<ApiResponse<Package>> => {
-    const lp = langOverride ? `lang=${langOverride}` : '';
-    const response = await fetch(`${API_BASE_URL}/packages/slug/${slug}${lp ? `?${lp}` : ''}`, {
-      headers: getAuthHeaders(),
-    });
+  getBySlug: async (
+    slug: string,
+    langOverride?: "en" | "zh",
+  ): Promise<ApiResponse<Package>> => {
+    const lp = langOverride ? `lang=${langOverride}` : "";
+    const response = await fetch(
+      `${API_BASE_URL}/packages/slug/${slug}${lp ? `?${lp}` : ""}`,
+      {
+        headers: getAuthHeaders(),
+      },
+    );
     return handleResponse<ApiResponse<Package>>(response);
   },
 
-  getOptions: async (langOverride?: 'en' | 'zh'): Promise<ApiResponse<PackageFilterOptions>> => {
-    const lp = langOverride ? `lang=${langOverride}` : '';
-    const response = await fetch(`${API_BASE_URL}/packages/options${lp ? `?${lp}` : ''}`, {
-      headers: getAuthHeaders(),
-    });
+  getOptions: async (
+    langOverride?: "en" | "zh",
+  ): Promise<ApiResponse<PackageFilterOptions>> => {
+    const lp = langOverride ? `lang=${langOverride}` : "";
+    const response = await fetch(
+      `${API_BASE_URL}/packages/options${lp ? `?${lp}` : ""}`,
+      {
+        headers: getAuthHeaders(),
+      },
+    );
     return handleResponse<ApiResponse<PackageFilterOptions>>(response);
   },
 
   create: async (data: PackageFormData): Promise<ApiResponse<Package>> => {
     const response = await fetch(`${API_BASE_URL}/packages`, {
-      method: 'POST',
+      method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
     return handleResponse<ApiResponse<Package>>(response);
   },
 
-  update: async (id: string, data: Partial<PackageFormData>): Promise<ApiResponse<Package>> => {
+  update: async (
+    id: string,
+    data: Partial<PackageFormData>,
+  ): Promise<ApiResponse<Package>> => {
     const response = await fetch(`${API_BASE_URL}/packages/${id}`, {
-      method: 'PUT',
+      method: "PUT",
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
@@ -136,7 +168,7 @@ export const packageApi = {
 
   delete: async (id: string): Promise<ApiResponse<void>> => {
     const response = await fetch(`${API_BASE_URL}/packages/${id}`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: getAuthHeaders(),
     });
     return handleResponse<ApiResponse<void>>(response);
@@ -144,14 +176,91 @@ export const packageApi = {
 
   incrementView: async (id: string): Promise<void> => {
     await fetch(`${API_BASE_URL}/packages/${id}/view`, {
-      method: 'POST',
+      method: "POST",
+      headers: getAuthHeaders(),
+    });
+  },
+};
+
+export const carApi = {
+  getAll: async (filters?: {
+    status?: string;
+    featured?: boolean;
+    search?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<any> => {
+    const params = new URLSearchParams();
+    if (filters) {
+      Object.entries(filters).forEach(([k, v]) => {
+        if (v !== undefined) params.append(k, String(v));
+      });
+    }
+    const response = await fetch(`${API_BASE_URL}/cars?${params}`, {
+      headers: getAuthHeaders(),
+    });
+    return response.json();
+  },
+
+  getById: async (id: string): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/cars/${id}`, {
+      headers: getAuthHeaders(),
+    });
+    return response.json();
+  },
+
+  getBySlug: async (slug: string): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/cars/slug/${slug}`, {
+      headers: getAuthHeaders(),
+    });
+    return response.json();
+  },
+
+  create: async (data: any): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/cars`, {
+      method: "POST",
+      headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  },
+
+  update: async (id: string, data: any): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/cars/${id}`, {
+      method: "PUT",
+      headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+    return response.json();
+  },
+
+  delete: async (id: string): Promise<any> => {
+    const response = await fetch(`${API_BASE_URL}/cars/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    return response.json();
+  },
+
+  incrementView: async (id: string): Promise<void> => {
+    await fetch(`${API_BASE_URL}/cars/${id}/view`, {
+      method: "POST",
       headers: getAuthHeaders(),
     });
   },
 };
 
 export const inquiryApi = {
-  getAll: async (filters?: { status?: string; page?: number; limit?: number; source?: string; packageId?: string; email?: string; dateFrom?: string; dateTo?: string }): Promise<PaginatedResponse<Inquiry>> => {
+  getAll: async (filters?: {
+    status?: string;
+    page?: number;
+    limit?: number;
+    source?: string;
+    packageId?: string;
+    email?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  }): Promise<PaginatedResponse<Inquiry>> => {
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([key, value]) => {
@@ -168,16 +277,19 @@ export const inquiryApi = {
 
   create: async (data: Partial<Inquiry>): Promise<ApiResponse<Inquiry>> => {
     const response = await fetch(`${API_BASE_URL}/inquiries`, {
-      method: 'POST',
+      method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
     return handleResponse<ApiResponse<Inquiry>>(response);
   },
 
-  updateStatus: async (id: string, status: Inquiry['status']): Promise<ApiResponse<Inquiry>> => {
+  updateStatus: async (
+    id: string,
+    status: Inquiry["status"],
+  ): Promise<ApiResponse<Inquiry>> => {
     const response = await fetch(`${API_BASE_URL}/inquiries/${id}/status`, {
-      method: 'PATCH',
+      method: "PATCH",
       headers: getAuthHeaders(),
       body: JSON.stringify({ status }),
     });
@@ -188,8 +300,8 @@ export const inquiryApi = {
 export const authApi = {
   login: async (credentials: LoginCredentials): Promise<AuthResponse> => {
     const response = await fetch(`${API_BASE_URL}/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(credentials),
     });
     return handleResponse<AuthResponse>(response);
@@ -197,7 +309,7 @@ export const authApi = {
 
   logout: async (): Promise<void> => {
     const response = await fetch(`${API_BASE_URL}/auth/logout`, {
-      method: 'POST',
+      method: "POST",
       headers: getAuthHeaders(),
     });
     await handleResponse<void>(response);
@@ -212,7 +324,7 @@ export const authApi = {
 
   refreshToken: async (): Promise<AuthResponse> => {
     const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: 'POST',
+      method: "POST",
       headers: getAuthHeaders(),
     });
     return handleResponse<AuthResponse>(response);
@@ -231,8 +343,8 @@ export const dashboardApi = {
 export const contactApi = {
   send: async (data: ContactFormData): Promise<ApiResponse<void>> => {
     const response = await fetch(`${API_BASE_URL}/contact`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify(data),
     });
     return handleResponse<ApiResponse<void>>(response);
@@ -240,16 +352,19 @@ export const contactApi = {
 };
 
 export const uploadApi = {
-  uploadImage: async (file: File, folder: string = 'packages'): Promise<ApiResponse<{ url: string }>> => {
+  uploadImage: async (
+    file: File,
+    folder: string = "packages",
+  ): Promise<ApiResponse<{ url: string }>> => {
     const formData = new FormData();
-    formData.append('file', file);
-    formData.append('folder', folder);
+    formData.append("file", file);
+    formData.append("folder", folder);
 
-    const token = localStorage.getItem('auth_token');
+    const token = localStorage.getItem("auth_token");
     const response = await fetch(`${API_BASE_URL}/upload/image`, {
-      method: 'POST',
+      method: "POST",
       headers: {
-        ...(token && { 'Authorization': `Bearer ${token}` }),
+        ...(token && { Authorization: `Bearer ${token}` }),
       },
       body: formData,
     });
@@ -258,7 +373,7 @@ export const uploadApi = {
 
   deleteImage: async (url: string): Promise<ApiResponse<void>> => {
     const response = await fetch(`${API_BASE_URL}/upload/image`, {
-      method: 'DELETE',
+      method: "DELETE",
       headers: getAuthHeaders(),
       body: JSON.stringify({ url }),
     });

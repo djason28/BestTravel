@@ -153,6 +153,33 @@ export const Footer: React.FC = () => {
               </li>
             </ul>
           </div>
+
+          {/* Services */}
+          <div>
+            <h3 className="text-white font-semibold text-lg mb-4">Services</h3>
+            <ul className="space-y-2">
+              <li>
+                <PrefetchLink
+                  to="/packages"
+                  prefetchEnabled
+                  prefetchOn="hover"
+                  className="hover:text-blue-500 transition-colors"
+                >
+                  Packages
+                </PrefetchLink>
+              </li>
+              <li>
+                <PrefetchLink
+                  to="/cars"
+                  prefetchEnabled
+                  prefetchOn="hover"
+                  className="hover:text-blue-500 transition-colors"
+                >
+                  Car Rental
+                </PrefetchLink>
+              </li>
+            </ul>
+          </div>
         </div>
 
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm">

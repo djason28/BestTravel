@@ -21,6 +21,7 @@ export const Header: React.FC = () => {
   const navLinks = [
     { path: "/", label: lang === "zh" ? "首页" : "Home" },
     { path: "/packages", label: lang === "zh" ? "套餐" : "Packages" },
+    { path: "/cars", label: lang === "zh" ? "租车" : "Cars" },
     { path: "/about", label: lang === "zh" ? "关于我们" : "About" },
     { path: "/contact", label: lang === "zh" ? "联系我们" : "Contact" },
   ];

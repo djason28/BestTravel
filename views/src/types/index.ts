@@ -229,3 +229,56 @@ export interface ToastMessage {
   message: string;
   duration?: number;
 }
+
+export interface Car {
+  id: number;
+  slug: string;
+  name: string;
+  brand: string;
+  model: string;
+  year: number;
+  seats: number;
+  transmission: string;
+  fuelType: string;
+  prices: PricePair[];
+  price: number;
+  currency: string;
+  priceUnit: string;
+  minDays: number;
+  withDriver: boolean;
+  features: string[];
+  included: string[];
+  excluded: string[];
+  images: PackageImage[];
+  imageUrl: string;
+  description: string;
+  descriptionZh: string;
+  status: string;
+  featured: boolean;
+  viewCount: number;
+  inquiryCount: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CarFormData {
+  name: string;
+  brand: string;
+  model: string;
+  year: number;
+  seats: number;
+  transmission: string;
+  fuelType: string;
+  prices: PricePair[];
+  priceUnit: string;
+  minDays: number;
+  withDriver: boolean;
+  features: string[];
+  included: string[];
+  excluded: string[];
+  images: PackageImage[];
+  description: string;
+  descriptionZh: string;
+  status: string;
+  featured: boolean;
+}
