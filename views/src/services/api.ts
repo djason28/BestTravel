@@ -1,5 +1,6 @@
 import type {
   Package,
+  Car,
   Inquiry,
   User,
   DashboardStats,
@@ -180,7 +181,9 @@ export const carApi = {
     search?: string;
     page?: number;
     limit?: number;
-  }): Promise<any> => {
+    transmission?: string;
+    withDriver?: string;
+  }): Promise<PaginatedResponse<Car>> => {
     const params = new URLSearchParams();
     if (filters) {
       Object.entries(filters).forEach(([k, v]) => {
@@ -190,7 +193,7 @@ export const carApi = {
     const response = await fetch(`${API_BASE_URL}/cars?${params}`, {
       headers: getAuthHeaders(),
     });
-    return response.json();
+    return handleResponse<PaginatedResponse<Car>>(response);
   },
 
   getById: async (id: string): Promise<any> => {

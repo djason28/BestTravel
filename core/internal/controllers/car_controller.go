@@ -1,9 +1,11 @@
 package controllers
 
 import (
+	"context"
 	"net/http"
 	"strconv"
 	"strings"
+	"time"
 
 	"besttravel/internal/config"
 	"besttravel/internal/database"
@@ -133,6 +135,9 @@ func NewCarController(cfg *config.Config) *CarController {
 
 // GET /api/cars
 func (h *CarController) GetAll(c *gin.Context) {
+	ctx, cancel := context.WithTimeout(c.Request.Context(), 5*time.Second) // Match PackageController timeout style, slightly longer just in case
+	defer cancel()
+
 	page, _ := strconv.Atoi(c.DefaultQuery("page", "1"))
 	limit, _ := strconv.Atoi(c.DefaultQuery("limit", "20"))
 	if page < 1 {
@@ -141,9 +146,11 @@ func (h *CarController) GetAll(c *gin.Context) {
 	if limit < 1 || limit > 100 {
 		limit = 20
 	}
-	offset := (page - 1) * limit
+	// offset := (page - 1) * limit // Calculated inside listBuilder now
 
-	q := database.Ctx(c).Model(&models.Car{}).Where("deleted_at IS NULL")
+	// Use database.DB directly with context, similar to PackageController
+	db := database.DB.WithContext(ctx)
+	q := db.Model(&models.Car{}).Where("deleted_at IS NULL")
 
 	// Filters
 	if s := c.Query("status"); s != "" {
@@ -162,13 +169,44 @@ func (h *CarController) GetAll(c *gin.Context) {
 		q = q.Where("name LIKE ? OR brand LIKE ? OR description LIKE ?", like, like, like)
 	}
 
-	var total int64
-	q.Count(&total)
+	// Additional Filters
+	if t := c.Query("transmission"); t != "" {
+		q = q.Where("transmission = ?", t)
+	}
+	if d := c.Query("withDriver"); d != "" {
+		switch d {
+		case "yes":
+			q = q.Where("with_driver = ?", 1)
+		case "no":
+			q = q.Where("with_driver = ?", 0)
+		}
+	}
 
+	var total int64
 	var cars []models.Car
-	if err := q.Order("created_at DESC").Offset(offset).Limit(limit).Find(&cars).Error; err != nil {
-		fail(c, http.StatusInternalServerError, "failed to fetch cars")
-		return
+
+	// Use parallel execution for Count and Find
+	errChan := make(chan error, 2)
+	go func() {
+		if err := q.Session(&gorm.Session{}).Count(&total).Error; err != nil {
+			errChan <- err
+		} else {
+			errChan <- nil
+		}
+	}()
+	go func() {
+		if err := q.Session(&gorm.Session{}).Order("created_at DESC").Offset((page - 1) * limit).Limit(limit).Find(&cars).Error; err != nil {
+			errChan <- err
+		} else {
+			errChan <- nil
+		}
+	}()
+
+	for i := 0; i < 2; i++ {
+		if err := <-errChan; err != nil {
+			fail(c, http.StatusInternalServerError, "failed to fetch cars")
+			return
+		}
 	}
 
 	dtos := make([]CarDTO, len(cars))
