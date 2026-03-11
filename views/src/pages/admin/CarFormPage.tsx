@@ -19,6 +19,7 @@ const CURRENCIES = ["IDR", "SGD", "USD", "MYR", "EUR"];
 
 const emptyForm: CarFormData = {
   name: "",
+  nameZh: "",
   brand: "",
   model: "",
   year: new Date().getFullYear(),
@@ -30,11 +31,16 @@ const emptyForm: CarFormData = {
   minDays: 1,
   withDriver: false,
   features: [],
+  featuresZh: [],
   included: [],
+  includedZh: [],
   excluded: [],
+  excludedZh: [],
   images: [],
   description: "",
   descriptionZh: "",
+  availability: "",
+  availabilityZh: "",
   status: "draft",
   featured: false,
 };
@@ -54,6 +60,9 @@ export const CarFormPage: React.FC = () => {
   const [featuresText, setFeaturesText] = useState("");
   const [includedText, setIncludedText] = useState("");
   const [excludedText, setExcludedText] = useState("");
+  const [featuresZhText, setFeaturesZhText] = useState("");
+  const [includedZhText, setIncludedZhText] = useState("");
+  const [excludedZhText, setExcludedZhText] = useState("");
 
   useEffect(() => {
     if (isEdit) loadCar();
@@ -67,6 +76,7 @@ export const CarFormPage: React.FC = () => {
         const d = res.data;
         setForm({
           name: d.name ?? "",
+          nameZh: d.nameZh ?? "",
           brand: d.brand ?? "",
           model: d.model ?? "",
           year: d.year ?? new Date().getFullYear(),
@@ -80,11 +90,16 @@ export const CarFormPage: React.FC = () => {
           minDays: d.minDays ?? 1,
           withDriver: d.withDriver ?? false,
           features: d.features ?? [],
+          featuresZh: d.featuresZh ?? [],
           included: d.included ?? [],
+          includedZh: d.includedZh ?? [],
           excluded: d.excluded ?? [],
+          excludedZh: d.excludedZh ?? [],
           images: d.images ?? [],
           description: d.description ?? "",
           descriptionZh: d.descriptionZh ?? "",
+          availability: d.availability ?? "",
+          availabilityZh: d.availabilityZh ?? "",
           status: d.status ?? "draft",
           featured: d.featured ?? false,
         });
@@ -92,6 +107,9 @@ export const CarFormPage: React.FC = () => {
         setFeaturesText((d.features ?? []).join("\n"));
         setIncludedText((d.included ?? []).join("\n"));
         setExcludedText((d.excluded ?? []).join("\n"));
+        setFeaturesZhText((d.featuresZh ?? []).join("\n"));
+        setIncludedZhText((d.includedZh ?? []).join("\n"));
+        setExcludedZhText((d.excludedZh ?? []).join("\n"));
       }
     } catch {
       addToast("Gagal memuat data mobil", "error");
@@ -155,8 +173,11 @@ export const CarFormPage: React.FC = () => {
     const payload = {
       ...form,
       features: parseLines(featuresText),
+      featuresZh: parseLines(featuresZhText),
       included: parseLines(includedText),
+      includedZh: parseLines(includedZhText),
       excluded: parseLines(excludedText),
+      excludedZh: parseLines(excludedZhText),
       images,
     };
 
@@ -226,7 +247,7 @@ export const CarFormPage: React.FC = () => {
           Informasi Dasar
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="md:col-span-2">
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Nama Mobil <span className="text-red-500">*</span>
             </label>
@@ -237,6 +258,18 @@ export const CarFormPage: React.FC = () => {
               placeholder="cth. Toyota Avanza 2023"
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               required
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              名称（中文）
+            </label>
+            <input
+              type="text"
+              value={form.nameZh}
+              onChange={(e) => onChange("nameZh", e.target.value)}
+              placeholder="例：丰田 Avanza 2023"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             />
           </div>
 
@@ -460,6 +493,30 @@ export const CarFormPage: React.FC = () => {
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
             />
           </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Ketersediaan (EN/ID)
+            </label>
+            <input
+              type="text"
+              value={form.availability}
+              onChange={(e) => onChange("availability", e.target.value)}
+              placeholder="cth. Tersedia setiap hari"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              可用性（中文）
+            </label>
+            <input
+              type="text"
+              value={form.availabilityZh}
+              onChange={(e) => onChange("availabilityZh", e.target.value)}
+              placeholder="例：每天可用"
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            />
+          </div>
         </div>
       </Card>
 
@@ -471,7 +528,7 @@ export const CarFormPage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Fitur Mobil
+              Fitur Mobil (EN/ID)
             </label>
             <textarea
               value={featuresText}
@@ -484,7 +541,7 @@ export const CarFormPage: React.FC = () => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Sudah Termasuk
+              Sudah Termasuk (EN/ID)
             </label>
             <textarea
               value={includedText}
@@ -497,7 +554,7 @@ export const CarFormPage: React.FC = () => {
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Tidak Termasuk
+              Tidak Termasuk (EN/ID)
             </label>
             <textarea
               value={excludedText}
@@ -507,6 +564,47 @@ export const CarFormPage: React.FC = () => {
               className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
             />
             <p className="text-xs text-gray-400 mt-1">Satu item per baris</p>
+          </div>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              车辆配置（中文）
+            </label>
+            <textarea
+              value={featuresZhText}
+              onChange={(e) => setFeaturesZhText(e.target.value)}
+              rows={5}
+              placeholder={"空调\n蓝牙\n倒车摄像头\n大型行李箱"}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+            />
+            <p className="text-xs text-gray-400 mt-1">每行一项</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              费用包含（中文）
+            </label>
+            <textarea
+              value={includedZhText}
+              onChange={(e) => setIncludedZhText(e.target.value)}
+              rows={5}
+              placeholder={"汽油\n保险\n过路费"}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+            />
+            <p className="text-xs text-gray-400 mt-1">每行一项</p>
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              费用不含（中文）
+            </label>
+            <textarea
+              value={excludedZhText}
+              onChange={(e) => setExcludedZhText(e.target.value)}
+              rows={5}
+              placeholder={"停车费\n渡船费"}
+              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"
+            />
+            <p className="text-xs text-gray-400 mt-1">每行一项</p>
           </div>
         </div>
       </Card>

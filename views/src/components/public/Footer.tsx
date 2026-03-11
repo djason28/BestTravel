@@ -156,7 +156,9 @@ export const Footer: React.FC = () => {
 
           {/* Services */}
           <div>
-            <h3 className="text-white font-semibold text-lg mb-4">Services</h3>
+            <h3 className="text-white font-semibold text-lg mb-4">
+              {t("services")}
+            </h3>
             <ul className="space-y-2">
               <li>
                 <PrefetchLink
@@ -165,7 +167,7 @@ export const Footer: React.FC = () => {
                   prefetchOn="hover"
                   className="hover:text-blue-500 transition-colors"
                 >
-                  Packages
+                  {t("packages")}
                 </PrefetchLink>
               </li>
               <li>
@@ -175,7 +177,7 @@ export const Footer: React.FC = () => {
                   prefetchOn="hover"
                   className="hover:text-blue-500 transition-colors"
                 >
-                  Car Rental
+                  {t("car_rental_service")}
                 </PrefetchLink>
               </li>
             </ul>

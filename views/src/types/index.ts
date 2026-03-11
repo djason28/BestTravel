@@ -234,6 +234,7 @@ export interface Car {
   id: number;
   slug: string;
   name: string;
+  nameZh: string;
   brand: string;
   model: string;
   year: number;
@@ -247,12 +248,17 @@ export interface Car {
   minDays: number;
   withDriver: boolean;
   features: string[];
+  featuresZh: string[];
   included: string[];
+  includedZh: string[];
   excluded: string[];
+  excludedZh: string[];
   images: PackageImage[];
   imageUrl: string;
   description: string;
   descriptionZh: string;
+  availability: string;
+  availabilityZh: string;
   status: string;
   featured: boolean;
   viewCount: number;
@@ -263,6 +269,7 @@ export interface Car {
 
 export interface CarFormData {
   name: string;
+  nameZh: string;
   brand: string;
   model: string;
   year: number;
@@ -274,11 +281,16 @@ export interface CarFormData {
   minDays: number;
   withDriver: boolean;
   features: string[];
+  featuresZh: string[];
   included: string[];
+  includedZh: string[];
   excluded: string[];
+  excludedZh: string[];
   images: PackageImage[];
   description: string;
   descriptionZh: string;
+  availability: string;
+  availabilityZh: string;
   status: string;
   featured: boolean;
 }

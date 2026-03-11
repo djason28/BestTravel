@@ -624,7 +624,7 @@ export const PackagesPage: React.FC = () => {
               return (
                 <Card key={pkg.id}>
                   <div className="p-6">
-                    <div className="flex items-start gap-4">
+                    <div className="flex items-start gap-6">
                       <img
                         src={
                           Array.isArray(pkg.images) && pkg.images[0]?.url
@@ -632,7 +632,7 @@ export const PackagesPage: React.FC = () => {
                             : "https://images.pexels.com/photos/1430676/pexels-photo-1430676.jpeg"
                         }
                         alt={pkg.title}
-                        className="w-32 h-32 object-cover rounded-lg"
+                        className="w-52 h-44 object-cover rounded-xl flex-shrink-0"
                       />
                       <div className="flex-1">
                         <div className="flex items-start justify-between mb-2">
@@ -711,6 +711,11 @@ export const PackagesPage: React.FC = () => {
                             <Eye className="h-4 w-4" />
                             {pkg.viewCount} views
                           </span>
+                          {(pkg.inquiryCount ?? 0) > 0 && (
+                            <span className="flex items-center gap-1 text-blue-600 font-medium">
+                              💬 {pkg.inquiryCount} inquiries
+                            </span>
+                          )}
                           <span>Created: {formatDate(pkg.createdAt)}</span>
                         </div>
                         <div className="flex gap-2">

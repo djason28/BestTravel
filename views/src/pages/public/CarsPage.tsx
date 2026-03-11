@@ -16,11 +16,26 @@ import { Card } from "../../components/common/Card";
 import { PackageCardSkeleton } from "../../components/common/Loading";
 import { Button } from "../../components/common/Button";
 import { useNavigationState } from "../../contexts/NavigationContext";
+import { t, currentLang } from "../../i18n";
 
-const PRICE_UNIT_LABEL: Record<string, string> = {
-  day: "/ hari",
-  trip: "/ perjalanan",
-  hour: "/ jam",
+function getPriceUnitLabel(unit: string): string {
+  if (unit === "day") return `/ ${t("per_day")}`;
+  if (unit === "trip") return `/ ${t("per_trip")}`;
+  if (unit === "hour") return `/ ${t("per_hour")}`;
+  return `/ ${unit}`;
+}
+
+const FUEL_ZH: Record<string, string> = {
+  Bensin: "汽油",
+  Solar: "柴油",
+  Listrik: "电力",
+  Hybrid: "混合动力",
+};
+
+const TRANSMISSION_ZH: Record<string, string> = {
+  Automatic: "自动挡",
+  Manual: "手动挡",
+  CVT: "CVT",
 };
 
 export const CarsPage: React.FC = () => {
@@ -133,9 +148,11 @@ export const CarsPage: React.FC = () => {
       {/* Hero Banner */}
       <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
         <div className="container mx-auto px-4">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4">Rental Mobil</h1>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">
+            {t("cars_page_title")}
+          </h1>
           <p className="text-xl text-blue-100 relative">
-            Temukan pilihan mobil terbaik untuk perjalanan Anda
+            {t("cars_page_subtitle")}
             <span className="block mt-4 h-1 w-32 bg-gradient-to-r from-white/70 to-blue-200 rounded"></span>
           </p>
         </div>
@@ -149,7 +166,7 @@ export const CarsPage: React.FC = () => {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-5 w-5" />
               <input
                 type="text"
-                placeholder="Cari nama, brand, model..."
+                placeholder={t("search_cars_placeholder")}
                 defaultValue={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -160,10 +177,10 @@ export const CarsPage: React.FC = () => {
               className="flex items-center gap-2 px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
             >
               <SlidersHorizontal className="h-5 w-5" />
-              <span>Filter</span>
+              <span>{t("filters")}</span>
               {hasActiveFilters && (
                 <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
-                  Aktif
+                  {t("active")}
                 </span>
               )}
             </button>
@@ -173,7 +190,7 @@ export const CarsPage: React.FC = () => {
             <div className="mt-4 pt-4 border-t grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Transmisi
+                  {t("transmission_label")}
                 </label>
                 <select
                   value={transmissionFilter}
@@ -183,7 +200,7 @@ export const CarsPage: React.FC = () => {
                   }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Semua Transmisi</option>
+                  <option value="">{t("filter_all_transmission")}</option>
                   <option value="Manual">Manual</option>
                   <option value="Automatic">Automatic</option>
                   <option value="CVT">CVT</option>
@@ -191,7 +208,7 @@ export const CarsPage: React.FC = () => {
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
-                  Supir
+                  {t("driver_option")}
                 </label>
                 <select
                   value={withDriverFilter}
@@ -201,9 +218,9 @@ export const CarsPage: React.FC = () => {
                   }}
                   className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
-                  <option value="">Dengan/Tanpa Sopir</option>
-                  <option value="yes">Dengan Sopir</option>
-                  <option value="no">Lepas Kunci</option>
+                  <option value="">{t("filter_driver_all")}</option>
+                  <option value="yes">{t("with_driver_label")}</option>
+                  <option value="no">{t("filter_self_drive")}</option>
                 </select>
               </div>
             </div>
@@ -221,11 +238,9 @@ export const CarsPage: React.FC = () => {
           <div className="text-center py-20">
             <CarIcon className="h-16 w-16 text-gray-300 mx-auto mb-4" />
             <h3 className="text-xl font-semibold text-gray-600 mb-2">
-              Tidak ada mobil ditemukan
+              {t("no_cars")}
             </h3>
-            <p className="text-gray-400 text-sm">
-              Coba ubah filter pencarian Anda
-            </p>
+            <p className="text-gray-400 text-sm">{t("try_change_filter")}</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
@@ -244,7 +259,7 @@ export const CarsPage: React.FC = () => {
               variant="outline"
               size="sm"
             >
-              Previous
+              {t("previous")}
             </Button>
 
             {paginationItems.map((it, idx) =>
@@ -273,7 +288,7 @@ export const CarsPage: React.FC = () => {
               variant="outline"
               size="sm"
             >
-              Next
+              {t("next")}
             </Button>
           </div>
         )}
@@ -289,7 +304,7 @@ const CarCard: React.FC<{ car: Car }> = ({ car }) => {
     car.imageUrl ??
     "https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg"; // Default car image
 
-  const priceLabel = PRICE_UNIT_LABEL[car.priceUnit] ?? `/ ${car.priceUnit}`;
+  const priceLabel = getPriceUnitLabel(car.priceUnit);
 
   return (
     <Link to={`/cars/${car.slug}`} className="group block h-full">
@@ -305,12 +320,12 @@ const CarCard: React.FC<{ car: Car }> = ({ car }) => {
           {car.featured && (
             <div className="absolute top-4 right-4 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
               <Star className="h-4 w-4 fill-current" />
-              Featured
+              {t("featured")}
             </div>
           )}
           {car.withDriver && (
             <div className="absolute top-4 left-4 bg-blue-600/90 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-semibold shadow-sm">
-              + Sopir
+              {t("with_driver_label")}
             </div>
           )}
         </div>
@@ -318,37 +333,51 @@ const CarCard: React.FC<{ car: Car }> = ({ car }) => {
         {/* Content - p-6 to match Package style */}
         <div className="p-6 flex flex-col flex-grow">
           <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
-            {car.name}
+            {currentLang() === "zh" ? car.nameZh || car.name : car.name}
           </h3>
           <p className="text-gray-600 mb-4 line-clamp-2 text-sm">
-            {car.description ||
-              `${car.brand} ${car.model} ${car.year ? `· ${car.year}` : ""}`}
+            {currentLang() === "zh"
+              ? car.descriptionZh ||
+                car.description ||
+                `${car.brand} ${car.model}${car.year ? ` · ${car.year}` : ""}`
+              : car.description ||
+                `${car.brand} ${car.model}${car.year ? ` · ${car.year}` : ""}`}
           </p>
 
           <div className="space-y-2 mb-4 flex-grow">
             {car.seats > 0 && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Users className="h-4 w-4 text-blue-600" />
-                <span>{car.seats} Kursi</span>
+                <span>
+                  {car.seats} {currentLang() === "zh" ? "座" : t("seats")}
+                </span>
               </div>
             )}
             {car.transmission && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Settings2 className="h-4 w-4 text-blue-600" />
-                <span>{car.transmission}</span>
+                <span>
+                  {currentLang() === "zh"
+                    ? TRANSMISSION_ZH[car.transmission] || car.transmission
+                    : car.transmission}
+                </span>
               </div>
             )}
             {car.fuelType && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
                 <Fuel className="h-4 w-4 text-blue-600" />
-                <span>{car.fuelType}</span>
+                <span>
+                  {currentLang() === "zh"
+                    ? FUEL_ZH[car.fuelType] || car.fuelType
+                    : car.fuelType}
+                </span>
               </div>
             )}
           </div>
 
           <div className="flex items-center justify-between pt-4 border-t mt-auto">
             <div>
-              <p className="text-sm text-gray-600">Mulai dari</p>
+              <p className="text-sm text-gray-600">{t("starting_from")}</p>
               <div className="flex items-baseline gap-1">
                 <span className="text-2xl font-bold text-blue-600">
                   {formatPrice(
@@ -360,7 +389,7 @@ const CarCard: React.FC<{ car: Car }> = ({ car }) => {
               </div>
             </div>
             <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-              Detail
+              {t("details")}
             </button>
           </div>
         </div>

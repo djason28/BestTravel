@@ -53,8 +53,10 @@ type carForm struct {
 type CarDTO struct {
 	ID             string                `json:"id"`
 	Name           string                `json:"name"`
+	NameZh         string                `json:"nameZh"`
 	Slug           string                `json:"slug"`
 	Description    string                `json:"description"`
+	DescriptionZh  string                `json:"descriptionZh"`
 	Brand          string                `json:"brand"`
 	Model          string                `json:"model"`
 	Year           int                   `json:"year"`
@@ -68,9 +70,13 @@ type CarDTO struct {
 	MinDays        int                   `json:"minDays"`
 	WithDriver     bool                  `json:"withDriver"`
 	Features       models.StringArray    `json:"features"`
+	FeaturesZh     models.StringArray    `json:"featuresZh"`
 	Included       models.StringArray    `json:"included"`
+	IncludedZh     models.StringArray    `json:"includedZh"`
 	Excluded       models.StringArray    `json:"excluded"`
+	ExcludedZh     models.StringArray    `json:"excludedZh"`
 	Availability   string                `json:"availability"`
+	AvailabilityZh string                `json:"availabilityZh"`
 	Status         string                `json:"status"`
 	Featured       bool                  `json:"featured"`
 	ViewCount      int64                 `json:"viewCount"`
@@ -95,33 +101,39 @@ func toCarDTO(c models.Car) CarDTO {
 		prices = models.PriceList{{Amount: c.Price, Currency: c.Currency}}
 	}
 	return CarDTO{
-		ID:           c.ID,
-		Name:         c.Name,
-		Slug:         c.Slug,
-		Description:  c.Description,
-		Brand:        c.Brand,
-		Model:        c.Model,
-		Year:         c.Year,
-		Seats:        c.Seats,
-		Transmission: c.Transmission,
-		FuelType:     c.FuelType,
-		Prices:       prices,
-		Price:        c.Price,
-		Currency:     c.Currency,
-		PriceUnit:    c.PriceUnit,
-		MinDays:      c.MinDays,
-		WithDriver:   c.WithDriver,
-		Features:     c.Features,
-		Included:     c.Included,
-		Excluded:     c.Excluded,
-		Availability: c.Availability,
-		Status:       c.Status,
-		Featured:     c.Featured,
-		ViewCount:    c.ViewCount,
-		InquiryCount: c.InquiryCount,
-		Images:       images,
-		CreatedAt:    c.CreatedAt.Format("2006-01-02T15:04:05Z"),
-		UpdatedAt:    c.UpdatedAt.Format("2006-01-02T15:04:05Z"),
+		ID:             c.ID,
+		Name:           c.Name,
+		NameZh:         c.NameZh,
+		Slug:           c.Slug,
+		Description:    c.Description,
+		DescriptionZh:  c.DescriptionZh,
+		Brand:          c.Brand,
+		Model:          c.Model,
+		Year:           c.Year,
+		Seats:          c.Seats,
+		Transmission:   c.Transmission,
+		FuelType:       c.FuelType,
+		Prices:         prices,
+		Price:          c.Price,
+		Currency:       c.Currency,
+		PriceUnit:      c.PriceUnit,
+		MinDays:        c.MinDays,
+		WithDriver:     c.WithDriver,
+		Features:       c.Features,
+		FeaturesZh:     c.FeaturesZh,
+		Included:       c.Included,
+		IncludedZh:     c.IncludedZh,
+		Excluded:       c.Excluded,
+		ExcludedZh:     c.ExcludedZh,
+		Availability:   c.Availability,
+		AvailabilityZh: c.AvailabilityZh,
+		Status:         c.Status,
+		Featured:       c.Featured,
+		ViewCount:      c.ViewCount,
+		InquiryCount:   c.InquiryCount,
+		Images:         images,
+		CreatedAt:      c.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		UpdatedAt:      c.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 }
 
@@ -395,12 +407,8 @@ func (h *CarController) Update(c *gin.Context) {
 		car.MinDays = req.MinDays
 	}
 	car.WithDriver = req.WithDriver
-	if len(req.Features) > 0 {
-		car.Features = models.StringArray(req.Features)
-	}
-	if len(req.FeaturesZh) > 0 {
-		car.FeaturesZh = models.StringArray(req.FeaturesZh)
-	}
+	car.Features = models.StringArray(req.Features)
+	car.FeaturesZh = models.StringArray(req.FeaturesZh)
 	if len(req.Included) >= 0 {
 		car.Included = models.StringArray(req.Included)
 	}
