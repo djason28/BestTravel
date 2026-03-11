@@ -35,12 +35,14 @@ BestTravel/
 ## Prerequisites
 
 ### Local Development (Manual Run — Recommended for Testing)
+
 - **Go** 1.22+ (backend)
 - **Node.js** 18+ (frontend)
 - **MySQL** (Laragon or standalone) OR SQLite (default for quick start)
 - **CompileDaemon** (optional, for live Go reload): `go install github.com/githubnemo/CompileDaemon@latest`
 
 ### Docker Testing (Optional)
+
 - **Docker Desktop** (Windows) or Docker Engine + Compose plugin
 
 ## Quick Start (Local Dev – Manual)
@@ -70,10 +72,11 @@ copy .env.example .env
 
 ```powershell
 cd core
-CompileDaemon --build="go build -o ..\bin\server.exe .\cmd\server" --command="..\bin\server.exe" --pattern="\.go$" --exclude-dir=bin,vendor --color=true
+CompileDaemon -command="./server" -build="go build -o server ./cmd/server"
 ```
 
 **Linux/macOS (fish shell):**
+
 ```fish
 cd core
 # First time: add Go bin to PATH
@@ -84,6 +87,7 @@ CompileDaemon --build="go build -o ../bin/server ./cmd/server" --command="../bin
 ```
 
 **Linux/macOS (bash/zsh):**
+
 ```bash
 cd core
 CompileDaemon --build="go build -o ../bin/server ./cmd/server" --command="../bin/server" --pattern="\.go$" --exclude-dir=bin,vendor --color=true
@@ -141,6 +145,7 @@ docker compose up -d --build
 ```
 
 Services:
+
 - **Backend**: Exposed internally on port 8080
 - **Caddy**: Port 80 (HTTP) and 443 (HTTPS if domain configured)
   - Serves frontend from `views/dist`
@@ -162,20 +167,24 @@ docker compose down
 ## Recommended Workflow
 
 ### For Active Development (Local Testing)
+
 ✅ **Manual run with CompileDaemon + npm run dev**
 
 **Why?**
+
 - **Instant feedback**: Backend auto-reloads on `.go` changes; frontend HMR (Hot Module Replacement)
 - **Fast iteration**: No container rebuild needed
 - **Easier debugging**: Direct logs in terminal, breakpoints work natively
 
 **When to use Docker:**
+
 - Testing production build behavior
 - Validating Caddy config or HTTPS setup
 - Simulating deployment environment
 - CI/CD dry runs
 
 ### For Production Deploy
+
 ✅ **Docker Compose** (see `docs/DEPLOY_ROCKY.md`)
 
 ---
@@ -184,19 +193,19 @@ docker compose down
 
 Key variables in `.env` (see `.env.example` for full list):
 
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `APP_ENV` | Environment mode | `development` \| `production` |
-| `PORT` | Backend port | `8080` |
-| `CORS_ORIGINS` | Allowed frontend origins | `http://localhost:5173` |
-| `JWT_SECRET` | JWT signing secret | Strong random string (32+ chars) |
-| `DB_DRIVER` | Database type | `mysql` \| `sqlite` |
-| `DB_HOST` | MySQL host | `127.0.0.1` |
-| `DB_PORT` | MySQL port | `3306` |
-| `DB_USER` | MySQL user | `root` |
-| `DB_PASSWORD` | MySQL password | (leave blank for Laragon default) |
-| `DB_NAME` | Database name | `besttravel` |
-| `VITE_API_URL` | Frontend API base | `http://localhost:8080/api` |
+| Variable       | Description              | Example                           |
+| -------------- | ------------------------ | --------------------------------- |
+| `APP_ENV`      | Environment mode         | `development` \| `production`     |
+| `PORT`         | Backend port             | `8080`                            |
+| `CORS_ORIGINS` | Allowed frontend origins | `http://localhost:5173`           |
+| `JWT_SECRET`   | JWT signing secret       | Strong random string (32+ chars)  |
+| `DB_DRIVER`    | Database type            | `mysql` \| `sqlite`               |
+| `DB_HOST`      | MySQL host               | `127.0.0.1`                       |
+| `DB_PORT`      | MySQL port               | `3306`                            |
+| `DB_USER`      | MySQL user               | `root`                            |
+| `DB_PASSWORD`  | MySQL password           | (leave blank for Laragon default) |
+| `DB_NAME`      | Database name            | `besttravel`                      |
+| `VITE_API_URL` | Frontend API base        | `http://localhost:8080/api`       |
 
 ---
 
@@ -222,6 +231,7 @@ Key variables in `.env` (see `.env.example` for full list):
 ## Scripts & Commands
 
 ### Backend (from `core/`)
+
 ```powershell
 go run ./cmd/server              # Run backend
 go build -o server.exe ./cmd/server  # Build binary
@@ -229,6 +239,7 @@ go test ./...                    # Run tests (if present)
 ```
 
 ### Frontend (from `views/`)
+
 ```powershell
 npm install      # Install dependencies
 npm run dev      # Dev server (http://localhost:5173)
@@ -237,12 +248,15 @@ npm run preview  # Preview production build
 npm run lint     # ESLint
 npm run typecheck # TypeScript check
 ```
+
 #### Dev Tips
+
 - If the dev tab shows a white screen, close old tabs and restart the dev server with `--force`.
 - Use an incognito/private window to avoid cached module graphs or extension interference.
 - Ensure you're opening the correct port printed by Vite.
 
 ### Docker (from root)
+
 ```powershell
 docker compose up -d --build     # Start all services
 docker compose logs -f           # Follow logs
@@ -268,22 +282,26 @@ docker compose down              # Stop & remove containers
 ## Troubleshooting
 
 ### Backend won't start
+
 - Check `.env` is present in root (not `core/.env`)
 - Verify MySQL is running if `DB_DRIVER=mysql`
 - Check port 8080 isn't already in use
 - Run `go mod tidy` if dependency errors
 
 ### Frontend 404 or CORS errors
+
 - Ensure `VITE_API_URL=http://localhost:8080/api` in `.env`
 - Backend must be running on port 8080
 - Check backend logs for CORS errors; verify `CORS_ORIGINS` includes `http://localhost:5173`
- - Browser shows source map warnings for dependencies (react/lucide): safe to ignore in dev.
+- Browser shows source map warnings for dependencies (react/lucide): safe to ignore in dev.
 
 ### Docker: "address already in use"
+
 - Stop local backend/frontend if running manually
 - Check what's using port 80/443: `netstat -ano | findstr :80`
 
 ### Database connection failed
+
 - MySQL: verify credentials, ensure DB exists, check if service is running
 - SQLite: ensure `./data/` folder is writable
 
@@ -294,6 +312,7 @@ docker compose down              # Stop & remove containers
 See **[docs/DEPLOY_ROCKY.md](docs/DEPLOY_ROCKY.md)** for full production deploy guide (Rocky Linux + Docker + Caddy HTTPS).
 
 Quick summary:
+
 1. Clone repo on server
 2. Set production `.env` (strong secrets, real domain, MySQL)
 3. Build frontend: `docker run --rm -v "$(pwd)/views":/app -w /app node:20-alpine sh -c "npm ci && npm run build"`
@@ -321,6 +340,7 @@ This project is private. Contact the repository owner for licensing information.
 ## Support
 
 For issues or questions:
+
 - Open an issue on GitHub
 - Check existing documentation in `docs/`
 - Review `SECURITY.md` for security-related queries

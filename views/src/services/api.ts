@@ -15,15 +15,6 @@ import type {
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || "/api";
 
-const langParam = () => {
-  // Prefer cookie
-  const match = document.cookie.match(/(?:^|; )lang=([^;]+)/);
-  const cookieLang = match ? decodeURIComponent(match[1]) : null;
-  const localLang = localStorage.getItem("lang");
-  const lang = cookieLang || localLang;
-  return lang === "zh" ? "lang=zh" : "";
-};
-
 export class ApiError extends Error {
   status: number;
   validationErrors?: Record<string, string>;
