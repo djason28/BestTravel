@@ -543,14 +543,14 @@ export const PackageFormPage: React.FC = () => {
               value={includedText}
               onChange={(e) => setIncludedText(e.target.value)}
               rows={6}
-              placeholder="Transport\nAccommodation\nMeals\nTour guide"
+              placeholder={"Transport\nAccommodation\nMeals\nTour guide"}
             />
             <Textarea
               label="What's Excluded (one item per line)"
               value={excludedText}
               onChange={(e) => setExcludedText(e.target.value)}
               rows={6}
-              placeholder="Personal expenses\nTips\nAccommodation"
+              placeholder={"Personal expenses\nTips\nAccommodation"}
             />
             <div className="border-b pb-4 mt-4">
               <h2 className="text-xl font-bold text-gray-900">
@@ -575,6 +575,7 @@ export const PackageFormPage: React.FC = () => {
                     value={p.amount}
                     min={1}
                     placeholder="Harga"
+                    onFocus={(e) => e.target.select()}
                     onChange={(e) =>
                       onPriceChange(idx, "amount", e.target.value)
                     }
@@ -635,6 +636,7 @@ export const PackageFormPage: React.FC = () => {
                   type="number"
                   name="minParticipants"
                   value={form.minParticipants}
+                  onFocus={(e) => e.target.select()}
                   onChange={onChange}
                   min={1}
                   className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -649,6 +651,7 @@ export const PackageFormPage: React.FC = () => {
                   type="number"
                   name="maxParticipants"
                   value={form.maxParticipants}
+                  onFocus={(e) => e.target.select()}
                   onChange={onChange}
                   min={1}
                   className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
@@ -662,6 +665,7 @@ export const PackageFormPage: React.FC = () => {
                 name="duration"
                 type="number"
                 value={form.duration}
+                onFocus={(e) => e.target.select()}
                 onChange={onChange}
                 placeholder="3"
                 required
@@ -993,14 +997,14 @@ export const PackageFormPage: React.FC = () => {
               value={includedZhText}
               onChange={(e) => setIncludedZhText(e.target.value)}
               rows={6}
-              placeholder="交通\n住宿\n餐食\n导游"
+              placeholder={"交通\n住宿\n餐食\n导游"}
             />
             <Textarea
               label="费用不含 (每行一条)"
               value={excludedZhText}
               onChange={(e) => setExcludedZhText(e.target.value)}
               rows={6}
-              placeholder="个人消费\n旅游保险\n小费"
+              placeholder={"个人消费\n旅游保险\n小费"}
             />
             <div className="mt-10 border-t pt-6 space-y-4">
               <div>

@@ -15,6 +15,6 @@ func SecureHeaders() gin.HandlerFunc {
 		STSIncludeSubdomains:  true,
 		ReferrerPolicy:        "strict-origin-when-cross-origin",
 		FeaturePolicy:         "geolocation 'none'; microphone 'none'; camera 'none'",
-		ContentSecurityPolicy: "default-src 'self' data: blob:; img-src 'self' data: blob: https:;",
+		ContentSecurityPolicy: "default-src 'self' blob:; script-src 'self'; img-src 'self' data: blob: https:;",
 	})
 }

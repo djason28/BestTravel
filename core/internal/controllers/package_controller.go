@@ -146,7 +146,7 @@ func toDTO(p models.Package, includeDetail bool) PackageDTO {
 
 func (h *PackageController) GetAll(c *gin.Context) {
 	isAdmin := false
-	if role, ok := c.Get("role"); ok && role == "admin" {
+	if role, ok := c.Get("role"); ok && (role == "admin" || role == "editor") {
 		isAdmin = true
 	}
 	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
@@ -223,7 +223,7 @@ func (h *PackageController) GetBySlug(c *gin.Context) {
 	defer cancel()
 	q := database.DB.WithContext(ctx)
 	isAdmin := false
-	if role, ok := c.Get("role"); ok && role == "admin" {
+	if role, ok := c.Get("role"); ok && (role == "admin" || role == "editor") {
 		isAdmin = true
 	}
 	if !isAdmin {

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate, Link } from "react-router-dom";
-import { Lock, Mail, Eye, EyeOff, Waves } from "lucide-react";
+import { useNavigate, useLocation, Link } from "react-router-dom";
+import { Lock, Mail, Eye, EyeOff, Waves, ArrowLeft, X } from "lucide-react";
 import longLogo from "@/assets/branding/logo pendek.png";
 import { useAuth } from "../../contexts/AuthContext";
 import { useToast } from "../../contexts/ToastContext";
@@ -8,12 +8,43 @@ import { validateEmail, sanitizeInput } from "../../utils/security";
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { login, isAuthenticated } = useAuth();
   const { addToast } = useToast();
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [formData, setFormData] = useState({ email: "", password: "" });
   const [errors, setErrors] = useState<Record<string, string>>({});
+
+  // Pre-login verification gate
+  const [verified, setVerified] = useState(false);
+  const [verifyCode, setVerifyCode] = useState("");
+  const [verifyError, setVerifyError] = useState(false);
+
+  // Detect modal mode (triggered via background location from Footer)
+  const isModal = !!(location.state as { backgroundLocation?: unknown } | null)
+    ?.backgroundLocation;
+  // Skip verify step if navigated from the modal after successful verification
+  const skipVerify = !!(location.state as { skipVerify?: boolean } | null)
+    ?.skipVerify;
+
+  const handleVerify = () => {
+    if (verifyCode === "djason28") {
+      setVerifyError(false);
+      if (isModal) {
+        // Verify popup was over the website → navigate to full-page login, skipping verify step
+        navigate("/admin/login", {
+          state: { skipVerify: true },
+          replace: true,
+        });
+      } else {
+        setVerified(true);
+      }
+    } else {
+      setVerifyError(true);
+      setVerifyCode("");
+    }
+  };
 
   useEffect(() => {
     if (isAuthenticated) navigate("/admin/dashboard");
@@ -60,8 +91,205 @@ export const LoginPage: React.FC = () => {
     }
   };
 
+  // ── Modal mode: overlay on top of the public website ──────────────────────
+  if (isModal) {
+    return (
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm p-4">
+        <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm relative overflow-hidden">
+          {/* Back / close button */}
+          <button
+            type="button"
+            onClick={() => navigate(-1)}
+            className="absolute top-4 right-4 p-1.5 rounded-lg text-gray-400 hover:text-gray-600 hover:bg-gray-100 transition-colors z-10"
+            aria-label="Back"
+          >
+            <X className="h-5 w-5" />
+          </button>
+
+          {!verified ? (
+            /* ── Verify step ── */
+            <div className="flex flex-col items-center gap-4 p-8 pt-10">
+              <div className="w-12 h-12 rounded-full bg-sky-50 flex items-center justify-center">
+                <Lock className="h-6 w-6 text-[#0891b2]" />
+              </div>
+              <input
+                type="password"
+                value={verifyCode}
+                onChange={(e) => {
+                  setVerifyCode(e.target.value);
+                  setVerifyError(false);
+                }}
+                onKeyDown={(e) => e.key === "Enter" && handleVerify()}
+                placeholder="input here"
+                autoFocus
+                className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#0891b2] bg-gray-50"
+              />
+              {verifyError && (
+                <p className="text-red-500 text-sm font-medium -mt-1">wrong!</p>
+              )}
+              <button
+                type="button"
+                onClick={handleVerify}
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-sky-700 to-teal-600 text-white text-sm font-semibold hover:from-sky-800 hover:to-teal-700 transition-all shadow-md"
+              >
+                Continue
+              </button>
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition-colors"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </button>
+            </div>
+          ) : (
+            /* ── Login form ── */
+            <div className="p-8">
+              <div className="mb-6">
+                <h1 className="text-xl font-bold text-sky-900">Welcome back</h1>
+                <p className="text-gray-500 text-sm mt-1">
+                  Sign in to your admin account
+                </p>
+              </div>
+              <form onSubmit={handleSubmit} className="space-y-4">
+                <div>
+                  <label
+                    htmlFor="modal-email"
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                  >
+                    Email address
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      id="modal-email"
+                      name="email"
+                      type="email"
+                      autoComplete="email"
+                      value={formData.email}
+                      onChange={handleChange}
+                      className={`w-full pl-10 pr-4 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all ${
+                        errors.email
+                          ? "border-red-400 bg-red-50"
+                          : "border-gray-200 bg-gray-50 focus:bg-white"
+                      }`}
+                      placeholder="admin@example.com"
+                    />
+                  </div>
+                  {errors.email && (
+                    <p className="mt-1.5 text-xs text-red-500">
+                      {errors.email}
+                    </p>
+                  )}
+                </div>
+                <div>
+                  <label
+                    htmlFor="modal-password"
+                    className="block text-sm font-medium text-gray-700 mb-1.5"
+                  >
+                    Password
+                  </label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <input
+                      id="modal-password"
+                      name="password"
+                      type={showPassword ? "text" : "password"}
+                      autoComplete="current-password"
+                      value={formData.password}
+                      onChange={handleChange}
+                      className={`w-full pl-10 pr-11 py-2.5 border rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 transition-all ${
+                        errors.password
+                          ? "border-red-400 bg-red-50"
+                          : "border-gray-200 bg-gray-50 focus:bg-white"
+                      }`}
+                      placeholder="••••••••"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword((v) => !v)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-teal-600 transition-colors"
+                      tabIndex={-1}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
+                  {errors.password && (
+                    <p className="mt-1.5 text-xs text-red-500">
+                      {errors.password}
+                    </p>
+                  )}
+                </div>
+                <button
+                  type="submit"
+                  disabled={isLoading}
+                  className="w-full py-2.5 rounded-xl font-semibold text-sm text-white transition-all mt-1 flex items-center justify-center gap-2 bg-gradient-to-r from-sky-700 to-teal-600 hover:from-sky-800 hover:to-teal-700 disabled:opacity-60 disabled:cursor-not-allowed shadow-md"
+                >
+                  {isLoading ? (
+                    <>
+                      <span className="h-4 w-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Signing in...
+                    </>
+                  ) : (
+                    "Sign In"
+                  )}
+                </button>
+              </form>
+              <button
+                type="button"
+                onClick={() => navigate(-1)}
+                className="mt-4 flex items-center gap-1.5 text-sm text-gray-400 hover:text-gray-600 transition-colors mx-auto"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Back
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // ── Full-page mode: direct URL access ─────────────────────────────────────
   return (
     <div className="min-h-screen flex">
+      {/* Pre-login verification overlay */}
+      {!verified && !skipVerify && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-gradient-to-br from-[#0c4a6e]/90 to-[#0d9488]/90 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl p-8 w-full max-w-xs flex flex-col items-center gap-4">
+            <div className="w-12 h-12 rounded-full bg-sky-50 flex items-center justify-center mb-1">
+              <Lock className="h-6 w-6 text-[#0891b2]" />
+            </div>
+            <input
+              type="password"
+              value={verifyCode}
+              onChange={(e) => {
+                setVerifyCode(e.target.value);
+                setVerifyError(false);
+              }}
+              onKeyDown={(e) => e.key === "Enter" && handleVerify()}
+              placeholder="input here"
+              autoFocus
+              className="w-full px-4 py-2.5 border border-gray-200 rounded-xl text-sm text-center focus:outline-none focus:ring-2 focus:ring-[#0891b2] bg-gray-50"
+            />
+            {verifyError && (
+              <p className="text-red-500 text-sm font-medium -mt-1">wrong!</p>
+            )}
+            <button
+              type="button"
+              onClick={handleVerify}
+              className="w-full py-2.5 rounded-xl bg-gradient-to-r from-sky-700 to-teal-600 text-white text-sm font-semibold hover:from-sky-800 hover:to-teal-700 transition-all shadow-md"
+            >
+              Continue
+            </button>
+          </div>
+        </div>
+      )}
       {/* Left panel — ocean/nature branding */}
       <div
         className="hidden lg:flex flex-col justify-between w-1/2 p-12 text-white relative overflow-hidden"

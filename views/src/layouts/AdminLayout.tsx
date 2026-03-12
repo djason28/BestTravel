@@ -27,7 +27,7 @@ export const AdminLayout: React.FC = () => {
     try {
       await logout();
       addToast("Logged out successfully", "success");
-      navigate("/admin/login");
+      navigate("/admin/login", { state: { skipVerify: true } });
     } catch (error) {
       addToast("Logout failed", "error");
     }

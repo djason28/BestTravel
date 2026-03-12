@@ -67,6 +67,15 @@ func (h *AuthController) Refresh(c *gin.Context) {
 		fail(c, http.StatusUnauthorized, "invalid token")
 		return
 	}
+	// Check blacklist by jti before issuing a new token
+	if claims.ID != "" {
+		var count int64
+		database.DB.Model(&models.TokenBlacklist{}).Where("jti = ?", claims.ID).Count(&count)
+		if count > 0 {
+			fail(c, http.StatusUnauthorized, "token revoked")
+			return
+		}
+	}
 	newToken, _, err := utils.GenerateJWT(h.cfg, claims.UserID, claims.Email, claims.Role)
 	if err != nil {
 		fail(c, http.StatusInternalServerError, "failed to refresh token")
@@ -80,10 +89,10 @@ func (h *AuthController) Logout(c *gin.Context) {
 	if strings.HasPrefix(auth, "Bearer ") {
 		tokenStr := strings.TrimPrefix(auth, "Bearer ")
 		claims, err := utils.ParseJWT(h.cfg, tokenStr)
-		if err == nil {
-			// Add to blacklist
+		if err == nil && claims.ID != "" {
+			// Store jti in blacklist (small UUID, not full token string)
 			_ = database.DB.Create(&models.TokenBlacklist{
-				Token:     tokenStr,
+				JTI:       claims.ID,
 				ExpiresAt: claims.ExpiresAt.Time,
 			}).Error
 		}

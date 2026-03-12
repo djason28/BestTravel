@@ -174,7 +174,7 @@ export const en = {
     "Join thousands of satisfied travelers and experience Indonesia like never before",
   story_combined:
     "Founded in 2015, Best Travel Agency was born from a passion for exploration and a desire to share the beauty of Indonesia with travelers from around the world. What started as a small team of dedicated travel enthusiasts has grown into one of the most trusted travel agencies in the region.\n\nWe believe that travel is more than just visiting new places—it's about creating meaningful connections, experiencing different cultures, and making memories that last a lifetime. Our mission is to craft personalized travel experiences that go beyond the ordinary, taking you to hidden gems and iconic destinations alike.\n\nWith over a decade of experience and thousands of satisfied travelers, we continue to innovate and improve our services, ensuring that every journey with us is exceptional. Our deep knowledge of Indonesia's diverse landscapes, rich culture, and warm hospitality allows us to create authentic experiences that truly capture the spirit of each destination.",
-  header_subtagline_header: "Exclusive Trip",
+  header_subtagline_header: "Exclusive Travel",
   // Cars Page
   cars_page_title: "Car Rental",
   cars_page_subtitle:

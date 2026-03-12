@@ -164,11 +164,6 @@ export const CarFormPage: React.FC = () => {
       addToast("Nama mobil wajib diisi", "error");
       return;
     }
-    if (!form.brand.trim()) {
-      addToast("Brand wajib diisi", "error");
-      return;
-    }
-
     setIsSaving(true);
     const payload = {
       ...form,
@@ -210,7 +205,18 @@ export const CarFormPage: React.FC = () => {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-6 max-w-4xl mx-auto">
+    <form
+      onSubmit={handleSubmit}
+      onKeyDown={(e) => {
+        if (
+          e.key === "Enter" &&
+          (e.target as HTMLElement).tagName !== "TEXTAREA"
+        ) {
+          e.preventDefault();
+        }
+      }}
+      className="space-y-6 max-w-4xl mx-auto"
+    >
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -275,38 +281,12 @@ export const CarFormPage: React.FC = () => {
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
-              Brand <span className="text-red-500">*</span>
-            </label>
-            <input
-              type="text"
-              value={form.brand}
-              onChange={(e) => onChange("brand", e.target.value)}
-              placeholder="cth. Toyota"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              required
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              Model
-            </label>
-            <input
-              type="text"
-              value={form.model}
-              onChange={(e) => onChange("model", e.target.value)}
-              placeholder="cth. Avanza"
-              className="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            />
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
               Tahun
             </label>
             <input
               type="number"
               value={form.year}
+              onFocus={(e) => e.target.select()}
               onChange={(e) =>
                 onChange("year", parseInt(e.target.value, 10) || 0)
               }
@@ -323,6 +303,7 @@ export const CarFormPage: React.FC = () => {
             <input
               type="number"
               value={form.seats}
+              onFocus={(e) => e.target.select()}
               onChange={(e) =>
                 onChange("seats", parseInt(e.target.value, 10) || 0)
               }
@@ -413,6 +394,7 @@ export const CarFormPage: React.FC = () => {
             <input
               type="number"
               value={form.minDays}
+              onFocus={(e) => e.target.select()}
               onChange={(e) =>
                 onChange("minDays", parseInt(e.target.value, 10) || 1)
               }
@@ -428,6 +410,7 @@ export const CarFormPage: React.FC = () => {
               <input
                 type="number"
                 value={p.amount}
+                onFocus={(e) => e.target.select()}
                 onChange={(e) => onPriceChange(idx, "amount", e.target.value)}
                 placeholder="Nominal harga"
                 min={0}

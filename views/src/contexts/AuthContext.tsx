@@ -49,9 +49,29 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkAuth();
   }, []);
 
+  /** Decode JWT payload without verification (client-side check only). */
+  const isTokenExpired = (jwt: string): boolean => {
+    try {
+      const payload = JSON.parse(atob(jwt.split(".")[1]));
+      // exp is in seconds; add 10s leeway for clock skew
+      return (
+        typeof payload.exp === "number" &&
+        payload.exp * 1000 < Date.now() - 10_000
+      );
+    } catch {
+      return true; // unparseable → treat as expired
+    }
+  };
+
   const checkAuth = async () => {
     const existing = token || localStorage.getItem("auth_token");
     if (!existing) {
+      setLoadingAuth(false);
+      return;
+    }
+    // Skip the network round-trip if the token is already expired on the client side
+    if (isTokenExpired(existing)) {
+      clearAuth();
       setLoadingAuth(false);
       return;
     }

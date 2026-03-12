@@ -1,4 +1,10 @@
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import {
+  BrowserRouter,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import { ToastContainer } from "./components/common/Toast";
@@ -100,6 +106,68 @@ const CacheWarm: React.FC = () => {
   return null;
 };
 
+function AppRoutes() {
+  const location = useLocation();
+  const bgLocation = (
+    location.state as { backgroundLocation?: typeof location } | null
+  )?.backgroundLocation;
+
+  return (
+    <>
+      <Suspense fallback={<ContentLoader overlay minHeight={400} />}>
+        <Routes location={bgLocation ?? location}>
+          <Route path="/" element={<PublicLayout />}>
+            <Route index element={<HomePage />} />
+            <Route path="packages" element={<PackagesPage />} />
+            <Route path="packages/:slug" element={<PackageDetailPage />} />
+            <Route path="contact" element={<ContactPage />} />
+            <Route path="about" element={<AboutPage />} />
+            <Route path="cars" element={<PublicCarsPage />} />
+            <Route path="cars/:slug" element={<CarDetailPage />} />
+          </Route>
+
+          {!bgLocation && <Route path="/admin/login" element={<LoginPage />} />}
+
+          <Route
+            path="/admin"
+            element={
+              <ProtectedRoute>
+                <AdminLayout />
+              </ProtectedRoute>
+            }
+          >
+            <Route index element={<Navigate to="/admin/dashboard" replace />} />
+            <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="packages" element={<AdminPackagesPage />} />
+            <Route path="packages/new" element={<PackageFormPage />} />
+            <Route path="packages/:id/edit" element={<PackageFormPage />} />
+            <Route
+              path="packages/:id/preview"
+              element={<PackagePreviewPage />}
+            />
+            <Route path="inquiries" element={<InquiriesPage />} />
+            <Route path="cars" element={<AdminCarsPage />} />
+            <Route path="cars/new" element={<CarFormPage />} />
+            <Route path="cars/:id/edit" element={<CarFormPage />} />
+            <Route path="profile" element={<ProfilePage />} />
+            <Route path="admins" element={<AdminsPage />} />
+          </Route>
+
+          <Route path="*" element={<Navigate to="/" replace />} />
+        </Routes>
+
+        {bgLocation && (
+          <Routes>
+            <Route path="/admin/login" element={<LoginPage />} />
+          </Routes>
+        )}
+      </Suspense>
+      <CacheWarm />
+      <IdleTasks />
+    </>
+  );
+}
+
 function App() {
   return (
     <ErrorBoundary>
@@ -110,67 +178,7 @@ function App() {
               <NavigationProvider>
                 <ToastProvider>
                   <ToastContainer />
-                  <Suspense
-                    fallback={<ContentLoader overlay minHeight={400} />}
-                  >
-                    <Routes>
-                      <Route path="/" element={<PublicLayout />}>
-                        <Route index element={<HomePage />} />
-                        <Route path="packages" element={<PackagesPage />} />
-                        <Route
-                          path="packages/:slug"
-                          element={<PackageDetailPage />}
-                        />
-                        <Route path="contact" element={<ContactPage />} />
-                        <Route path="about" element={<AboutPage />} />
-                        <Route path="cars" element={<PublicCarsPage />} />
-                        <Route path="cars/:slug" element={<CarDetailPage />} />
-                      </Route>
-
-                      <Route path="/admin/login" element={<LoginPage />} />
-
-                      <Route
-                        path="/admin"
-                        element={
-                          <ProtectedRoute>
-                            <AdminLayout />
-                          </ProtectedRoute>
-                        }
-                      >
-                        <Route
-                          index
-                          element={<Navigate to="/admin/dashboard" replace />}
-                        />
-                        <Route path="dashboard" element={<DashboardPage />} />
-                        <Route
-                          path="packages"
-                          element={<AdminPackagesPage />}
-                        />
-                        <Route
-                          path="packages/new"
-                          element={<PackageFormPage />}
-                        />
-                        <Route
-                          path="packages/:id/edit"
-                          element={<PackageFormPage />}
-                        />
-                        <Route
-                          path="packages/:id/preview"
-                          element={<PackagePreviewPage />}
-                        />
-                        <Route path="inquiries" element={<InquiriesPage />} />
-                        <Route path="cars" element={<AdminCarsPage />} />
-                        <Route path="cars/new" element={<CarFormPage />} />
-                        <Route path="cars/:id/edit" element={<CarFormPage />} />
-                        <Route path="profile" element={<ProfilePage />} />
-                        <Route path="admins" element={<AdminsPage />} />
-                      </Route>
-
-                      <Route path="*" element={<Navigate to="/" replace />} />
-                    </Routes>
-                  </Suspense>
-                  <CacheWarm />
-                  <IdleTasks />
+                  <AppRoutes />
                 </ToastProvider>
               </NavigationProvider>
             </DataCacheProvider>

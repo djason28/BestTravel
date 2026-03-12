@@ -6,6 +6,7 @@ import (
 	"besttravel/internal/config"
 
 	"github.com/golang-jwt/jwt/v5"
+	"github.com/google/uuid"
 )
 
 type Claims struct {
@@ -22,8 +23,12 @@ func GenerateJWT(cfg *config.Config, userID, email, role string) (string, time.T
 		Email:  email,
 		Role:   role,
 		RegisteredClaims: jwt.RegisteredClaims{
+			ID:        uuid.NewString(), // jti — unique per token, enables precise revocation
+			Issuer:    cfg.JWTIssuer,
+			Audience:  jwt.ClaimStrings{cfg.JWTAudience},
 			ExpiresAt: jwt.NewNumericDate(exp),
 			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			NotBefore: jwt.NewNumericDate(time.Now()),
 		},
 	}
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
@@ -32,8 +37,13 @@ func GenerateJWT(cfg *config.Config, userID, email, role string) (string, time.T
 }
 
 func ParseJWT(cfg *config.Config, tokenStr string) (*Claims, error) {
-	token, err := jwt.ParseWithClaims(tokenStr, &Claims{}, func(token *jwt.Token) (interface{}, error) {
-		// Enforce HMAC signing method to avoid alg confusion attacks
+	parser := jwt.NewParser(
+		jwt.WithValidMethods([]string{jwt.SigningMethodHS256.Alg()}), // enforce HMAC-SHA256 only
+		jwt.WithIssuer(cfg.JWTIssuer),
+		jwt.WithAudience(cfg.JWTAudience),
+		jwt.WithExpirationRequired(),
+	)
+	token, err := parser.ParseWithClaims(tokenStr, &Claims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, jwt.ErrTokenSignatureInvalid
 		}

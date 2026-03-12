@@ -31,11 +31,28 @@ type inquiryReq struct {
 	Source        string `json:"source"`
 }
 
+var allowedInquirySources = map[string]struct{}{
+	"form": {}, "detail": {}, "contact": {}, "whatsapp": {}, "car": {},
+}
+
 func (h *InquiryController) Create(c *gin.Context) {
 	var req inquiryReq
 	if err := c.ShouldBindJSON(&req); err != nil {
 		fail(c, http.StatusBadRequest, "invalid request body")
 		return
+	}
+	// Field length caps — prevent large-payload DoS
+	if len(req.Name) > 120 || len(req.Message) > 4000 ||
+		len(req.Email) > 254 || len(req.Phone) > 30 || len(req.PackageTitle) > 200 {
+		fail(c, http.StatusBadRequest, "one or more fields exceed allowed length")
+		return
+	}
+	// Whitelist source to prevent arbitrary string injection
+	source := req.Source
+	if source == "" {
+		source = "form"
+	} else if _, ok := allowedInquirySources[source]; !ok {
+		source = "form" // silently normalise unknown source
 	}
 	inq := models.Inquiry{
 		ID:            uuid.NewString(),
@@ -47,7 +64,7 @@ func (h *InquiryController) Create(c *gin.Context) {
 		Message:       req.Message,
 		Participants:  req.Participants,
 		PreferredDate: req.PreferredDate,
-		Source:        utils.Or(req.Source, "form"),
+		Source:        source,
 		Status:        "new",
 	}
 	if err := database.Ctx(c).Create(&inq).Error; err != nil {

@@ -28,19 +28,22 @@ func AuthRequired(cfg *config.Config) gin.HandlerFunc {
 		}
 		token := strings.TrimPrefix(auth, "Bearer ")
 
-		// Check blacklist
-		var count int64
-		database.DB.Model(&models.TokenBlacklist{}).Where("token = ?", token).Count(&count)
-		if count > 0 {
-			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"success": false, "error": "token revoked"})
-			return
-		}
-
 		claims, err := utils.ParseJWT(cfg, token)
 		if err != nil {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"success": false, "error": "invalid token"})
 			return
 		}
+
+		// Check blacklist by jti (fast UUID primary key lookup)
+		if claims.ID != "" {
+			var count int64
+			database.DB.Model(&models.TokenBlacklist{}).Where("jti = ?", claims.ID).Count(&count)
+			if count > 0 {
+				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"success": false, "error": "token revoked"})
+				return
+			}
+		}
+
 		c.Set(string(CtxUserID), claims.UserID)
 		c.Set(string(CtxUserRole), claims.Role)
 		c.Next()
@@ -64,20 +67,20 @@ func OptionalAuth(cfg *config.Config) gin.HandlerFunc {
 		auth := c.GetHeader("Authorization")
 		if strings.HasPrefix(auth, "Bearer ") {
 			token := strings.TrimPrefix(auth, "Bearer ")
-
-			// Check blacklist
-			var count int64
-			database.DB.Model(&models.TokenBlacklist{}).Where("token = ?", token).Count(&count)
-			if count > 0 {
-				// Treat as if no token provided
-				c.Next()
-				return
-			}
-
 			claims, err := utils.ParseJWT(cfg, token)
 			if err == nil {
-				c.Set(string(CtxUserID), claims.UserID)
-				c.Set(string(CtxUserRole), claims.Role)
+				// Check blacklist by jti
+				if claims.ID != "" {
+					var count int64
+					database.DB.Model(&models.TokenBlacklist{}).Where("jti = ?", claims.ID).Count(&count)
+					if count == 0 {
+						c.Set(string(CtxUserID), claims.UserID)
+						c.Set(string(CtxUserRole), claims.Role)
+					}
+				} else {
+					c.Set(string(CtxUserID), claims.UserID)
+					c.Set(string(CtxUserRole), claims.Role)
+				}
 			}
 		}
 		c.Next()

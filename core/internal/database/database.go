@@ -71,6 +71,11 @@ func Init(cfg *config.Config) {
 		log.Fatalf("unsupported DB driver '%s'", cfg.DBDriver)
 	}
 
+	// Migrate token_blacklists schema: PK changed from `token` (512 chars) to `jti` (36 chars).
+	// Drop and recreate is safe — blacklisted tokens expire within JWT_TTL_MINUTES anyway.
+	// Only runs if the old schema (token column as PK) is detected.
+	migrateTokenBlacklist(DB)
+
 	// Auto migrate models
 	if err := DB.AutoMigrate(
 		&models.User{},
@@ -153,4 +158,17 @@ func Ctx(c *gin.Context) *gorm.DB {
 		return nil
 	}
 	return DB.WithContext(c.Request.Context())
+}
+
+// migrateTokenBlacklist handles the one-time schema change from token (512-char PK) to jti (36-char PK).
+// Existing blacklisted entries will expire naturally within JWT_TTL_MINUTES, so dropping is safe.
+func migrateTokenBlacklist(db *gorm.DB) {
+	if db.Migrator().HasColumn(&models.TokenBlacklist{}, "jti") {
+		return // already on new schema
+	}
+	if err := db.Migrator().DropTable(&models.TokenBlacklist{}); err != nil {
+		log.Printf("[DB] migrateTokenBlacklist: could not drop old table: %v", err)
+	} else {
+		log.Printf("[DB] migrateTokenBlacklist: dropped old token_blacklists table (PK: token→jti)")
+	}
 }

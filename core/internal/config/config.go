@@ -16,6 +16,8 @@ type Config struct {
 	CorsOrigins   []string
 	JWTSecret     string
 	JWTTTLMinutes int
+	JWTIssuer     string
+	JWTAudience   string
 	// DB
 	DBDriver       string // mysql | turso
 	DBDSN          string // optional DSN override (mysql)
@@ -67,6 +69,8 @@ func Load() *Config {
 		CorsOrigins:                   splitAndTrim(getEnv("CORS_ORIGINS", "http://localhost:5173")),
 		JWTSecret:                     getEnv("JWT_SECRET", "change-this-in-production"),
 		JWTTTLMinutes:                 getEnvAsInt("JWT_TTL_MINUTES", 30),
+		JWTIssuer:                     getEnv("JWT_ISSUER", "besttravel-api"),
+		JWTAudience:                   getEnv("JWT_AUDIENCE", "besttravel-client"),
 		DBDriver:                      strings.ToLower(getEnv("DB_DRIVER", "turso")),
 		DBDSN:                         getEnv("DB_DSN", ""),
 		DBHost:                        getEnv("DB_HOST", "127.0.0.1"),

@@ -200,32 +200,32 @@ export const carApi = {
     const response = await fetch(`${API_BASE_URL}/cars/${id}`, {
       headers: getAuthHeaders(),
     });
-    return response.json();
+    return handleResponse<any>(response);
   },
 
   getBySlug: async (slug: string): Promise<any> => {
     const response = await fetch(`${API_BASE_URL}/cars/slug/${slug}`, {
       headers: getAuthHeaders(),
     });
-    return response.json();
+    return handleResponse<any>(response);
   },
 
   create: async (data: any): Promise<any> => {
     const response = await fetch(`${API_BASE_URL}/cars`, {
       method: "POST",
-      headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
-    return response.json();
+    return handleResponse<any>(response);
   },
 
   update: async (id: string, data: any): Promise<any> => {
     const response = await fetch(`${API_BASE_URL}/cars/${id}`, {
       method: "PUT",
-      headers: { ...getAuthHeaders(), "Content-Type": "application/json" },
+      headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
-    return response.json();
+    return handleResponse<any>(response);
   },
 
   delete: async (id: string): Promise<any> => {
@@ -233,7 +233,7 @@ export const carApi = {
       method: "DELETE",
       headers: getAuthHeaders(),
     });
-    return response.json();
+    return handleResponse<any>(response);
   },
 
   incrementView: async (id: string): Promise<void> => {

@@ -81,7 +81,7 @@ func Setup(cfg *config.Config) *gin.Engine {
 
 		// Inquiries
 		inq := controllers.NewInquiryController(cfg)
-		api.POST("/inquiries", inq.Create)
+		api.POST("/inquiries", middleware.RateLimit(1, 3), inq.Create) // 1 req/sec, burst 3
 		adminInq := api.Group("/inquiries")
 		adminInq.Use(middleware.AuthRequired(cfg), middleware.AdminOnly())
 		{
@@ -91,7 +91,7 @@ func Setup(cfg *config.Config) *gin.Engine {
 
 		// Cars
 		car := controllers.NewCarController(cfg)
-		api.GET("/cars", car.GetAll)
+		api.GET("/cars", middleware.OptionalAuth(cfg), car.GetAll)
 		api.GET("/cars/:id", car.GetByID)
 		api.GET("/cars/slug/:slug", car.GetBySlug)
 		api.POST("/cars/:id/view", car.IncrementView)
@@ -113,7 +113,7 @@ func Setup(cfg *config.Config) *gin.Engine {
 
 		// Contact
 		contact := controllers.NewContactController(cfg)
-		api.POST("/contact", contact.Send)
+		api.POST("/contact", middleware.RateLimit(1, 3), contact.Send) // 1 req/sec, burst 3
 
 		// Upload
 		upload := controllers.NewUploadController(cfg)

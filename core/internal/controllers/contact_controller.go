@@ -29,6 +29,12 @@ func (h *ContactController) Send(c *gin.Context) {
 		fail(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
+	// Field length caps — prevent large-payload DoS
+	if len(req.Name) > 120 || len(req.Email) > 254 || len(req.Phone) > 30 ||
+		len(req.Subject) > 200 || len(req.Message) > 4000 {
+		fail(c, http.StatusBadRequest, "one or more fields exceed allowed length")
+		return
+	}
 
 	// Save contact inquiry to database
 	inquiry := models.Inquiry{

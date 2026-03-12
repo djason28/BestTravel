@@ -1,5 +1,5 @@
 import React from "react";
-import { Link } from "react-router-dom";
+import { Link, useLocation } from "react-router-dom";
 import { PrefetchLink } from "../common";
 import {
   Mail,
@@ -14,6 +14,7 @@ import logo from "@/assets/branding/logo pendek.png";
 import { t, currentLang } from "../../i18n";
 
 export const Footer: React.FC = () => {
+  const location = useLocation();
   return (
     <footer className="bg-[#06253a] text-gray-300">
       <div className="container mx-auto px-4 py-12">
@@ -204,6 +205,7 @@ export const Footer: React.FC = () => {
             {" · "}
             <Link
               to="/admin/login"
+              state={{ backgroundLocation: location }}
               className="text-gray-700 hover:text-gray-400 transition-colors"
             >
               Admin
