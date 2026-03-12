@@ -48,6 +48,19 @@ func Setup(cfg *config.Config) *gin.Engine {
 		{
 			apiAuth.POST("/logout", auth.Logout)
 			apiAuth.GET("/me", auth.Me)
+			userCtrl := controllers.NewUserController()
+			apiAuth.PUT("/profile", userCtrl.UpdateProfile)
+			apiAuth.PUT("/password", userCtrl.ChangePassword)
+		}
+
+		// Users (admin management)
+		userCtrl := controllers.NewUserController()
+		adminUsers := api.Group("/users")
+		adminUsers.Use(middleware.AuthRequired(cfg), middleware.AdminOnly())
+		{
+			adminUsers.GET("", userCtrl.GetAll)
+			adminUsers.POST("", userCtrl.Create)
+			adminUsers.DELETE(":id", userCtrl.Delete)
 		}
 
 		// Packages

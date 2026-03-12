@@ -79,6 +79,16 @@ const CarDetailPage = lazy(() =>
     default: m.CarDetailPage,
   })),
 );
+const ProfilePage = lazy(() =>
+  import("./pages/admin/ProfilePage").then((m) => ({
+    default: m.ProfilePage,
+  })),
+);
+const AdminsPage = lazy(() =>
+  import("./pages/admin/AdminsPage").then((m) => ({
+    default: m.AdminsPage,
+  })),
+);
 
 const CacheWarm: React.FC = () => {
   const { prefetchFeatured, prefetchFilterOptions } = useDataCache();
@@ -145,6 +155,8 @@ function App() {
                       <Route path="cars" element={<AdminCarsPage />} />
                       <Route path="cars/new" element={<CarFormPage />} />
                       <Route path="cars/:id/edit" element={<CarFormPage />} />
+                      <Route path="profile" element={<ProfilePage />} />
+                      <Route path="admins" element={<AdminsPage />} />
                     </Route>
 
                     <Route path="*" element={<Navigate to="/" replace />} />

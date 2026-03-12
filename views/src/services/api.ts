@@ -374,3 +374,58 @@ export const uploadApi = {
     return handleResponse<ApiResponse<void>>(response);
   },
 };
+
+export const userApi = {
+  getAll: async (): Promise<ApiResponse<User[]>> => {
+    const response = await fetch(`${API_BASE_URL}/users`, {
+      headers: getAuthHeaders(),
+    });
+    return handleResponse<ApiResponse<User[]>>(response);
+  },
+
+  create: async (data: {
+    email: string;
+    name: string;
+    password: string;
+    role?: string;
+  }): Promise<ApiResponse<User>> => {
+    const response = await fetch(`${API_BASE_URL}/users`, {
+      method: "POST",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse<ApiResponse<User>>(response);
+  },
+
+  delete: async (id: string): Promise<ApiResponse<void>> => {
+    const response = await fetch(`${API_BASE_URL}/users/${id}`, {
+      method: "DELETE",
+      headers: getAuthHeaders(),
+    });
+    return handleResponse<ApiResponse<void>>(response);
+  },
+
+  updateProfile: async (data: {
+    name: string;
+    email: string;
+  }): Promise<ApiResponse<User>> => {
+    const response = await fetch(`${API_BASE_URL}/auth/profile`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse<ApiResponse<User>>(response);
+  },
+
+  changePassword: async (data: {
+    currentPassword: string;
+    newPassword: string;
+  }): Promise<ApiResponse<{ message: string }>> => {
+    const response = await fetch(`${API_BASE_URL}/auth/password`, {
+      method: "PUT",
+      headers: getAuthHeaders(),
+      body: JSON.stringify(data),
+    });
+    return handleResponse<ApiResponse<{ message: string }>>(response);
+  },
+};

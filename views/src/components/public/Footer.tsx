@@ -187,9 +187,27 @@ export const Footer: React.FC = () => {
         <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm">
           <p>
             {t("copyright_prefix")} {new Date().getFullYear()} Bintan Batam
-            Exclusive Trip. {t("all_rights_reserved")}
+            Exclusive Trip {t("all_rights_reserved")}
           </p>
-          <div className="flex justify-center gap-6 mt-2">
+          <p className="mt-2 text-xs text-gray-600">
+            Designed &amp; Developed by{" "}
+            <a
+              href="https://delvinjs.dev/"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-400 hover:text-white hover:underline transition-colors font-medium"
+            >
+              DJason28
+            </a>
+            {" · "}
+            <Link
+              to="/admin/login"
+              className="text-gray-700 hover:text-gray-400 transition-colors"
+            >
+              Admin
+            </Link>
+          </p>
+          {/* <div className="flex justify-center gap-6 mt-2">
             <PrefetchLink
               to="/privacy"
               prefetchEnabled
@@ -214,7 +232,7 @@ export const Footer: React.FC = () => {
             >
               {t("faq")}
             </PrefetchLink>
-          </div>
+          </div> */}
         </div>
       </div>
     </footer>
