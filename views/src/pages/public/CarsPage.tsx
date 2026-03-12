@@ -144,16 +144,21 @@ export const CarsPage: React.FC = () => {
   }, [currentPage, totalPages]);
 
   return (
-    <div className="bg-gray-50 min-h-screen">
+    <div className="bg-sky-50 min-h-screen">
       {/* Hero Banner */}
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-16">
+      <div
+        className="text-white py-16"
+        style={{
+          background: "linear-gradient(135deg, #0c4a6e 0%, #0891b2 100%)",
+        }}
+      >
         <div className="container mx-auto px-4">
           <h1 className="text-4xl md:text-5xl font-bold mb-4">
             {t("cars_page_title")}
           </h1>
-          <p className="text-xl text-blue-100 relative">
+          <p className="text-xl text-cyan-100 relative">
             {t("cars_page_subtitle")}
-            <span className="block mt-4 h-1 w-32 bg-gradient-to-r from-white/70 to-blue-200 rounded"></span>
+            <span className="block mt-4 h-1 w-32 bg-gradient-to-r from-white/70 to-cyan-200 rounded"></span>
           </p>
         </div>
       </div>
@@ -169,7 +174,7 @@ export const CarsPage: React.FC = () => {
                 placeholder={t("search_cars_placeholder")}
                 defaultValue={searchQuery}
                 onChange={(e) => handleSearchChange(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#0891b2]"
               />
             </div>
             <button
@@ -179,7 +184,7 @@ export const CarsPage: React.FC = () => {
               <SlidersHorizontal className="h-5 w-5" />
               <span>{t("filters")}</span>
               {hasActiveFilters && (
-                <span className="bg-blue-600 text-white text-xs px-2 py-1 rounded-full">
+                <span className="bg-[#0891b2] text-white text-xs px-2 py-1 rounded-full">
                   {t("active")}
                 </span>
               )}
@@ -324,7 +329,7 @@ const CarCard: React.FC<{ car: Car }> = ({ car }) => {
             </div>
           )}
           {car.withDriver && (
-            <div className="absolute top-4 left-4 bg-blue-600/90 backdrop-blur-sm text-white px-3 py-1 rounded-full text-xs font-semibold shadow-sm">
+            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-[#0891b2] px-3 py-1 rounded-full text-xs font-semibold shadow-sm">
               {t("with_driver_label")}
             </div>
           )}
@@ -332,7 +337,7 @@ const CarCard: React.FC<{ car: Car }> = ({ car }) => {
 
         {/* Content - p-6 to match Package style */}
         <div className="p-6 flex flex-col flex-grow">
-          <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-blue-600 transition-colors">
+          <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-[#0891b2] transition-colors">
             {currentLang() === "zh" ? car.nameZh || car.name : car.name}
           </h3>
           <p className="text-gray-600 mb-4 line-clamp-2 text-sm">
@@ -347,7 +352,7 @@ const CarCard: React.FC<{ car: Car }> = ({ car }) => {
           <div className="space-y-2 mb-4 flex-grow">
             {car.seats > 0 && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Users className="h-4 w-4 text-blue-600" />
+                <Users className="h-4 w-4 text-cyan-600" />
                 <span>
                   {car.seats} {currentLang() === "zh" ? "座" : t("seats")}
                 </span>
@@ -355,7 +360,7 @@ const CarCard: React.FC<{ car: Car }> = ({ car }) => {
             )}
             {car.transmission && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Settings2 className="h-4 w-4 text-blue-600" />
+                <Settings2 className="h-4 w-4 text-cyan-600" />
                 <span>
                   {currentLang() === "zh"
                     ? TRANSMISSION_ZH[car.transmission] || car.transmission
@@ -365,7 +370,7 @@ const CarCard: React.FC<{ car: Car }> = ({ car }) => {
             )}
             {car.fuelType && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Fuel className="h-4 w-4 text-blue-600" />
+                <Fuel className="h-4 w-4 text-cyan-600" />
                 <span>
                   {currentLang() === "zh"
                     ? FUEL_ZH[car.fuelType] || car.fuelType
@@ -379,7 +384,7 @@ const CarCard: React.FC<{ car: Car }> = ({ car }) => {
             <div>
               <p className="text-sm text-gray-600">{t("starting_from")}</p>
               <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-blue-600">
+                <span className="text-2xl font-bold text-[#0891b2]">
                   {formatPrice(
                     car.prices?.[0]?.amount || car.price,
                     car.prices?.[0]?.currency || car.currency,
@@ -388,7 +393,7 @@ const CarCard: React.FC<{ car: Car }> = ({ car }) => {
                 <span className="text-xs text-gray-500">{priceLabel}</span>
               </div>
             </div>
-            <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+            <button className="px-4 py-2 bg-[#0891b2] text-white rounded-lg hover:bg-cyan-700 transition-colors">
               {t("details")}
             </button>
           </div>

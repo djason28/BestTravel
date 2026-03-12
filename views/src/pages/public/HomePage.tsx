@@ -73,7 +73,7 @@ export const HomePage: React.FC = () => {
 
   return (
     <div>
-      <section className="relative h-[600px] overflow-hidden bg-blue-900">
+      <section className="relative h-[600px] overflow-hidden bg-[#0c4a6e]">
         {/* Image wrapper with skeleton */}
         <HeroPicture />
         <div className="absolute inset-0 bg-black/40"></div>
@@ -90,7 +90,7 @@ export const HomePage: React.FC = () => {
                 to="/packages"
                 prefetchOn="hover"
                 prefetchEnabled
-                className="inline-flex items-center gap-2 px-8 py-4 bg-yellow-400 text-gray-900 font-semibold rounded-lg hover:bg-yellow-300 transition-all duration-300 hover:scale-105 shadow-lg"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-amber-500 text-white font-semibold rounded-lg hover:bg-amber-600 transition-all duration-300 hover:scale-105 shadow-lg"
               >
                 {t("explore_packages")}
                 <ArrowRight className="h-5 w-5" />
@@ -116,40 +116,40 @@ export const HomePage: React.FC = () => {
           >
             <path
               d="M0 120L60 105C120 90 240 60 360 45C480 30 600 30 720 37.5C840 45 960 60 1080 67.5C1200 75 1320 75 1380 75L1440 75V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z"
-              fill="white"
+              fill="#f0f9ff"
             />
           </svg>
         </div>
       </section>
 
-      <section className="py-16 bg-white">
+      <section className="py-16 bg-sky-50">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
             {[
               {
-                icon: <Shield className="h-12 w-12 text-blue-600" />,
+                icon: <Shield className="h-12 w-12 text-[#0891b2]" />,
                 title: t("feature_safe_secure_title"),
                 description: t("feature_safe_secure_desc"),
               },
               {
-                icon: <Award className="h-12 w-12 text-blue-600" />,
+                icon: <Award className="h-12 w-12 text-[#0891b2]" />,
                 title: t("feature_best_prices_title"),
                 description: t("feature_best_prices_desc"),
               },
               {
-                icon: <Calendar className="h-12 w-12 text-blue-600" />,
+                icon: <Calendar className="h-12 w-12 text-[#0891b2]" />,
                 title: t("feature_expert_guides_title"),
                 description: t("feature_expert_guides_desc"),
               },
               {
-                icon: <Clock className="h-12 w-12 text-blue-600" />,
+                icon: <Clock className="h-12 w-12 text-[#0891b2]" />,
                 title: t("feature_support_title"),
                 description: t("feature_support_desc"),
               },
             ].map((feature, index) => (
               <div
                 key={index}
-                className="text-center p-6 rounded-xl border border-gray-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+                className="text-center p-6 rounded-xl border border-sky-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
               >
                 <div className="flex justify-center mb-4">{feature.icon}</div>
                 <h3 className="text-xl font-semibold mb-2 text-gray-900">
@@ -162,10 +162,10 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      <section className="py-20 bg-gray-50">
+      <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12">
-            <h2 className="text-4xl font-bold text-gray-900 mb-4">
+            <h2 className="text-4xl font-bold text-[#0c4a6e] mb-4">
               {t("featured")} {t("packages")}
             </h2>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
@@ -240,7 +240,7 @@ export const HomePage: React.FC = () => {
 
                         <div className="space-y-2 mb-4">
                           <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <MapPin className="h-4 w-4 text-blue-600" />
+                            <MapPin className="h-4 w-4 text-cyan-600" />
                             <span>
                               {currentLang() === "zh"
                                 ? pkg.destinationZh || pkg.destination
@@ -248,7 +248,7 @@ export const HomePage: React.FC = () => {
                             </span>
                           </div>
                           <div className="flex items-center gap-2 text-sm text-gray-600">
-                            <Calendar className="h-4 w-4 text-blue-600" />
+                            <Calendar className="h-4 w-4 text-cyan-600" />
                             <span>
                               {pkg.duration} {localizeUnit(pkg.durationUnit)}
                             </span>
@@ -260,11 +260,11 @@ export const HomePage: React.FC = () => {
                             <p className="text-sm text-gray-600">
                               {t("starting_from")}
                             </p>
-                            <p className="text-2xl font-bold text-blue-600">
+                            <p className="text-2xl font-bold text-[#0891b2]">
                               {formatPrice(pkg.price, pkg.currency)}
                             </p>
                           </div>
-                          <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                          <button className="px-4 py-2 bg-[#0891b2] text-white rounded-lg hover:bg-cyan-700 transition-colors">
                             {t("details")}
                           </button>
                         </div>
@@ -279,7 +279,7 @@ export const HomePage: React.FC = () => {
           <div className="text-center">
             <Link
               to="/packages"
-              className="inline-flex items-center gap-2 px-8 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors"
+              className="inline-flex items-center gap-2 px-8 py-3 bg-[#0891b2] text-white font-semibold rounded-lg hover:bg-cyan-700 transition-colors"
             >
               {t("explore_packages")}
               <ArrowRight className="h-5 w-5" />
@@ -288,15 +288,20 @@ export const HomePage: React.FC = () => {
         </div>
       </section>
 
-      <section className="py-20 bg-blue-600 text-white">
+      <section
+        className="py-20 text-white"
+        style={{
+          background: "linear-gradient(135deg, #0c4a6e 0%, #065f46 100%)",
+        }}
+      >
         <div className="container mx-auto px-4">
           <div className="max-w-4xl mx-auto text-center">
             <h2 className="text-4xl font-bold mb-6">{t("home_title")}</h2>
-            <p className="text-xl mb-8 text-blue-100">{t("home_subtitle")}</p>
+            <p className="text-xl mb-8 text-cyan-100">{t("home_subtitle")}</p>
             <div className="flex flex-wrap justify-center gap-4">
               <Link
                 to="/packages"
-                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-blue-600 font-semibold rounded-lg hover:bg-gray-100 transition-colors"
+                className="inline-flex items-center gap-2 px-8 py-4 bg-white text-[#0891b2] font-semibold rounded-lg hover:bg-gray-100 transition-colors"
               >
                 {t("explore_packages")}
                 <ArrowRight className="h-5 w-5" />
@@ -385,7 +390,7 @@ const HeroPicture: React.FC = () => {
   return (
     <div className="absolute inset-0">
       {!loaded && (
-        <div className="absolute inset-0 bg-gradient-to-r from-blue-700 to-blue-900 animate-pulse" />
+        <div className="absolute inset-0 bg-gradient-to-r from-[#0c4a6e] to-[#07304c] animate-pulse" />
       )}
       <picture>
         <source

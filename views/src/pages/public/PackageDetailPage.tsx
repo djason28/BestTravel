@@ -148,7 +148,7 @@ export const PackageDetailPage: React.FC = () => {
         <h2 className="text-2xl font-bold text-gray-900 mb-4">
           {t("package_not_found")}
         </h2>
-        <Link to="/packages" className="text-blue-600 hover:underline">
+        <Link to="/packages" className="text-[#0891b2] hover:underline">
           {t("browse_all_packages")}
         </Link>
       </div>
@@ -178,11 +178,11 @@ export const PackageDetailPage: React.FC = () => {
   const included = pkg?.included || [];
   const excluded = pkg?.excluded || [];
   return (
-    <div className="bg-gray-50">
+    <div className="bg-sky-50">
       <div className="container mx-auto px-4 py-8">
         <Link
           to="/packages"
-          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6"
+          className="inline-flex items-center gap-2 text-[#0891b2] hover:text-cyan-700 mb-6"
         >
           <ChevronLeft className="h-4 w-4" />
           <span>{t("back_to_packages")}</span>
@@ -267,7 +267,7 @@ export const PackageDetailPage: React.FC = () => {
                       loading="lazy"
                       className={`w-full h-24 object-cover rounded-lg cursor-pointer transition-all ${
                         index === currentImageIndex
-                          ? "ring-2 ring-blue-600"
+                          ? "ring-2 ring-[#0891b2]"
                           : "opacity-70 hover:opacity-100"
                       }`}
                       onClick={() => setCurrentImageIndex(index)}
@@ -284,14 +284,14 @@ export const PackageDetailPage: React.FC = () => {
                     {currentLang() === "zh"
                       ? pkg.titleZh || pkg.title
                       : pkg.title}
-                    <span className="block mt-3 h-1 w-24 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded"></span>
+                    <span className="block mt-3 h-1 w-24 bg-gradient-to-r from-[#0891b2] via-teal-500 to-[#065f46] rounded"></span>
                   </h1>
                   <div className="flex flex-wrap gap-2 mb-4">
                     {pkg.categories &&
                       pkg.categories.map((cat, idx) => (
                         <span
                           key={idx}
-                          className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium"
+                          className="px-3 py-1 bg-sky-100 text-sky-800 rounded-full text-sm font-medium"
                         >
                           {cat}
                         </span>
@@ -308,7 +308,7 @@ export const PackageDetailPage: React.FC = () => {
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <div className="flex items-center gap-3">
-                  <MapPin className="h-6 w-6 text-blue-600" />
+                  <MapPin className="h-6 w-6 text-[#0891b2]" />
                   <div>
                     <p className="text-sm text-gray-600">{t("destination")}</p>
                     <p className="font-semibold text-gray-900">
@@ -319,7 +319,7 @@ export const PackageDetailPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Calendar className="h-6 w-6 text-blue-600" />
+                  <Calendar className="h-6 w-6 text-[#0891b2]" />
                   <div>
                     <p className="text-sm text-gray-600">{t("duration")}</p>
                     <p className="font-semibold text-gray-900">
@@ -328,7 +328,7 @@ export const PackageDetailPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Users className="h-6 w-6 text-blue-600" />
+                  <Users className="h-6 w-6 text-[#0891b2]" />
                   <div>
                     <p className="text-sm text-gray-600">{t("group_size")}</p>
                     <p className="font-semibold text-gray-900">
@@ -339,7 +339,7 @@ export const PackageDetailPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <TrendingUp className="h-6 w-6 text-blue-600" />
+                  <TrendingUp className="h-6 w-6 text-[#0891b2]" />
                   <div>
                     <p className="text-sm text-gray-600">{t("views")}</p>
                     <p className="font-semibold text-gray-900">
@@ -385,10 +385,10 @@ export const PackageDetailPage: React.FC = () => {
                   {itinerary.map((day) => (
                     <div
                       key={day.day}
-                      className="border-l-4 border-blue-600 pl-6"
+                      className="border-l-4 border-[#0891b2] pl-6"
                     >
                       <div className="flex items-center gap-3 mb-2">
-                        <span className="bg-blue-600 text-white px-3 py-1 rounded-full text-sm font-semibold">
+                        <span className="bg-[#0891b2] text-white px-3 py-1 rounded-full text-sm font-semibold">
                           {currentLang() === "zh"
                             ? `${t("day_label")}${day.day}天`
                             : `${t("day_label")} ${day.day}`}
@@ -425,7 +425,7 @@ export const PackageDetailPage: React.FC = () => {
                     {t("whats_included")}
                   </h3>
                   {/* Decorative underline directly under Included subtitle */}
-                  <span className="block mt-2 mb-4 h-1 w-32 bg-gradient-to-r from-green-500 via-blue-600 to-purple-600 rounded" />
+                  <span className="block mt-2 mb-4 h-1 w-32 bg-gradient-to-r from-[#065f46] via-[#0891b2] to-teal-500 rounded" />
                   <ul className="space-y-2">
                     {included.map((item, index) => (
                       <li
@@ -475,14 +475,14 @@ export const PackageDetailPage: React.FC = () => {
                     key={i}
                     className={
                       i === 0
-                        ? "text-4xl font-bold text-blue-600"
+                        ? "text-4xl font-bold text-[#0891b2]"
                         : "text-xl font-semibold text-gray-500 mt-1"
                     }
                   >
                     {formatPrice(p.amount, p.currency)}
                   </p>
                 ))}
-                <div className="flex items-center gap-2 text-gray-700">
+                <div className="flex items-center gap-2 text-gray-700 mt-3">
                   <Clock className="h-5 w-5 text-gray-400" />
                   <span className="text-sm">{pkg.availability}</span>
                 </div>
@@ -511,7 +511,7 @@ export const PackageDetailPage: React.FC = () => {
                 </p>
                 <a
                   href="tel:+6285283918338"
-                  className="text-sm text-blue-600 hover:underline flex items-center gap-2"
+                  className="text-sm text-[#0891b2] hover:underline flex items-center gap-2"
                 >
                   <Phone className="h-4 w-4" />
                   +62-852-8391-8338

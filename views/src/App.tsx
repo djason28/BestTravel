@@ -11,6 +11,7 @@ import { NavigationProvider } from "./contexts/NavigationContext";
 
 import React, { Suspense, lazy, useEffect } from "react";
 import { DataCacheProvider, useDataCache } from "./contexts/DataCacheContext";
+import { LangProvider } from "./contexts/LangContext";
 import { IdleTasks } from "./components/system/IdleTasks";
 // Wrap named exports so React.lazy gets a default
 const HomePage = lazy(() =>
@@ -103,71 +104,78 @@ function App() {
   return (
     <ErrorBoundary>
       <BrowserRouter>
-        <AuthProvider>
-          <DataCacheProvider>
-            <NavigationProvider>
-              <ToastProvider>
-                <ToastContainer />
-                <Suspense fallback={<ContentLoader overlay minHeight={400} />}>
-                  <Routes>
-                    <Route path="/" element={<PublicLayout />}>
-                      <Route index element={<HomePage />} />
-                      <Route path="packages" element={<PackagesPage />} />
-                      <Route
-                        path="packages/:slug"
-                        element={<PackageDetailPage />}
-                      />
-                      <Route path="contact" element={<ContactPage />} />
-                      <Route path="about" element={<AboutPage />} />
-                      <Route path="cars" element={<PublicCarsPage />} />
-                      <Route path="cars/:slug" element={<CarDetailPage />} />
-                    </Route>
+        <LangProvider>
+          <AuthProvider>
+            <DataCacheProvider>
+              <NavigationProvider>
+                <ToastProvider>
+                  <ToastContainer />
+                  <Suspense
+                    fallback={<ContentLoader overlay minHeight={400} />}
+                  >
+                    <Routes>
+                      <Route path="/" element={<PublicLayout />}>
+                        <Route index element={<HomePage />} />
+                        <Route path="packages" element={<PackagesPage />} />
+                        <Route
+                          path="packages/:slug"
+                          element={<PackageDetailPage />}
+                        />
+                        <Route path="contact" element={<ContactPage />} />
+                        <Route path="about" element={<AboutPage />} />
+                        <Route path="cars" element={<PublicCarsPage />} />
+                        <Route path="cars/:slug" element={<CarDetailPage />} />
+                      </Route>
 
-                    <Route path="/admin/login" element={<LoginPage />} />
+                      <Route path="/admin/login" element={<LoginPage />} />
 
-                    <Route
-                      path="/admin"
-                      element={
-                        <ProtectedRoute>
-                          <AdminLayout />
-                        </ProtectedRoute>
-                      }
-                    >
                       <Route
-                        index
-                        element={<Navigate to="/admin/dashboard" replace />}
-                      />
-                      <Route path="dashboard" element={<DashboardPage />} />
-                      <Route path="packages" element={<AdminPackagesPage />} />
-                      <Route
-                        path="packages/new"
-                        element={<PackageFormPage />}
-                      />
-                      <Route
-                        path="packages/:id/edit"
-                        element={<PackageFormPage />}
-                      />
-                      <Route
-                        path="packages/:id/preview"
-                        element={<PackagePreviewPage />}
-                      />
-                      <Route path="inquiries" element={<InquiriesPage />} />
-                      <Route path="cars" element={<AdminCarsPage />} />
-                      <Route path="cars/new" element={<CarFormPage />} />
-                      <Route path="cars/:id/edit" element={<CarFormPage />} />
-                      <Route path="profile" element={<ProfilePage />} />
-                      <Route path="admins" element={<AdminsPage />} />
-                    </Route>
+                        path="/admin"
+                        element={
+                          <ProtectedRoute>
+                            <AdminLayout />
+                          </ProtectedRoute>
+                        }
+                      >
+                        <Route
+                          index
+                          element={<Navigate to="/admin/dashboard" replace />}
+                        />
+                        <Route path="dashboard" element={<DashboardPage />} />
+                        <Route
+                          path="packages"
+                          element={<AdminPackagesPage />}
+                        />
+                        <Route
+                          path="packages/new"
+                          element={<PackageFormPage />}
+                        />
+                        <Route
+                          path="packages/:id/edit"
+                          element={<PackageFormPage />}
+                        />
+                        <Route
+                          path="packages/:id/preview"
+                          element={<PackagePreviewPage />}
+                        />
+                        <Route path="inquiries" element={<InquiriesPage />} />
+                        <Route path="cars" element={<AdminCarsPage />} />
+                        <Route path="cars/new" element={<CarFormPage />} />
+                        <Route path="cars/:id/edit" element={<CarFormPage />} />
+                        <Route path="profile" element={<ProfilePage />} />
+                        <Route path="admins" element={<AdminsPage />} />
+                      </Route>
 
-                    <Route path="*" element={<Navigate to="/" replace />} />
-                  </Routes>
-                </Suspense>
-                <CacheWarm />
-                <IdleTasks />
-              </ToastProvider>
-            </NavigationProvider>
-          </DataCacheProvider>
-        </AuthProvider>
+                      <Route path="*" element={<Navigate to="/" replace />} />
+                    </Routes>
+                  </Suspense>
+                  <CacheWarm />
+                  <IdleTasks />
+                </ToastProvider>
+              </NavigationProvider>
+            </DataCacheProvider>
+          </AuthProvider>
+        </LangProvider>
       </BrowserRouter>
     </ErrorBoundary>
   );

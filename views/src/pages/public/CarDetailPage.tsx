@@ -166,7 +166,7 @@ export const CarDetailPage: React.FC = () => {
         <h2 className="text-2xl font-bold text-gray-900 mb-4">
           {t("car_not_found")}
         </h2>
-        <Link to="/cars" className="text-blue-600 hover:underline">
+        <Link to="/cars" className="text-[#0891b2] hover:underline">
           {t("browse_all_cars")}
         </Link>
       </div>
@@ -225,11 +225,11 @@ export const CarDetailPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-gray-50">
+    <div className="bg-sky-50">
       <div className="container mx-auto px-4 py-8">
         <Link
           to="/cars"
-          className="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6"
+          className="inline-flex items-center gap-2 text-[#0891b2] hover:text-cyan-700 mb-6"
         >
           <ChevronLeft className="h-4 w-4" />
           <span>{t("back_to_cars")}</span>
@@ -331,7 +331,7 @@ export const CarDetailPage: React.FC = () => {
                       loading="lazy"
                       className={`w-full h-24 object-cover rounded-lg cursor-pointer transition-all ${
                         index === currentImageIndex
-                          ? "ring-2 ring-blue-600"
+                          ? "ring-2 ring-[#0891b2]"
                           : "opacity-70 hover:opacity-100"
                       }`}
                       onClick={() => setCurrentImageIndex(index)}
@@ -346,7 +346,7 @@ export const CarDetailPage: React.FC = () => {
               <div className="flex items-start justify-between mb-6">
                 <div className="flex-1">
                   <div className="flex flex-wrap gap-2 mb-2">
-                    <span className="px-3 py-1 bg-blue-100 text-blue-800 rounded-full text-sm font-medium">
+                    <span className="px-3 py-1 bg-sky-100 text-sky-800 rounded-full text-sm font-medium">
                       {car.brand}
                     </span>
                     {car.year > 0 && (
@@ -363,7 +363,7 @@ export const CarDetailPage: React.FC = () => {
                   </div>
                   <h1 className="text-4xl font-bold text-gray-900 mb-2 relative">
                     {displayName}
-                    <span className="block mt-3 h-1 w-24 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 rounded"></span>
+                    <span className="block mt-3 h-1 w-24 bg-gradient-to-r from-[#0891b2] via-teal-500 to-[#065f46] rounded"></span>
                   </h1>
                 </div>
               </div>
@@ -371,7 +371,7 @@ export const CarDetailPage: React.FC = () => {
               {/* Info grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
                 <div className="flex items-center gap-3">
-                  <Users className="h-6 w-6 text-blue-600 flex-shrink-0" />
+                  <Users className="h-6 w-6 text-[#0891b2] flex-shrink-0" />
                   <div>
                     <p className="text-sm text-gray-600">{t("seats")}</p>
                     <p className="font-semibold text-gray-900">
@@ -381,7 +381,7 @@ export const CarDetailPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Settings className="h-6 w-6 text-blue-600 flex-shrink-0" />
+                  <Settings className="h-6 w-6 text-[#0891b2] flex-shrink-0" />
                   <div>
                     <p className="text-sm text-gray-600">
                       {t("transmission_label")}
@@ -396,7 +396,7 @@ export const CarDetailPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Fuel className="h-6 w-6 text-blue-600 flex-shrink-0" />
+                  <Fuel className="h-6 w-6 text-[#0891b2] flex-shrink-0" />
                   <div>
                     <p className="text-sm text-gray-600">{t("fuel_type")}</p>
                     <p className="font-semibold text-gray-900 capitalize">
@@ -412,7 +412,7 @@ export const CarDetailPage: React.FC = () => {
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
-                  <UserCheck className="h-6 w-6 text-blue-600 flex-shrink-0" />
+                  <UserCheck className="h-6 w-6 text-[#0891b2] flex-shrink-0" />
                   <div>
                     <p className="text-sm text-gray-600">
                       {t("driver_option")}
@@ -475,7 +475,7 @@ export const CarDetailPage: React.FC = () => {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                     {features.map((feature, index) => (
                       <div key={index} className="flex items-start gap-2">
-                        <CheckCircle className="h-5 w-5 text-blue-600 flex-shrink-0 mt-0.5" />
+                        <CheckCircle className="h-5 w-5 text-[#0891b2] flex-shrink-0 mt-0.5" />
                         <span className="text-gray-700">{feature}</span>
                       </div>
                     ))}
@@ -494,7 +494,7 @@ export const CarDetailPage: React.FC = () => {
                         <CheckCircle className="h-6 w-6 text-green-600" />
                         {t("whats_included")}
                       </h3>
-                      <span className="block mt-2 mb-4 h-1 w-32 bg-gradient-to-r from-green-500 via-blue-600 to-purple-600 rounded" />
+                      <span className="block mt-2 mb-4 h-1 w-32 bg-gradient-to-r from-[#065f46] via-[#0891b2] to-teal-500 rounded" />
                       <ul className="space-y-2">
                         {included.map((item, index) => (
                           <li
@@ -548,7 +548,7 @@ export const CarDetailPage: React.FC = () => {
                     key={i}
                     className={
                       i === 0
-                        ? "text-4xl font-bold text-blue-600"
+                        ? "text-4xl font-bold text-[#0891b2]"
                         : "text-xl font-semibold text-gray-500 mt-1"
                     }
                   >
@@ -559,7 +559,7 @@ export const CarDetailPage: React.FC = () => {
                   / {localizePriceUnit(car.priceUnit)}
                 </p>
                 {(car.availability || car.availabilityZh) && (
-                  <div className="flex items-center gap-2 text-gray-700 mt-2">
+                  <div className="flex items-center gap-2 text-gray-700 mt-3">
                     <Clock className="h-5 w-5 text-gray-400" />
                     <span className="text-sm">
                       {currentLang() === "zh"
@@ -593,7 +593,7 @@ export const CarDetailPage: React.FC = () => {
                 </p>
                 <a
                   href="tel:+6285283918338"
-                  className="text-sm text-blue-600 hover:underline flex items-center gap-2"
+                  className="text-sm text-[#0891b2] hover:underline flex items-center gap-2"
                 >
                   <Phone className="h-4 w-4" />
                   +62-852-8391-8338

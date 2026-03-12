@@ -11,11 +11,11 @@ import {
   Youtube,
 } from "lucide-react";
 import logo from "@/assets/branding/logo pendek.png";
-import { t } from "../../i18n";
+import { t, currentLang } from "../../i18n";
 
 export const Footer: React.FC = () => {
   return (
-    <footer className="bg-gray-900 text-gray-300">
+    <footer className="bg-[#06253a] text-gray-300">
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
           <div>
@@ -31,26 +31,26 @@ export const Footer: React.FC = () => {
               <div className="flex flex-col justify-center">
                 {/* <h3 className="text-xl font-display font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight">Bintan Batam</h3>
                 <h3 className="text-xl font-display font-bold bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent leading-tight">Exclusive Trip</h3> */}
-                <h3 className="text-xl font-display font-bold bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 bg-clip-text text-transparent leading-tight">
+                <h3 className="text-xl font-display font-bold bg-gradient-to-r from-cyan-400 via-sky-300 to-teal-300 bg-clip-text text-transparent leading-tight">
                   Bintan Batam
                 </h3>
-                <h3 className="text-xl font-display font-bold bg-gradient-to-r from-red-400 via-yellow-400 to-green-400 bg-clip-text text-transparent leading-tight">
+                <h3 className="text-xl font-display font-bold bg-gradient-to-r from-cyan-400 via-sky-300 to-teal-300 bg-clip-text text-transparent leading-tight">
                   Exclusive Trip
                 </h3>
               </div>
             </div>
             <p className="text-sm leading-relaxed">{t("footer_tagline")}</p>
             <div className="flex gap-4 mt-4">
-              <a href="#" className="hover:text-blue-500 transition-colors">
+              <a href="#" className="hover:text-cyan-400 transition-colors">
                 <Facebook className="h-5 w-5" />
               </a>
-              <a href="#" className="hover:text-blue-500 transition-colors">
+              <a href="#" className="hover:text-cyan-400 transition-colors">
                 <Instagram className="h-5 w-5" />
               </a>
-              <a href="#" className="hover:text-blue-500 transition-colors">
+              <a href="#" className="hover:text-cyan-400 transition-colors">
                 <Twitter className="h-5 w-5" />
               </a>
-              <a href="#" className="hover:text-blue-500 transition-colors">
+              <a href="#" className="hover:text-cyan-400 transition-colors">
                 <Youtube className="h-5 w-5" />
               </a>
             </div>
@@ -66,7 +66,7 @@ export const Footer: React.FC = () => {
                   to="/"
                   prefetchEnabled
                   prefetchOn="viewport"
-                  className="hover:text-blue-500 transition-colors"
+                  className="hover:text-cyan-400 transition-colors"
                 >
                   {t("home")}
                 </PrefetchLink>
@@ -76,7 +76,7 @@ export const Footer: React.FC = () => {
                   to="/packages"
                   prefetchEnabled
                   prefetchOn="hover"
-                  className="hover:text-blue-500 transition-colors"
+                  className="hover:text-cyan-400 transition-colors"
                 >
                   {t("packages")}
                 </PrefetchLink>
@@ -86,7 +86,7 @@ export const Footer: React.FC = () => {
                   to="/about"
                   prefetchEnabled
                   prefetchOn="hover"
-                  className="hover:text-blue-500 transition-colors"
+                  className="hover:text-cyan-400 transition-colors"
                 >
                   {t("about_us")}
                 </PrefetchLink>
@@ -96,7 +96,7 @@ export const Footer: React.FC = () => {
                   to="/contact"
                   prefetchEnabled
                   prefetchOn="hover"
-                  className="hover:text-blue-500 transition-colors"
+                  className="hover:text-cyan-400 transition-colors"
                 >
                   {t("contact_us")}
                 </PrefetchLink>
@@ -130,23 +130,23 @@ export const Footer: React.FC = () => {
             </h3>
             <ul className="space-y-3">
               <li className="flex items-start gap-2">
-                <MapPin className="h-5 w-5 text-blue-500 flex-shrink-0 mt-0.5" />
+                <MapPin className="h-5 w-5 text-cyan-400 flex-shrink-0 mt-0.5" />
                 <span className="text-sm">Bintan - Indonesia</span>
               </li>
               <li className="flex items-center gap-2">
-                <Phone className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                <Phone className="h-5 w-5 text-cyan-400 flex-shrink-0" />
                 <a
                   href="tel:+6285283918338"
-                  className="text-sm hover:text-blue-500 transition-colors"
+                  className="text-sm hover:text-cyan-400 transition-colors"
                 >
                   +62-852-8391-8338
                 </a>
               </li>
               <li className="flex items-center gap-2">
-                <Mail className="h-5 w-5 text-blue-500 flex-shrink-0" />
+                <Mail className="h-5 w-5 text-cyan-400 flex-shrink-0" />
                 <a
                   href="mailto:info@besttravel.com"
-                  className="text-sm hover:text-blue-500 transition-colors"
+                  className="text-sm hover:text-cyan-400 transition-colors"
                 >
                   info@besttravel.com
                 </a>
@@ -165,7 +165,7 @@ export const Footer: React.FC = () => {
                   to="/packages"
                   prefetchEnabled
                   prefetchOn="hover"
-                  className="hover:text-blue-500 transition-colors"
+                  className="hover:text-cyan-400 transition-colors"
                 >
                   {t("packages")}
                 </PrefetchLink>
@@ -175,7 +175,7 @@ export const Footer: React.FC = () => {
                   to="/cars"
                   prefetchEnabled
                   prefetchOn="hover"
-                  className="hover:text-blue-500 transition-colors"
+                  className="hover:text-cyan-400 transition-colors"
                 >
                   {t("car_rental_service")}
                 </PrefetchLink>
@@ -184,13 +184,15 @@ export const Footer: React.FC = () => {
           </div>
         </div>
 
-        <div className="border-t border-gray-800 mt-8 pt-8 text-center text-sm">
+        <div className="border-t border-cyan-900/40 mt-8 pt-8 text-center text-sm">
           <p>
             {t("copyright_prefix")} {new Date().getFullYear()} Bintan Batam
             Exclusive Trip {t("all_rights_reserved")}
           </p>
           <p className="mt-2 text-xs text-gray-600">
-            Designed &amp; Developed by{" "}
+            {currentLang() === "zh"
+              ? "设计与开发："
+              : "Designed & Developed by"}{" "}
             <a
               href="https://delvinjs.dev/"
               target="_blank"

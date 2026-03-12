@@ -3,15 +3,14 @@ import { Link, useLocation } from "react-router-dom";
 import { PrefetchLink } from "../common";
 import { Menu, X, MessageCircle } from "lucide-react";
 import logo from "@/assets/branding/logo pendek.png";
-import { toggleLang, currentLang, t } from "../../i18n";
+import { t } from "../../i18n";
+import { useLang } from "../../contexts/LangContext";
 import { useNavigationState } from "../../contexts/NavigationContext";
 
 export const Header: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [tempLang, setTempLang] = useState(currentLang());
+  const { lang, switchLang } = useLang();
   const location = useLocation();
-
-  const lang = currentLang();
   const { startNavigation, isNavigating } = useNavigationState();
   const lastNavRef = useRef<{ path: string; ts: number }>({
     path: location.pathname,
@@ -29,7 +28,7 @@ export const Header: React.FC = () => {
   const isActive = (path: string) => location.pathname === path;
 
   return (
-    <header className="bg-white shadow-md sticky top-0 z-40">
+    <header className="bg-white shadow-sm border-b border-sky-100 sticky top-0 z-40">
       <div className="container mx-auto px-4">
         <div className="flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-3 group">
@@ -41,10 +40,10 @@ export const Header: React.FC = () => {
             />
             <div className="flex flex-col">
               {/* <span className="text-xl md:text-2xl font-display font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent group-hover:from-blue-700 group-hover:via-purple-700 group-hover:to-pink-700 transition-all">BEST Tour and Travel</span> */}
-              <span className="text-xl md:text-2xl font-display font-bold bg-gradient-to-r from-red-600 via-yellow-600 to-green-600 bg-clip-text text-transparent group-hover:from-red-700 group-hover:via-yellow-700 group-hover:to-green-700 transition-all">
+              <span className="text-xl md:text-2xl font-display font-bold bg-gradient-to-r from-[#0c4a6e] via-[#0891b2] to-teal-500 bg-clip-text text-transparent transition-all">
                 TripXB
               </span>
-              <span className="text-[11px] md:text-xs text-gray-500 font-medium tracking-wide group-hover:text-black transition-colors leading-tight">
+              <span className="text-[11px] md:text-xs text-gray-500 font-medium tracking-wide group-hover:text-[#0891b2] transition-colors leading-tight">
                 {t("header_subtagline_header")}
               </span>
             </div>
@@ -80,8 +79,8 @@ export const Header: React.FC = () => {
                 }}
                 className={`text-sm font-medium transition-colors ${
                   isActive(link.path)
-                    ? "text-blue-600"
-                    : "text-gray-700 hover:text-blue-600"
+                    ? "text-[#0891b2]"
+                    : "text-gray-700 hover:text-[#0891b2]"
                 } ${isNavigating ? "pointer-events-none opacity-50" : ""}`}
               >
                 {link.label}
@@ -108,22 +107,16 @@ export const Header: React.FC = () => {
               role="group"
             >
               <div
-                className={`absolute top-1 bottom-1 w-[calc(50%-0.25rem)] bg-blue-600 rounded-full transition-transform duration-300 ease-in-out ${
-                  tempLang === "zh" ? "translate-x-full" : "translate-x-0"
+                className={`absolute top-1 bottom-1 w-[calc(50%-0.25rem)] bg-[#0891b2] rounded-full transition-transform duration-300 ease-in-out ${
+                  lang === "zh" ? "translate-x-full" : "translate-x-0"
                 }`}
               />
               <button
                 onClick={() => {
-                  if (tempLang !== "en") {
-                    setTempLang("en");
-                    setTimeout(() => {
-                      toggleLang();
-                      window.location.reload();
-                    }, 300);
-                  }
+                  if (lang !== "en") switchLang();
                 }}
                 className={`relative z-10 flex-1 px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
-                  tempLang === "en"
+                  lang === "en"
                     ? "text-white"
                     : "text-gray-700 hover:text-gray-900"
                 }`}
@@ -137,16 +130,10 @@ export const Header: React.FC = () => {
               </button>
               <button
                 onClick={() => {
-                  if (tempLang !== "zh") {
-                    setTempLang("zh");
-                    setTimeout(() => {
-                      toggleLang();
-                      window.location.reload();
-                    }, 300);
-                  }
+                  if (lang !== "zh") switchLang();
                 }}
                 className={`relative z-10 flex-1 px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
-                  tempLang === "zh"
+                  lang === "zh"
                     ? "text-white"
                     : "text-gray-700 hover:text-gray-900"
                 }`}
@@ -204,8 +191,8 @@ export const Header: React.FC = () => {
                   }}
                   className={`text-sm font-medium transition-colors ${
                     isActive(link.path)
-                      ? "text-blue-600"
-                      : "text-gray-700 hover:text-blue-600"
+                      ? "text-[#0891b2]"
+                      : "text-gray-700 hover:text-[#0891b2]"
                   } ${isNavigating ? "pointer-events-none opacity-50" : ""}`}
                 >
                   {link.label}
@@ -229,22 +216,16 @@ export const Header: React.FC = () => {
                 role="group"
               >
                 <div
-                  className={`absolute top-1 bottom-1 w-[calc(50%-0.25rem)] bg-blue-600 rounded-full transition-transform duration-300 ease-in-out ${
-                    tempLang === "zh" ? "translate-x-full" : "translate-x-0"
+                  className={`absolute top-1 bottom-1 w-[calc(50%-0.25rem)] bg-[#0891b2] rounded-full transition-transform duration-300 ease-in-out ${
+                    lang === "zh" ? "translate-x-full" : "translate-x-0"
                   }`}
                 />
                 <button
                   onClick={() => {
-                    if (tempLang !== "en") {
-                      setTempLang("en");
-                      setTimeout(() => {
-                        toggleLang();
-                        window.location.reload();
-                      }, 300);
-                    }
+                    if (lang !== "en") switchLang();
                   }}
                   className={`relative z-10 flex-1 px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
-                    tempLang === "en"
+                    lang === "en"
                       ? "text-white"
                       : "text-gray-700 hover:text-gray-900"
                   }`}
@@ -258,16 +239,10 @@ export const Header: React.FC = () => {
                 </button>
                 <button
                   onClick={() => {
-                    if (tempLang !== "zh") {
-                      setTempLang("zh");
-                      setTimeout(() => {
-                        toggleLang();
-                        window.location.reload();
-                      }, 300);
-                    }
+                    if (lang !== "zh") switchLang();
                   }}
                   className={`relative z-10 flex-1 px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
-                    tempLang === "zh"
+                    lang === "zh"
                       ? "text-white"
                       : "text-gray-700 hover:text-gray-900"
                   }`}

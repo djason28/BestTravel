@@ -97,15 +97,20 @@ export const ContactPage: React.FC = () => {
   };
 
   return (
-    <div className="bg-gray-50">
-      <div className="bg-gradient-to-r from-blue-600 to-blue-800 text-white py-12">
+    <div className="bg-sky-50">
+      <div
+        className="text-white py-12"
+        style={{
+          background: "linear-gradient(135deg, #0c4a6e 0%, #0891b2 100%)",
+        }}
+      >
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row items-center justify-between gap-6">
             <div className="flex-1">
               <h1 className="text-3xl md:text-4xl font-bold mb-3">
                 {t("contact_us")}
               </h1>
-              <p className="text-lg text-blue-100">
+              <p className="text-lg text-cyan-100">
                 {t("contact_page_subtitle")}
               </p>
             </div>
@@ -195,7 +200,7 @@ export const ContactPage: React.FC = () => {
               </h3>
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
-                  <MapPin className="h-6 w-6 text-blue-600 flex-shrink-0" />
+                  <MapPin className="h-6 w-6 text-[#0891b2] flex-shrink-0" />
                   <div>
                     <p className="font-semibold text-gray-900">
                       {t("address")}
@@ -205,12 +210,12 @@ export const ContactPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <Phone className="h-6 w-6 text-blue-600 flex-shrink-0" />
+                  <Phone className="h-6 w-6 text-[#0891b2] flex-shrink-0" />
                   <div>
                     <p className="font-semibold text-gray-900">{t("phone")}</p>
                     <a
                       href="tel:+6285283918338"
-                      className="text-blue-600 hover:underline text-sm"
+                      className="text-[#0891b2] hover:underline text-sm"
                     >
                       +62-852-8391-8338
                     </a>
@@ -218,12 +223,12 @@ export const ContactPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <Mail className="h-6 w-6 text-blue-600 flex-shrink-0" />
+                  <Mail className="h-6 w-6 text-[#0891b2] flex-shrink-0" />
                   <div>
                     <p className="font-semibold text-gray-900">{t("email")}</p>
                     <a
                       href="mailto:info@besttravel.com"
-                      className="text-blue-600 hover:underline text-sm"
+                      className="text-[#0891b2] hover:underline text-sm"
                     >
                       info@besttravel.com
                     </a>
@@ -231,7 +236,7 @@ export const ContactPage: React.FC = () => {
                 </div>
 
                 <div className="flex items-start gap-3">
-                  <Clock className="h-6 w-6 text-blue-600 flex-shrink-0" />
+                  <Clock className="h-6 w-6 text-[#0891b2] flex-shrink-0" />
                   <div>
                     <p className="font-semibold text-gray-900">
                       {t("business_hours")}
