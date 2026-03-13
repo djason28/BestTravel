@@ -600,7 +600,7 @@ export const CarDetailPage: React.FC = () => {
         >
           <button
             onClick={() => setIsGalleryOpen(false)}
-            className="absolute top-4 right-4 text-white p-2 hover:bg-white/20 rounded-full transition-colors"
+            className="absolute top-4 right-4 z-50 text-white p-2 hover:bg-white/20 rounded-full transition-colors"
             aria-label="Close gallery"
           >
             <X className="h-8 w-8" />
@@ -609,14 +609,14 @@ export const CarDetailPage: React.FC = () => {
             <>
               <button
                 onClick={prevImage}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-white p-2 hover:bg-white/20 rounded-full transition-colors"
+                className="absolute left-4 top-1/2 -translate-y-1/2 z-50 text-white p-2 hover:bg-white/20 rounded-full transition-colors"
                 aria-label="Previous image"
               >
                 <ChevronLeft className="h-8 w-8" />
               </button>
               <button
                 onClick={nextImage}
-                className="absolute right-4 top-1/2 -translate-y-1/2 text-white p-2 hover:bg-white/20 rounded-full transition-colors"
+                className="absolute right-4 top-1/2 -translate-y-1/2 z-50 text-white p-2 hover:bg-white/20 rounded-full transition-colors"
                 aria-label="Next image"
               >
                 <ChevronRight className="h-8 w-8" />
@@ -657,7 +657,7 @@ export const CarDetailPage: React.FC = () => {
                 </div>
               ),
           )}
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white flex items-center gap-4 select-none">
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-50 text-white flex items-center gap-4 select-none">
             <span>
               {currentImageIndex + 1} / {images.length}
             </span>
