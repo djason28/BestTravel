@@ -20,10 +20,12 @@ import { getWhatsAppLink } from "../../utils/security";
 import { ContentLoader } from "../../components/common/ContentLoader";
 import { useNavigationState } from "../../contexts/NavigationContext";
 import { Button } from "../../components/common/Button";
-import { t, currentLang } from "../../i18n";
+import { t } from "../../i18n";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+import { useLang } from "../../contexts/LangContext";
 
 export const PackageDetailPage: React.FC = () => {
+  const { lang } = useLang();
   const { slug } = useParams<{ slug: string }>();
   const [pkg, setPkg] = useState<Package | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -44,10 +46,7 @@ export const PackageDetailPage: React.FC = () => {
   const loadPackage = async (slug: string) => {
     setIsLoading(true);
     try {
-      const response = await packageApi.getBySlug(
-        slug,
-        currentLang() === "zh" ? "zh" : "en",
-      );
+      const response = await packageApi.getBySlug(slug);
       if (response.success && response.data) {
         setPkg(response.data);
         await packageApi.incrementView(response.data.id);
@@ -156,7 +155,7 @@ export const PackageDetailPage: React.FC = () => {
   }
 
   const localizeUnit = (unit: string) => {
-    if (currentLang() === "zh") {
+    if (lang === "zh") {
       switch (unit) {
         case "days":
           return "天";
@@ -173,10 +172,23 @@ export const PackageDetailPage: React.FC = () => {
 
   // Normalisasi agar field array yang mungkin datang sebagai null (dari Go: slice nil -> JSON null)
   // images already defined above for autoplay logic.
-  const highlights = pkg?.highlights || [];
+  const highlights =
+    (lang === "zh" && pkg.highlightsZh?.length
+      ? pkg.highlightsZh
+      : pkg?.highlights) || [];
   const itinerary = pkg?.itinerary || [];
-  const included = pkg?.included || [];
-  const excluded = pkg?.excluded || [];
+  const included =
+    (lang === "zh" && pkg.includedZh?.length
+      ? pkg.includedZh
+      : pkg?.included) || [];
+  const excluded =
+    (lang === "zh" && pkg.excludedZh?.length
+      ? pkg.excludedZh
+      : pkg?.excluded) || [];
+  const categories =
+    (lang === "zh" && pkg.categoriesZh?.length
+      ? pkg.categoriesZh
+      : pkg?.categories) || [];
   return (
     <div className="bg-sky-50">
       <div className="container mx-auto px-4 py-8">
@@ -281,21 +293,18 @@ export const PackageDetailPage: React.FC = () => {
               <div className="flex items-start justify-between mb-6">
                 <div>
                   <h1 className="text-4xl font-bold text-gray-900 mb-2 relative">
-                    {currentLang() === "zh"
-                      ? pkg.titleZh || pkg.title
-                      : pkg.title}
+                    {lang === "zh" ? pkg.titleZh || pkg.title : pkg.title}
                     <span className="block mt-3 h-1 w-24 bg-gradient-to-r from-[#0891b2] via-teal-500 to-[#065f46] rounded"></span>
                   </h1>
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {pkg.categories &&
-                      pkg.categories.map((cat, idx) => (
-                        <span
-                          key={idx}
-                          className="px-3 py-1 bg-sky-100 text-sky-800 rounded-full text-sm font-medium"
-                        >
-                          {cat}
-                        </span>
-                      ))}
+                    {categories.map((cat, idx) => (
+                      <span
+                        key={idx}
+                        className="px-3 py-1 bg-sky-100 text-sky-800 rounded-full text-sm font-medium"
+                      >
+                        {cat}
+                      </span>
+                    ))}
                     {pkg.featured && (
                       <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium flex items-center gap-1">
                         <Star className="h-4 w-4 fill-current" />
@@ -312,7 +321,7 @@ export const PackageDetailPage: React.FC = () => {
                   <div>
                     <p className="text-sm text-gray-600">{t("destination")}</p>
                     <p className="font-semibold text-gray-900">
-                      {currentLang() === "zh"
+                      {lang === "zh"
                         ? pkg.destinationZh || pkg.destination
                         : pkg.destination}
                     </p>
@@ -332,7 +341,7 @@ export const PackageDetailPage: React.FC = () => {
                   <div>
                     <p className="text-sm text-gray-600">{t("group_size")}</p>
                     <p className="font-semibold text-gray-900">
-                      {currentLang() === "zh"
+                      {lang === "zh"
                         ? `${pkg.minParticipants || 1} - ${pkg.maxParticipants} 人`
                         : `${pkg.minParticipants || 1} - ${pkg.maxParticipants} People`}
                     </p>
@@ -354,7 +363,7 @@ export const PackageDetailPage: React.FC = () => {
                   {t("overview")}
                 </h2>
                 <p className="text-gray-700 leading-relaxed mb-6">
-                  {currentLang() === "zh"
+                  {lang === "zh"
                     ? pkg.descriptionZh || pkg.description
                     : pkg.description}
                 </p>
@@ -389,28 +398,32 @@ export const PackageDetailPage: React.FC = () => {
                     >
                       <div className="flex items-center gap-3 mb-2">
                         <span className="bg-[#0891b2] text-white px-3 py-1 rounded-full text-sm font-semibold">
-                          {currentLang() === "zh"
+                          {lang === "zh"
                             ? `${t("day_label")}${day.day}天`
                             : `${t("day_label")} ${day.day}`}
                         </span>
                         <h3 className="text-xl font-semibold text-gray-900">
-                          {currentLang() === "zh"
-                            ? day.titleZh || day.title
-                            : day.title}
+                          {lang === "zh" ? day.titleZh || day.title : day.title}
                         </h3>
                       </div>
                       <p className="text-gray-700 mb-3">
-                        {currentLang() === "zh"
+                        {lang === "zh"
                           ? day.descriptionZh || day.description
                           : day.description}
                       </p>
-                      {(day.activities || []).length > 0 && (
-                        <ul className="list-disc list-inside space-y-1 text-gray-600">
-                          {(day.activities || []).map((activity, index) => (
-                            <li key={index}>{activity}</li>
-                          ))}
-                        </ul>
-                      )}
+                      {(() => {
+                        const acts =
+                          (lang === "zh" && day.activitiesZh?.length
+                            ? day.activitiesZh
+                            : day.activities) || [];
+                        return acts.length > 0 ? (
+                          <ul className="list-disc list-inside space-y-1 text-gray-600">
+                            {acts.map((activity, index) => (
+                              <li key={index}>{activity}</li>
+                            ))}
+                          </ul>
+                        ) : null;
+                      })()}
                     </div>
                   ))}
                 </div>
@@ -470,17 +483,17 @@ export const PackageDetailPage: React.FC = () => {
                     <Calendar className="h-5 w-5 text-white" />
                   </div>
                   <span className="text-xs font-medium uppercase tracking-wider text-white/80">
-                    {currentLang() === "zh" ? "可用时间" : "Availability"}
+                    {lang === "zh" ? "可用时间" : "Availability"}
                   </span>
                 </div>
                 <p className="text-3xl font-bold tracking-tight mt-2">
-                  {currentLang() === "zh" && pkg.availabilityZh
+                  {lang === "zh" && pkg.availabilityZh
                     ? pkg.availabilityZh
                     : pkg.availability}
                 </p>
                 <p className="text-xs text-white/70 mt-2">
                   *{" "}
-                  {currentLang() === "zh"
+                  {lang === "zh"
                     ? "请联系我们获取详细价格与预订情况"
                     : "Contact us for detailed pricing & availability"}
                 </p>

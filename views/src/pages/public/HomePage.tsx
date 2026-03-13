@@ -14,13 +14,15 @@ import type { Package } from "../../types";
 import { formatCategories } from "../../utils/security";
 import { Card } from "../../components/common/Card";
 import { PackageCardSkeleton } from "../../components/common/Loading";
-import { t, currentLang } from "../../i18n";
+import { t } from "../../i18n";
 import { useNavigationState } from "../../contexts/NavigationContext";
 import { useDataCache } from "../../contexts/DataCacheContext";
 import { PrefetchLink } from "../../components/common";
+import { useLang } from "../../contexts/LangContext";
 // import { LazySection } from '../../components/common';
 
 export const HomePage: React.FC = () => {
+  const { lang } = useLang();
   const [featuredPackages, setFeaturedPackages] = useState<Package[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -38,11 +40,11 @@ export const HomePage: React.FC = () => {
       if (cachedFeatured) {
         setFeaturedPackages(cachedFeatured);
       } else {
-        const langOverride = currentLang() === "zh" ? "zh" : "en";
-        const response = await packageApi.getAll(
-          { limit: 6, sortBy: "popular", status: "published" },
-          langOverride,
-        );
+        const response = await packageApi.getAll({
+          limit: 6,
+          sortBy: "popular",
+          status: "published",
+        });
         if (response.success) {
           setFeaturedPackages(response.data.slice(0, 6));
         }
@@ -56,7 +58,7 @@ export const HomePage: React.FC = () => {
   };
 
   const localizeUnit = (unit: string) => {
-    if (currentLang() === "zh") {
+    if (lang === "zh") {
       switch (unit) {
         case "days":
           return "天";
@@ -228,12 +230,10 @@ export const HomePage: React.FC = () => {
                       </div>
                       <div className="p-6">
                         <h3 className="text-xl font-bold text-gray-900 mb-2">
-                          {currentLang() === "zh"
-                            ? pkg.titleZh || pkg.title
-                            : pkg.title}
+                          {lang === "zh" ? pkg.titleZh || pkg.title : pkg.title}
                         </h3>
                         <p className="text-gray-600 mb-4 line-clamp-2">
-                          {currentLang() === "zh"
+                          {lang === "zh"
                             ? pkg.shortDescriptionZh || pkg.shortDescription
                             : pkg.shortDescription}
                         </p>
@@ -242,7 +242,7 @@ export const HomePage: React.FC = () => {
                           <div className="flex items-center gap-2 text-sm text-gray-600">
                             <MapPin className="h-4 w-4 text-cyan-600" />
                             <span>
-                              {currentLang() === "zh"
+                              {lang === "zh"
                                 ? pkg.destinationZh || pkg.destination
                                 : pkg.destination}
                             </span>
@@ -260,9 +260,7 @@ export const HomePage: React.FC = () => {
                             to={`/packages/${pkg.slug}`}
                             className="px-6 py-2 bg-[#0891b2] text-white rounded-lg hover:bg-cyan-700 transition-colors shadow-sm font-medium"
                           >
-                            {currentLang() === "zh"
-                              ? "立刻预订！"
-                              : "Book Now!"}
+                            {lang === "zh" ? "立刻预订！" : "Book Now!"}
                           </Link>
                         </div>
                       </div>

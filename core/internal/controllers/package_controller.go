@@ -59,31 +59,42 @@ type packageForm struct {
 // PackageDTO exposes a consistent subset of Package fields for API consumers.
 // (Chinese language substitution applied before conversion when requested.)
 type PackageDTO struct {
-	ID               string                `json:"id"`
-	Title            string                `json:"title"`
-	Slug             string                `json:"slug"`
-	ShortDescription string                `json:"shortDescription"`
-	Description      string                `json:"description"`
-	Price            int64                 `json:"price"`
-	Currency         string                `json:"currency"`
-	Prices           models.PriceList      `json:"prices"`
-	Duration         int                   `json:"duration"`
-	DurationUnit     string                `json:"durationUnit"`
-	Categories       models.StringArray    `json:"categories"`
-	Destination      string                `json:"destination"`
-	Included         models.StringArray    `json:"included"`
-	Excluded         models.StringArray    `json:"excluded"`
-	Highlights       models.StringArray    `json:"highlights"`
-	Availability     string                `json:"availability"`
-	MinParticipants  int                   `json:"minParticipants"`
-	MaxParticipants  int                   `json:"maxParticipants"`
-	Featured         bool                  `json:"featured"`
-	Status           string                `json:"status"`
-	ViewCount        int64                 `json:"viewCount"`
-	InquiryCount     int64                 `json:"inquiryCount"`
-	Images           []models.PackageImage `json:"images"`
+	ID                 string                `json:"id"`
+	Title              string                `json:"title"`
+	TitleZh            string                `json:"titleZh"`
+	Slug               string                `json:"slug"`
+	ShortDescription   string                `json:"shortDescription"`
+	ShortDescriptionZh string                `json:"shortDescriptionZh"`
+	Description        string                `json:"description"`
+	DescriptionZh      string                `json:"descriptionZh"`
+	Price              int64                 `json:"price"`
+	Currency           string                `json:"currency"`
+	Prices             models.PriceList      `json:"prices"`
+	Duration           int                   `json:"duration"`
+	DurationUnit       string                `json:"durationUnit"`
+	Categories         models.StringArray    `json:"categories"`
+	CategoriesZh       models.StringArray    `json:"categoriesZh"`
+	Destination        string                `json:"destination"`
+	DestinationZh      string                `json:"destinationZh"`
+	Included           models.StringArray    `json:"included"`
+	IncludedZh         models.StringArray    `json:"includedZh"`
+	Excluded           models.StringArray    `json:"excluded"`
+	ExcludedZh         models.StringArray    `json:"excludedZh"`
+	Highlights         models.StringArray    `json:"highlights"`
+	HighlightsZh       models.StringArray    `json:"highlightsZh"`
+	Availability       string                `json:"availability"`
+	AvailabilityZh     string                `json:"availabilityZh"`
+	MinParticipants    int                   `json:"minParticipants"`
+	MaxParticipants    int                   `json:"maxParticipants"`
+	Featured           bool                  `json:"featured"`
+	Status             string                `json:"status"`
+	ViewCount          int64                 `json:"viewCount"`
+	InquiryCount       int64                 `json:"inquiryCount"`
+	Images             []models.PackageImage `json:"images"`
 	// Itinerary only included in detail endpoints; left empty for list.
 	Itinerary []models.ItineraryItem `json:"itinerary,omitempty"`
+	CreatedAt string                 `json:"createdAt"`
+	UpdatedAt string                 `json:"updatedAt"`
 }
 
 type PaginationDTO struct {
@@ -114,29 +125,40 @@ func toDTO(p models.Package, includeDetail bool) PackageDTO {
 		}
 	}
 	dto := PackageDTO{
-		ID:               p.ID,
-		Title:            p.Title,
-		Slug:             p.Slug,
-		ShortDescription: p.ShortDescription,
-		Description:      p.Description,
-		Price:            p.Price,
-			Currency:         p.Currency,
-			Prices:           p.Prices,
-		Duration:         p.Duration,
-		DurationUnit:     p.DurationUnit,
-		Categories:       p.Categories,
-		Destination:      p.Destination,
-		Included:         p.Included,
-		Excluded:         p.Excluded,
-		Highlights:       p.Highlights,
-		Availability:     p.Availability,
-		MinParticipants:  p.MinParticipants,
-		MaxParticipants:  p.MaxParticipants,
-		Featured:         p.Featured,
-		Status:           p.Status,
-		ViewCount:        p.ViewCount,
-		InquiryCount:     p.InquiryCount,
-		Images:           images,
+		ID:                 p.ID,
+		Title:              p.Title,
+		TitleZh:            p.TitleZh,
+		Slug:               p.Slug,
+		ShortDescription:   p.ShortDescription,
+		ShortDescriptionZh: p.ShortDescriptionZh,
+		Description:        p.Description,
+		DescriptionZh:      p.DescriptionZh,
+		Price:              p.Price,
+		Currency:           p.Currency,
+		Prices:             p.Prices,
+		Duration:           p.Duration,
+		DurationUnit:       p.DurationUnit,
+		Categories:         p.Categories,
+		CategoriesZh:       p.CategoriesZh,
+		Destination:        p.Destination,
+		DestinationZh:      p.DestinationZh,
+		Included:           p.Included,
+		IncludedZh:         p.IncludedZh,
+		Excluded:           p.Excluded,
+		ExcludedZh:         p.ExcludedZh,
+		Highlights:         p.Highlights,
+		HighlightsZh:       p.HighlightsZh,
+		Availability:       p.Availability,
+		AvailabilityZh:     p.AvailabilityZh,
+		MinParticipants:    p.MinParticipants,
+		MaxParticipants:    p.MaxParticipants,
+		Featured:           p.Featured,
+		Status:             p.Status,
+		ViewCount:          p.ViewCount,
+		InquiryCount:       p.InquiryCount,
+		Images:             images,
+		CreatedAt:          p.CreatedAt.Format("2006-01-02T15:04:05Z"),
+		UpdatedAt:          p.UpdatedAt.Format("2006-01-02T15:04:05Z"),
 	}
 	if includeDetail {
 		dto.Itinerary = p.Itinerary
@@ -164,7 +186,7 @@ func (h *PackageController) GetAll(c *gin.Context) {
 		return
 	}
 
-	rawKey := c.Request.URL.RawQuery + "|admin=" + strconv.FormatBool(isAdmin) + "|lang=" + detectLang(c) + "|page=" + strconv.Itoa(page) + "|limit=" + strconv.Itoa(limit) + "|sort=" + sortBy
+	rawKey := c.Request.URL.RawQuery + "|admin=" + strconv.FormatBool(isAdmin) + "|page=" + strconv.Itoa(page) + "|limit=" + strconv.Itoa(limit) + "|sort=" + sortBy
 	sum := sha1.Sum([]byte(rawKey))
 	cacheKey := "pkg:list:" + hex.EncodeToString(sum[:])
 	if cachedRaw, ok := cache.GetPackageList(cacheKey); ok {
@@ -183,11 +205,6 @@ func (h *PackageController) GetAll(c *gin.Context) {
 		&total,
 	)
 
-	if detectLang(c) == "zh" {
-		for i := range items {
-			applyLangZh(&items[i])
-		}
-	}
 	dtoList := make([]PackageDTO, len(items))
 	for i, p := range items {
 		dtoList[i] = toDTO(p, false)
@@ -211,9 +228,6 @@ func (h *PackageController) GetByID(c *gin.Context) {
 		fail(c, http.StatusNotFound, "not found")
 		return
 	}
-	if detectLang(c) == "zh" {
-		applyLangZh(&pkg)
-	}
 	ok(c, toDTO(pkg, true))
 }
 
@@ -233,9 +247,6 @@ func (h *PackageController) GetBySlug(c *gin.Context) {
 	if err := q.First(&pkg, "slug = ?", slug).Error; err != nil {
 		fail(c, http.StatusNotFound, "not found")
 		return
-	}
-	if detectLang(c) == "zh" {
-		applyLangZh(&pkg)
 	}
 	ok(c, toDTO(pkg, true))
 }
@@ -725,55 +736,6 @@ func buildPackageFilters(q *gorm.DB, c *gin.Context, isAdmin bool) *gorm.DB {
 		}
 	}
 	return q
-}
-
-// applyLangZh copies *_Zh fields into primary fields for response when Chinese requested.
-func applyLangZh(p *models.Package) {
-	if p.TitleZh != "" {
-		p.Title = p.TitleZh
-	}
-	if p.DescriptionZh != "" {
-		p.Description = p.DescriptionZh
-	}
-	if p.ShortDescriptionZh != "" {
-		p.ShortDescription = p.ShortDescriptionZh
-	}
-	if len(p.CategoriesZh) > 0 {
-		p.Categories = p.CategoriesZh
-	}
-	if p.DestinationZh != "" {
-		p.Destination = p.DestinationZh
-	}
-	if len(p.IncludedZh) > 0 {
-		p.Included = p.IncludedZh
-	}
-	if len(p.ExcludedZh) > 0 {
-		p.Excluded = p.ExcludedZh
-	}
-	if len(p.HighlightsZh) > 0 {
-		p.Highlights = p.HighlightsZh
-	}
-	if p.AvailabilityZh != "" {
-		p.Availability = p.AvailabilityZh
-	}
-	for i := range p.Itinerary {
-		it := &p.Itinerary[i]
-		if it.TitleZh != "" {
-			it.Title = it.TitleZh
-		}
-		if it.DescriptionZh != "" {
-			it.Description = it.DescriptionZh
-		}
-		if len(it.ActivitiesZh) > 0 {
-			it.Activities = it.ActivitiesZh
-		}
-		if len(it.MealsZh) > 0 {
-			it.Meals = it.MealsZh
-		}
-		if it.AccommodationZh != "" {
-			it.Accommodation = it.AccommodationZh
-		}
-	}
 }
 
 func isSlugConflict(err error) bool {

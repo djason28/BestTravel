@@ -25,7 +25,6 @@ export const PackagePreviewPage: React.FC = () => {
   const navigate = useNavigate();
   const { addToast } = useToast();
   const [pkg, setPkg] = useState<Package | null>(null);
-  const [pkgZh, setPkgZh] = useState<Package | null>(null);
   const [viewLang, setViewLang] = useState<"en" | "zh">("en");
   const [isLoading, setIsLoading] = useState(true);
   const [selectedImage, setSelectedImage] = useState(0);
@@ -39,15 +38,9 @@ export const PackagePreviewPage: React.FC = () => {
   const loadPackage = async () => {
     setIsLoading(true);
     try {
-      const [resEn, resZh] = await Promise.all([
-        packageApi.getById(id!, "en"),
-        packageApi.getById(id!, "zh"),
-      ]);
-      if (resEn.success && resEn.data) {
-        setPkg(resEn.data);
-      }
-      if (resZh.success && resZh.data) {
-        setPkgZh(resZh.data);
+      const res = await packageApi.getById(id!);
+      if (res.success && res.data) {
+        setPkg(res.data);
       } else {
         addToast("Package not found", "error");
         navigate("/admin/packages");
@@ -207,7 +200,7 @@ export const PackagePreviewPage: React.FC = () => {
             {/* Title & Info */}
             <div className="bg-white rounded-lg shadow-md p-8">
               <h1 className="text-4xl font-bold text-gray-900 mb-4">
-                {viewLang === "en" ? pkg.title : pkgZh?.title || pkg.title}
+                {viewLang === "en" ? pkg.title : pkg.titleZh || pkg.title}
               </h1>
 
               {/* Categories */}
@@ -226,10 +219,10 @@ export const PackagePreviewPage: React.FC = () => {
                   </div>
                 )}
               {viewLang === "zh" &&
-                pkgZh?.categories &&
-                pkgZh.categories.length > 0 && (
+                pkg.categoriesZh &&
+                pkg.categoriesZh.length > 0 && (
                   <div className="flex flex-wrap gap-2 mb-4">
-                    {pkgZh.categories.map((cat, idx) => (
+                    {pkg.categoriesZh.map((cat, idx) => (
                       <span
                         key={idx}
                         className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm font-medium"
@@ -243,7 +236,7 @@ export const PackagePreviewPage: React.FC = () => {
               <p className="text-xl text-gray-700 mb-6">
                 {viewLang === "en"
                   ? pkg.shortDescription
-                  : pkgZh?.shortDescription || pkg.shortDescription}
+                  : pkg.shortDescriptionZh || pkg.shortDescription}
               </p>
 
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4 pb-6 border-b">
@@ -256,7 +249,7 @@ export const PackagePreviewPage: React.FC = () => {
                     <p className="font-semibold text-gray-900">
                       {viewLang === "en"
                         ? pkg.destination
-                        : pkgZh?.destination || pkg.destination}
+                        : pkg.destinationZh || pkg.destination}
                     </p>
                   </div>
                 </div>
@@ -291,7 +284,7 @@ export const PackagePreviewPage: React.FC = () => {
                     <p className="font-semibold text-gray-900">
                       {viewLang === "en"
                         ? pkg.availability
-                        : pkgZh?.availability || pkg.availability}
+                        : pkg.availabilityZh || pkg.availability}
                     </p>
                   </div>
                 </div>
@@ -307,7 +300,7 @@ export const PackagePreviewPage: React.FC = () => {
                 <div className="prose max-w-none text-gray-700 whitespace-pre-line">
                   {viewLang === "en"
                     ? pkg.description
-                    : pkgZh?.description || pkg.description}
+                    : pkg.descriptionZh || pkg.description}
                 </div>
               </div>
             </Card>
@@ -333,15 +326,15 @@ export const PackagePreviewPage: React.FC = () => {
                 </Card>
               )}
             {viewLang === "zh" &&
-              pkgZh?.highlights &&
-              pkgZh.highlights.length > 0 && (
+              pkg.highlightsZh &&
+              pkg.highlightsZh.length > 0 && (
                 <Card>
                   <div className="p-8">
                     <h2 className="text-2xl font-bold text-gray-900 mb-4">
                       亮点
                     </h2>
                     <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                      {pkgZh.highlights.map((highlight, idx) => (
+                      {pkg.highlightsZh.map((highlight, idx) => (
                         <li key={idx} className="flex items-start gap-2">
                           <Star className="h-5 w-5 text-yellow-500 flex-shrink-0 mt-0.5" />
                           <span className="text-gray-700">{highlight}</span>
@@ -401,44 +394,47 @@ export const PackagePreviewPage: React.FC = () => {
                 </div>
               </Card>
             )}
-            {viewLang === "zh" &&
-              pkgZh?.itinerary &&
-              pkgZh.itinerary.length > 0 && (
-                <Card>
-                  <div className="p-8">
-                    <h2 className="text-2xl font-bold text-gray-900 mb-6">
-                      行程安排
-                    </h2>
-                    <div className="space-y-6">
-                      {pkgZh.itinerary.map((day, idx) => (
-                        <div
-                          key={idx}
-                          className="border-l-4 border-blue-600 pl-6"
-                        >
-                          <h3 className="text-lg font-bold text-gray-900 mb-2">
-                            第{day.day}天: {day.title}
-                          </h3>
-                          <p className="text-gray-700 mb-3">
-                            {day.description}
-                          </p>
-                          {day.activities && day.activities.length > 0 && (
-                            <div className="mb-2">
-                              <p className="text-sm font-semibold text-gray-600 mb-1">
-                                活动:
-                              </p>
-                              <ul className="list-disc list-inside text-gray-700 text-sm">
-                                {day.activities.map((activity, actIdx) => (
-                                  <li key={actIdx}>{activity}</li>
-                                ))}
-                              </ul>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
+            {viewLang === "zh" && pkg.itinerary && pkg.itinerary.length > 0 && (
+              <Card>
+                <div className="p-8">
+                  <h2 className="text-2xl font-bold text-gray-900 mb-6">
+                    行程安排
+                  </h2>
+                  <div className="space-y-6">
+                    {pkg.itinerary.map((day, idx) => (
+                      <div
+                        key={idx}
+                        className="border-l-4 border-blue-600 pl-6"
+                      >
+                        <h3 className="text-lg font-bold text-gray-900 mb-2">
+                          第{day.day}天: {day.titleZh || day.title}
+                        </h3>
+                        <p className="text-gray-700 mb-3">
+                          {day.descriptionZh || day.description}
+                        </p>
+                        {((day as any).activitiesZh || day.activities || [])
+                          .length > 0 && (
+                          <div className="mb-2">
+                            <p className="text-sm font-semibold text-gray-600 mb-1">
+                              活动:
+                            </p>
+                            <ul className="list-disc list-inside text-gray-700 text-sm">
+                              {(
+                                (day as any).activitiesZh ||
+                                day.activities ||
+                                []
+                              ).map((activity: string, actIdx: number) => (
+                                <li key={actIdx}>{activity}</li>
+                              ))}
+                            </ul>
+                          </div>
+                        )}
+                      </div>
+                    ))}
                   </div>
-                </Card>
-              )}
+                </div>
+              </Card>
+            )}
 
             {/* Included/Excluded */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -486,8 +482,8 @@ export const PackagePreviewPage: React.FC = () => {
                 </Card>
               )}
               {viewLang === "zh" &&
-                pkgZh?.included &&
-                pkgZh.included.length > 0 && (
+                pkg.includedZh &&
+                pkg.includedZh.length > 0 && (
                   <Card>
                     <div className="p-6">
                       <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -495,7 +491,7 @@ export const PackagePreviewPage: React.FC = () => {
                         费用包含
                       </h3>
                       <ul className="space-y-2">
-                        {pkgZh.included.map((item, idx) => (
+                        {pkg.includedZh.map((item, idx) => (
                           <li
                             key={idx}
                             className="flex items-start gap-2 text-gray-700"
@@ -509,8 +505,8 @@ export const PackagePreviewPage: React.FC = () => {
                   </Card>
                 )}
               {viewLang === "zh" &&
-                pkgZh?.excluded &&
-                pkgZh.excluded.length > 0 && (
+                pkg.excludedZh &&
+                pkg.excludedZh.length > 0 && (
                   <Card>
                     <div className="p-6">
                       <h3 className="text-xl font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -518,7 +514,7 @@ export const PackagePreviewPage: React.FC = () => {
                         费用不含
                       </h3>
                       <ul className="space-y-2">
-                        {pkgZh.excluded.map((item, idx) => (
+                        {pkg.excludedZh.map((item, idx) => (
                           <li
                             key={idx}
                             className="flex items-start gap-2 text-gray-700"

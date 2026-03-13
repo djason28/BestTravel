@@ -89,79 +89,19 @@ export const PackagesPage: React.FC = () => {
     setIsLoading(true);
     try {
       const payload: FilterOptions = { ...filters, search: searchQuery };
-      let resEn: any;
-      try {
-        resEn = await packageApi.getAll(payload, "en");
-      } catch (e: any) {
-        // Fallback: retry without explicit lang param (older behavior) if first attempt fails
-        console.warn(
-          "[admin] english request failed, retrying without lang=en",
-          e,
-        );
-        try {
-          resEn = await packageApi.getAll(payload, undefined);
-        } catch (e2: any) {
-          throw e2; // propagate original failure after fallback attempt
-        }
-      }
-      const resZh = await packageApi.getAll(payload, "zh").catch((e) => {
-        console.warn(
-          "[admin] zh request failed, continuing without zh overlay",
-          e,
-        );
-        return null;
-      });
-      if (resEn && resEn.success) {
-        const zhMap: Record<string, Package> = {};
-        if (resZh && resZh.success) {
-          resZh.data.forEach((p: Package) => {
-            zhMap[p.id] = p;
-          });
-        }
-        const merged = resEn.data.map((p: Package) => {
-          const zh = zhMap[p.id];
-          if (!zh) return p;
-          return {
-            ...p,
-            titleZh: zh.title,
-            shortDescriptionZh: zh.shortDescription,
-            descriptionZh: zh.description,
-            categoriesZh: (zh as any).categories || [],
-            destinationZh: zh.destination,
-            availabilityZh: zh.availability,
-            highlightsZh: zh.highlights,
-            includedZh: zh.included,
-            excludedZh: zh.excluded,
-            itinerary: Array.isArray(p.itinerary)
-              ? p.itinerary.map((day: any, idx: number) => {
-                  const zhDay = (zh as any).itinerary
-                    ? (zh as any).itinerary[idx]
-                    : undefined;
-                  if (!zhDay) return day;
-                  return {
-                    ...day,
-                    titleZh: zhDay.title,
-                    descriptionZh: zhDay.description,
-                  } as any;
-                })
-              : p.itinerary,
-          } as any;
-        });
-        setPackages(merged);
-        if (resEn.pagination) {
-          setTotalPages(resEn.pagination.totalPages);
-          setCurrentPage(resEn.pagination.page);
-          setTotalItems(resEn.pagination.total || merged.length);
+      const res = await packageApi.getAll(payload);
+      if (res && res.success) {
+        setPackages(res.data);
+        if (res.pagination) {
+          setTotalPages(res.pagination.totalPages);
+          setCurrentPage(res.pagination.page);
+          setTotalItems(res.pagination.total || res.data.length);
         }
       } else {
-        throw new Error("English packages response invalid");
+        throw new Error("Failed to load packages");
       }
-    } catch (error) {
-      console.error(
-        "[admin] failed to load packages details:",
-        error?.message,
-        error,
-      );
+    } catch (error: any) {
+      console.error("[admin] failed to load packages:", error?.message, error);
       const msg = error?.message || "Failed to load packages";
       addToast(msg, "error");
     } finally {

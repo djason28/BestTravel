@@ -66,7 +66,6 @@ const handleResponse = async <T>(response: Response): Promise<T> => {
 export const packageApi = {
   getAll: async (
     filters?: FilterOptions,
-    langOverride?: "en" | "zh",
   ): Promise<PaginatedResponse<Package>> => {
     const params = new URLSearchParams();
     if (filters) {
@@ -84,56 +83,30 @@ export const packageApi = {
         if (v !== "") params.append(key, v);
       });
     }
-    const lp = langOverride ? `lang=${langOverride}` : "";
-    const query = params.toString();
-    const sep = query ? "&" : "";
-    const response = await fetch(
-      `${API_BASE_URL}/packages?${query}${lp ? sep + lp : ""}`,
-      {
-        headers: getAuthHeaders(),
-      },
-    );
+    const response = await fetch(`${API_BASE_URL}/packages?${params}`, {
+      headers: getAuthHeaders(),
+    });
     return handleResponse<PaginatedResponse<Package>>(response);
   },
 
-  getById: async (
-    id: string,
-    langOverride?: "en" | "zh",
-  ): Promise<ApiResponse<Package>> => {
-    const lp = langOverride ? `lang=${langOverride}` : "";
-    const response = await fetch(
-      `${API_BASE_URL}/packages/${id}${lp ? `?${lp}` : ""}`,
-      {
-        headers: getAuthHeaders(),
-      },
-    );
+  getById: async (id: string): Promise<ApiResponse<Package>> => {
+    const response = await fetch(`${API_BASE_URL}/packages/${id}`, {
+      headers: getAuthHeaders(),
+    });
     return handleResponse<ApiResponse<Package>>(response);
   },
 
-  getBySlug: async (
-    slug: string,
-    langOverride?: "en" | "zh",
-  ): Promise<ApiResponse<Package>> => {
-    const lp = langOverride ? `lang=${langOverride}` : "";
-    const response = await fetch(
-      `${API_BASE_URL}/packages/slug/${slug}${lp ? `?${lp}` : ""}`,
-      {
-        headers: getAuthHeaders(),
-      },
-    );
+  getBySlug: async (slug: string): Promise<ApiResponse<Package>> => {
+    const response = await fetch(`${API_BASE_URL}/packages/slug/${slug}`, {
+      headers: getAuthHeaders(),
+    });
     return handleResponse<ApiResponse<Package>>(response);
   },
 
-  getOptions: async (
-    langOverride?: "en" | "zh",
-  ): Promise<ApiResponse<PackageFilterOptions>> => {
-    const lp = langOverride ? `lang=${langOverride}` : "";
-    const response = await fetch(
-      `${API_BASE_URL}/packages/options${lp ? `?${lp}` : ""}`,
-      {
-        headers: getAuthHeaders(),
-      },
-    );
+  getOptions: async (): Promise<ApiResponse<PackageFilterOptions>> => {
+    const response = await fetch(`${API_BASE_URL}/packages/options`, {
+      headers: getAuthHeaders(),
+    });
     return handleResponse<ApiResponse<PackageFilterOptions>>(response);
   },
 

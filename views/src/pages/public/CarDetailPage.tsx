@@ -26,9 +26,11 @@ import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { ContentLoader } from "../../components/common/ContentLoader";
 import { useNavigationState } from "../../contexts/NavigationContext";
 import { Button } from "../../components/common/Button";
-import { t, currentLang } from "../../i18n";
+import { t } from "../../i18n";
+import { useLang } from "../../contexts/LangContext";
 
 export const CarDetailPage: React.FC = () => {
+  const { lang } = useLang();
   const { slug } = useParams<{ slug: string }>();
   const [car, setCar] = useState<CarType | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -64,9 +66,9 @@ export const CarDetailPage: React.FC = () => {
 
   const handleWhatsAppClick = () => {
     if (!car) return;
-    const carName = currentLang() === "zh" ? car.nameZh || car.name : car.name;
+    const carName = lang === "zh" ? car.nameZh || car.name : car.name;
     const driverOption =
-      currentLang() === "zh"
+      lang === "zh"
         ? car.withDriver
           ? t("with_driver_label")
           : t("without_driver_label")
@@ -74,7 +76,7 @@ export const CarDetailPage: React.FC = () => {
           ? "With Driver"
           : "Self Drive";
     const message =
-      currentLang() === "zh"
+      lang === "zh"
         ? `您好！我想咨询租车服务。\n\n车辆：${carName}\n- 座位：${car.seats} 座\n- 变速箱：${car.transmission}\n- 司机选项：${driverOption}\n\n请告知可用时间和具体价格。`
         : `Hello! I'm interested in renting a car.\n\nCar: ${carName}\n- Seats: ${car.seats}\n- Transmission: ${car.transmission}\n- Driver Option: ${driverOption}\n\nPlease let me know about availability and pricing details.`;
     const link = getWhatsAppLink("6285283918338", message);
@@ -169,34 +171,31 @@ export const CarDetailPage: React.FC = () => {
     );
   }
 
-  const displayName =
-    currentLang() === "zh" ? car.nameZh || car.name : car.name;
+  const displayName = lang === "zh" ? car.nameZh || car.name : car.name;
   const displayDescription =
-    currentLang() === "zh"
-      ? car.descriptionZh || car.description
-      : car.description;
+    lang === "zh" ? car.descriptionZh || car.description : car.description;
 
   const features =
-    (currentLang() === "zh"
+    (lang === "zh"
       ? car.featuresZh?.length
         ? car.featuresZh
         : car.features
       : car.features) || [];
   const included =
-    (currentLang() === "zh"
+    (lang === "zh"
       ? car.includedZh?.length
         ? car.includedZh
         : car.included
       : car.included) || [];
   const excluded =
-    (currentLang() === "zh"
+    (lang === "zh"
       ? car.excludedZh?.length
         ? car.excludedZh
         : car.excluded
       : car.excluded) || [];
 
   const localizePriceUnit = (unit: string) => {
-    if (currentLang() === "zh") {
+    if (lang === "zh") {
       switch (unit) {
         case "day":
           return "天";
@@ -370,7 +369,7 @@ export const CarDetailPage: React.FC = () => {
                     <p className="text-sm text-gray-600">{t("seats")}</p>
                     <p className="font-semibold text-gray-900">
                       {car.seats}
-                      {currentLang() === "zh" ? " 座" : " seats"}
+                      {lang === "zh" ? " 座" : " seats"}
                     </p>
                   </div>
                 </div>
@@ -394,7 +393,7 @@ export const CarDetailPage: React.FC = () => {
                   <div>
                     <p className="text-sm text-gray-600">{t("fuel_type")}</p>
                     <p className="font-semibold text-gray-900 capitalize">
-                      {currentLang() === "zh"
+                      {lang === "zh"
                         ? ({
                             Bensin: "汽油",
                             Solar: "柴油",
@@ -435,7 +434,7 @@ export const CarDetailPage: React.FC = () => {
                     <span className="text-sm text-gray-700">
                       <span className="font-medium">{t("min_days")}:</span>{" "}
                       {car.minDays}
-                      {currentLang() === "zh" ? " 天" : " days"}
+                      {lang === "zh" ? " 天" : " days"}
                     </span>
                   </div>
                 )}
@@ -537,17 +536,17 @@ export const CarDetailPage: React.FC = () => {
                     <Calendar className="h-5 w-5 text-white" />
                   </div>
                   <span className="text-xs font-medium uppercase tracking-wider text-white/80">
-                    {currentLang() === "zh" ? "可用时间" : "Availability"}
+                    {lang === "zh" ? "可用时间" : "Availability"}
                   </span>
                 </div>
                 <p className="text-3xl font-bold tracking-tight mt-2">
-                  {currentLang() === "zh"
+                  {lang === "zh"
                     ? car.availabilityZh || car.availability || car.year
                     : car.availability || car.year}
                 </p>
                 <p className="text-xs text-white/70 mt-2">
                   *{" "}
-                  {currentLang() === "zh"
+                  {lang === "zh"
                     ? "请联系我们获取详细价格与预订情况"
                     : "Contact us for detailed pricing & availability"}
                 </p>

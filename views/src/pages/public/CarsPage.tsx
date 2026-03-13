@@ -16,8 +16,9 @@ import { Card } from "../../components/common/Card";
 import { PackageCardSkeleton } from "../../components/common/Loading";
 import { Button } from "../../components/common/Button";
 import { useNavigationState } from "../../contexts/NavigationContext";
-import { t, currentLang } from "../../i18n";
+import { t } from "../../i18n";
 import { useResponsiveLimit } from "../../hooks/useResponsiveLimit";
+import { useLang } from "../../contexts/LangContext";
 
 const FUEL_ZH: Record<string, string> = {
   Bensin: "汽油",
@@ -33,6 +34,7 @@ const TRANSMISSION_ZH: Record<string, string> = {
 };
 
 export const CarsPage: React.FC = () => {
+  const { lang } = useLang();
   const [searchParams, setSearchParams] = useSearchParams();
   const [cars, setCars] = useState<Car[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -255,7 +257,7 @@ export const CarsPage: React.FC = () => {
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
             {cars.map((car) => (
-              <CarCard key={car.id} car={car} />
+              <CarCard key={car.id} car={car} lang={lang} />
             ))}
           </div>
         )}
@@ -307,7 +309,7 @@ export const CarsPage: React.FC = () => {
   );
 };
 
-const CarCard: React.FC<{ car: Car }> = ({ car }) => {
+const CarCard: React.FC<{ car: Car; lang: "en" | "zh" }> = ({ car, lang }) => {
   const coverImage =
     car.images?.find((i) => i.isCover)?.url ??
     car.images?.[0]?.url ??
@@ -339,10 +341,10 @@ const CarCard: React.FC<{ car: Car }> = ({ car }) => {
       {/* Content - p-6 to match Package style */}
       <div className="p-6 flex flex-col flex-grow">
         <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-[#0891b2] transition-colors">
-          {currentLang() === "zh" ? car.nameZh || car.name : car.name}
+          {lang === "zh" ? car.nameZh || car.name : car.name}
         </h3>
         <p className="text-gray-600 mb-4 line-clamp-2 text-sm">
-          {currentLang() === "zh"
+          {lang === "zh"
             ? car.descriptionZh ||
               car.description ||
               `${car.brand} ${car.model}${car.year ? ` · ${car.year}` : ""}`
@@ -355,7 +357,7 @@ const CarCard: React.FC<{ car: Car }> = ({ car }) => {
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Users className="h-4 w-4 text-cyan-600" />
               <span>
-                {car.seats} {currentLang() === "zh" ? "座" : t("seats")}
+                {car.seats} {lang === "zh" ? "座" : t("seats")}
               </span>
             </div>
           )}
@@ -363,7 +365,7 @@ const CarCard: React.FC<{ car: Car }> = ({ car }) => {
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Settings2 className="h-4 w-4 text-cyan-600" />
               <span>
-                {currentLang() === "zh"
+                {lang === "zh"
                   ? TRANSMISSION_ZH[car.transmission] || car.transmission
                   : car.transmission}
               </span>
@@ -373,7 +375,7 @@ const CarCard: React.FC<{ car: Car }> = ({ car }) => {
             <div className="flex items-center gap-2 text-sm text-gray-600">
               <Fuel className="h-4 w-4 text-cyan-600" />
               <span>
-                {currentLang() === "zh"
+                {lang === "zh"
                   ? FUEL_ZH[car.fuelType] || car.fuelType
                   : car.fuelType}
               </span>
@@ -386,7 +388,7 @@ const CarCard: React.FC<{ car: Car }> = ({ car }) => {
             to={`/cars/${car.slug}`}
             className="px-6 py-2 bg-[#0891b2] text-white rounded-lg hover:bg-cyan-700 transition-colors shadow-sm font-medium"
           >
-            {currentLang() === "zh" ? "立刻预订！" : "Book Now!"}
+            {lang === "zh" ? "立刻预订！" : "Book Now!"}
           </Link>
         </div>
       </div>

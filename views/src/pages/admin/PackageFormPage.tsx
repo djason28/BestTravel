@@ -67,80 +67,58 @@ export const PackageFormPage: React.FC = () => {
     }
     (async () => {
       try {
-        const [resEn, resZh] = await Promise.all([
-          packageApi.getById(id, "en"),
-          packageApi.getById(id, "zh"),
-        ]);
-        if (resEn.success && resEn.data) {
-          const pEn: any = resEn.data;
+        const res = await packageApi.getById(id);
+        if (res.success && res.data) {
+          const p: any = res.data;
           const base: PackageFormData = {
-            title: pEn.title || "",
-            titleZh: "",
-            shortDescription: pEn.shortDescription || "",
-            shortDescriptionZh: "",
-            description: pEn.description || "",
-            descriptionZh: "",
+            title: p.title || "",
+            titleZh: p.titleZh || "",
+            shortDescription: p.shortDescription || "",
+            shortDescriptionZh: p.shortDescriptionZh || "",
+            description: p.description || "",
+            descriptionZh: p.descriptionZh || "",
             prices:
-              pEn.prices && pEn.prices.length > 0
-                ? pEn.prices
-                : [{ amount: pEn.price || 1, currency: pEn.currency || "IDR" }],
-            price: pEn.price || 1,
-            currency: pEn.currency || "IDR",
-            duration: pEn.duration || 1,
-            durationUnit: pEn.durationUnit || "days",
-            categories: pEn.categories || [],
-            categoriesZh: [],
-            destination: pEn.destination || "",
-            destinationZh: "",
-            availability: pEn.availability || "",
-            availabilityZh: "",
-            minParticipants: pEn.minParticipants || 1,
-            maxParticipants: pEn.maxParticipants || 1,
-            highlights: pEn.highlights || [],
-            highlightsZh: [],
-            included: pEn.included || [],
-            includedZh: [],
-            excluded: pEn.excluded || [],
-            excludedZh: [],
-            itinerary: pEn.itinerary || [],
+              p.prices && p.prices.length > 0
+                ? p.prices
+                : [{ amount: p.price || 1, currency: p.currency || "IDR" }],
+            price: p.price || 1,
+            currency: p.currency || "IDR",
+            duration: p.duration || 1,
+            durationUnit: p.durationUnit || "days",
+            categories: p.categories || [],
+            categoriesZh: p.categoriesZh || [],
+            destination: p.destination || "",
+            destinationZh: p.destinationZh || "",
+            availability: p.availability || "",
+            availabilityZh: p.availabilityZh || "",
+            minParticipants: p.minParticipants || 1,
+            maxParticipants: p.maxParticipants || 1,
+            highlights: p.highlights || [],
+            highlightsZh: p.highlightsZh || [],
+            included: p.included || [],
+            includedZh: p.includedZh || [],
+            excluded: p.excluded || [],
+            excludedZh: p.excludedZh || [],
+            itinerary: (p.itinerary || []).map((day: any) => ({
+              ...day,
+              titleZh: day.titleZh || "",
+              descriptionZh: day.descriptionZh || "",
+              activitiesZh: day.activitiesZh || [],
+              mealsZh: day.mealsZh || [],
+              accommodationZh: day.accommodationZh || "",
+            })),
             status:
-              pEn.status === "draft" || pEn.status === "published"
-                ? pEn.status
+              p.status === "draft" || p.status === "published"
+                ? p.status
                 : "draft",
-            featured: !!pEn.featured,
+            featured: !!p.featured,
           };
-          if (resZh.success && resZh.data) {
-            const pZh: any = resZh.data;
-            base.titleZh = pZh.title || "";
-            base.shortDescriptionZh = pZh.shortDescription || "";
-            base.descriptionZh = pZh.description || "";
-            base.categoriesZh = pZh.categories || [];
-            base.destinationZh = pZh.destination || "";
-            base.availabilityZh = pZh.availability || "";
-            base.highlightsZh = pZh.highlights || [];
-            base.includedZh = pZh.included || [];
-            base.excludedZh = pZh.excluded || [];
-            base.itinerary = (base.itinerary || []).map(
-              (day: any, idx: number) => {
-                const zhDay = (pZh.itinerary || [])[idx];
-                if (!zhDay) return day;
-                return {
-                  ...day,
-                  titleZh: zhDay.title,
-                  descriptionZh: zhDay.description,
-                  activitiesZh: zhDay.activities,
-                  mealsZh: zhDay.meals,
-                  accommodationZh: zhDay.accommodation,
-                };
-              },
-            );
-          }
           setForm(base);
           setIncludedText(base.included.join("\n"));
           setExcludedText(base.excluded.join("\n"));
           setIncludedZhText(base.includedZh.join("\n"));
           setExcludedZhText(base.excludedZh.join("\n"));
-          setImages(pEn.images || []);
+          setImages(p.images || []);
         }
       } catch (e) {
         addToast("Failed to load package", "error");
@@ -975,7 +953,6 @@ export const PackageFormPage: React.FC = () => {
               placeholder="套餐的简要概述..."
             />
             <Textarea
-              
               label="费用包含 (每行一条)"
               value={includedZhText}
               onChange={(e) => setIncludedZhText(e.target.value)}

@@ -15,12 +15,14 @@ import { buildFilterQuery, parseFilterParams } from "../../utils/query";
 import { Card } from "../../components/common/Card";
 import { PackageCardSkeleton } from "../../components/common/Loading";
 import { Button } from "../../components/common/Button";
-import { t, currentLang } from "../../i18n";
+import { t } from "../../i18n";
 import { useNavigationState } from "../../contexts/NavigationContext";
 import { useDataCache } from "../../contexts/DataCacheContext";
 import { useResponsiveLimit } from "../../hooks/useResponsiveLimit";
+import { useLang } from "../../contexts/LangContext";
 
 export const PackagesPage: React.FC = () => {
+  const { lang } = useLang();
   const [searchParams, setSearchParams] = useSearchParams();
   const [packages, setPackages] = useState<Package[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -52,7 +54,7 @@ export const PackagesPage: React.FC = () => {
       setOptions(cachedOptions);
     } else {
       packageApi
-        .getOptions(currentLang() === "zh" ? "zh" : "en")
+        .getOptions()
         .then((res) => {
           if (res.success && res.data) {
             setOptions(res.data);
@@ -75,12 +77,8 @@ export const PackagesPage: React.FC = () => {
   const loadPackages = async () => {
     setIsLoading(true);
     startNavigation();
-    const lang = currentLang();
     try {
-      const response = await packageApi.getAll(
-        filters,
-        lang === "zh" ? "zh" : "en",
-      );
+      const response = await packageApi.getAll(filters);
       if (response.success) {
         setPackages(response.data);
         setTotalPages(response.pagination.totalPages);
@@ -308,7 +306,7 @@ export const PackagesPage: React.FC = () => {
                   value={filters.availability || ""}
                   onChange={(e) => updateFilter("availability", e.target.value)}
                   placeholder={
-                    currentLang() === "zh"
+                    lang === "zh"
                       ? "例如: 全年, 季节性"
                       : "e.g., year-round, seasonal"
                   }
@@ -477,7 +475,7 @@ export const PackagesPage: React.FC = () => {
           <p className="text-gray-600 text-sm md:text-base">
             {isLoading
               ? t("loading")
-              : currentLang() === "zh"
+              : lang === "zh"
                 ? `${t("showing")} ${packages.length} / ${totalItems} ${t("packages_label")}` +
                   (totalPages > 1
                     ? ` (第 ${currentPage} / ${totalPages} ${t("pages")})`
@@ -503,8 +501,12 @@ export const PackagesPage: React.FC = () => {
             </div>
           ) : (
             packages.map((pkg) => {
+              const cats =
+                lang === "zh" && pkg.categoriesZh?.length
+                  ? pkg.categoriesZh
+                  : pkg.categories || [];
               const { visible: visibleCategories, remaining: remainingCount } =
-                formatCategories(pkg.categories || [], 3);
+                formatCategories(cats, 3);
 
               return (
                 <div key={pkg.id}>
@@ -549,12 +551,10 @@ export const PackagesPage: React.FC = () => {
                     </div>
                     <div className="p-6">
                       <h3 className="text-xl font-bold text-gray-900 mb-2">
-                        {currentLang() === "zh"
-                          ? pkg.titleZh || pkg.title
-                          : pkg.title}
+                        {lang === "zh" ? pkg.titleZh || pkg.title : pkg.title}
                       </h3>
                       <p className="text-gray-600 mb-4 line-clamp-2">
-                        {currentLang() === "zh"
+                        {lang === "zh"
                           ? pkg.shortDescriptionZh || pkg.shortDescription
                           : pkg.shortDescription}
                       </p>
@@ -563,7 +563,7 @@ export const PackagesPage: React.FC = () => {
                         <div className="flex items-center gap-2 text-sm text-gray-600">
                           <MapPin className="h-4 w-4 text-cyan-600" />
                           <span>
-                            {currentLang() === "zh"
+                            {lang === "zh"
                               ? pkg.destinationZh || pkg.destination
                               : pkg.destination}
                           </span>
@@ -572,7 +572,7 @@ export const PackagesPage: React.FC = () => {
                           <Calendar className="h-4 w-4 text-cyan-600" />
                           <span>
                             {pkg.duration}{" "}
-                            {currentLang() === "zh"
+                            {lang === "zh"
                               ? pkg.durationUnit === "days"
                                 ? "天"
                                 : pkg.durationUnit === "nights"
@@ -590,7 +590,7 @@ export const PackagesPage: React.FC = () => {
                           to={`/packages/${pkg.slug}`}
                           className="px-6 py-2 bg-[#0891b2] text-white rounded-lg hover:bg-cyan-700 transition-colors shadow-sm font-medium"
                         >
-                          {currentLang() === "zh" ? "立刻预订！" : "Book Now!"}
+                          {lang === "zh" ? "立刻预订！" : "Book Now!"}
                         </Link>
                       </div>
                     </div>
