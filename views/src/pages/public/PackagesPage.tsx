@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { packageApi } from "../../services/api";
 import type { Package, FilterOptions, PackageFilterOptions } from "../../types";
-import { formatPrice, debounce, formatCategories } from "../../utils/security";
+import { debounce, formatCategories } from "../../utils/security";
 import { buildFilterQuery, parseFilterParams } from "../../utils/query";
 import { Card } from "../../components/common/Card";
 import { PackageCardSkeleton } from "../../components/common/Loading";
@@ -320,8 +320,6 @@ export const PackagesPage: React.FC = () => {
                 >
                   <option value="newest">{t("newest_first")}</option>
                   <option value="popular">{t("most_popular")}</option>
-                  <option value="price_asc">{t("price_low_high")}</option>
-                  <option value="price_desc">{t("price_high_low")}</option>
                   <option value="duration_asc">
                     {t("duration_short_long")}
                   </option>
@@ -384,40 +382,7 @@ export const PackagesPage: React.FC = () => {
                 </select>
               </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-2">
-                  {t("price_range")}
-                </label>
-                <div className="flex gap-2">
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="Min"
-                    className="w-full px-3 py-2 border rounded"
-                    value={String(searchParams.get("priceMin") || "")}
-                    onChange={(e) =>
-                      updateFilter(
-                        "priceMin",
-                        e.target.value ? Number(e.target.value) : undefined,
-                      )
-                    }
-                  />
-                  <input
-                    type="number"
-                    min="1"
-                    placeholder="Max"
-                    className="w-full px-3 py-2 border rounded"
-                    value={String(searchParams.get("priceMax") || "")}
-                    onChange={(e) =>
-                      updateFilter(
-                        "priceMax",
-                        e.target.value ? Number(e.target.value) : undefined,
-                      )
-                    }
-                  />
-                </div>
-              </div>
-
+              {/* Price filter removed as requested */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   {t("duration_days")}
@@ -535,8 +500,8 @@ export const PackagesPage: React.FC = () => {
                 formatCategories(pkg.categories || [], 3);
 
               return (
-                <Link key={pkg.id} to={`/packages/${pkg.slug}`}>
-                  <Card hover className="h-full">
+                <div key={pkg.id}>
+                  <Card hover className="h-full flex flex-col group">
                     <div className="relative h-64 overflow-hidden">
                       <img
                         src={
@@ -548,7 +513,7 @@ export const PackagesPage: React.FC = () => {
                         }
                         alt={pkg.title}
                         loading="lazy"
-                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-110"
+                        className="w-full h-full object-contain bg-gray-100 transition-transform duration-500 hover:scale-110"
                       />
                       {pkg.featured && (
                         <div className="absolute top-4 right-4 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
@@ -613,22 +578,17 @@ export const PackagesPage: React.FC = () => {
                         </div>
                       </div>
 
-                      <div className="flex items-center justify-between pt-4 border-t">
-                        <div>
-                          <p className="text-sm text-gray-600">
-                            {t("starting_from")}
-                          </p>
-                          <p className="text-2xl font-bold text-[#0891b2]">
-                            {formatPrice(pkg.price, pkg.currency)}
-                          </p>
-                        </div>
-                        <button className="px-4 py-2 bg-[#0891b2] text-white rounded-lg hover:bg-cyan-700 transition-colors">
-                          {t("details")}
-                        </button>
+                      <div className="flex items-center justify-end pt-4 border-t mt-auto">
+                        <Link
+                          to={`/packages/${pkg.slug}`}
+                          className="px-6 py-2 bg-[#0891b2] text-white rounded-lg hover:bg-cyan-700 transition-colors shadow-sm font-medium"
+                        >
+                          {currentLang() === "zh" ? "立刻预订！" : "Book Now!"}
+                        </Link>
                       </div>
                     </div>
                   </Card>
-                </Link>
+                </div>
               );
             })
           )}

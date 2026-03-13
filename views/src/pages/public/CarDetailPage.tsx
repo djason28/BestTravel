@@ -19,7 +19,9 @@ import {
 } from "lucide-react";
 import { carApi } from "../../services/api";
 import type { Car as CarType } from "../../types";
-import { formatPrice, getWhatsAppLink } from "../../utils/security";
+import { getWhatsAppLink } from "../../utils/security";
+import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
+
 import { ContentLoader } from "../../components/common/ContentLoader";
 import { useNavigationState } from "../../contexts/NavigationContext";
 import { Button } from "../../components/common/Button";
@@ -70,17 +72,10 @@ export const CarDetailPage: React.FC = () => {
         : car.withDriver
           ? "With Driver"
           : "Self Drive";
-    const priceStr = (
-      car.prices?.length
-        ? car.prices
-        : [{ amount: car.price, currency: car.currency }]
-    )
-      .map((p) => formatPrice(p.amount, p.currency))
-      .join(" / ");
     const message =
       currentLang() === "zh"
-        ? `您好！我想咨询租车服务。\n\n车辆：${carName}\n- 座位：${car.seats} 座\n- 变速箱：${car.transmission}\n- 司机选项：${driverOption}\n- 价格：${priceStr}\n\n请告知可用时间和租车详情。`
-        : `Hello! I'm interested in renting a car.\n\nCar: ${carName}\n- Seats: ${car.seats}\n- Transmission: ${car.transmission}\n- Driver Option: ${driverOption}\n- Price: ${priceStr}\n\nPlease let me know about availability and rental details.`;
+        ? `您好！我想咨询租车服务。\n\n车辆：${carName}\n- 座位：${car.seats} 座\n- 变速箱：${car.transmission}\n- 司机选项：${driverOption}\n\n请告知可用时间和具体价格。`
+        : `Hello! I'm interested in renting a car.\n\nCar: ${carName}\n- Seats: ${car.seats}\n- Transmission: ${car.transmission}\n- Driver Option: ${driverOption}\n\nPlease let me know about availability and pricing details.`;
     const link = getWhatsAppLink("6285283918338", message);
     window.open(link, "_blank");
   };
@@ -272,9 +267,7 @@ export const CarDetailPage: React.FC = () => {
                       }
                       alt={image.alt || displayName}
                       loading={i === 0 ? "eager" : "lazy"}
-                      className={`absolute inset-0 w-full h-full object-cover cursor-pointer select-none transition-opacity duration-700 ease-in-out ${
-                        i === currentImageIndex ? "opacity-100" : "opacity-0"
-                      } ${i === currentImageIndex ? "" : "pointer-events-none"}`}
+                      className={`absolute inset-0 w-full h-full object-contain bg-gray-100 cursor-pointer select-none transition-opacity duration-700 ease-in-out ${i === currentImageIndex ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"}`}
                       onClick={() => setIsGalleryOpen(true)}
                       draggable={false}
                     />
@@ -286,7 +279,7 @@ export const CarDetailPage: React.FC = () => {
                       "https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg"
                     }
                     alt={displayName}
-                    className="w-full h-full object-cover cursor-pointer"
+                    className="w-full h-full object-contain bg-gray-100 cursor-pointer"
                     onClick={() => setIsGalleryOpen(true)}
                     draggable={false}
                   />
@@ -329,7 +322,7 @@ export const CarDetailPage: React.FC = () => {
                       src={image.url}
                       alt={image.alt}
                       loading="lazy"
-                      className={`w-full h-24 object-cover rounded-lg cursor-pointer transition-all ${
+                      className={`w-full h-24 object-contain bg-gray-100 rounded-lg cursor-pointer transition-all ${
                         index === currentImageIndex
                           ? "ring-2 ring-[#0891b2]"
                           : "opacity-70 hover:opacity-100"
@@ -536,38 +529,19 @@ export const CarDetailPage: React.FC = () => {
           {/* Sticky sidebar */}
           <div className="lg:col-span-1">
             <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
-              <div className="mb-6">
-                <p className="text-sm text-gray-600 mb-1">
-                  {t("starting_from")}
+              <div className="mb-6 border-b pb-6">
+                <p className="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
+                  <Clock className="h-6 w-6 text-[#0891b2]" />
+                  {currentLang() === "zh"
+                    ? car.availabilityZh || car.availability || car.year
+                    : car.availability || car.year}
                 </p>
-                {(car.prices?.length
-                  ? car.prices
-                  : [{ amount: car.price, currency: car.currency }]
-                ).map((p, i) => (
-                  <p
-                    key={i}
-                    className={
-                      i === 0
-                        ? "text-4xl font-bold text-[#0891b2]"
-                        : "text-xl font-semibold text-gray-500 mt-1"
-                    }
-                  >
-                    {formatPrice(p.amount, p.currency)}
-                  </p>
-                ))}
-                <p className="text-sm text-gray-500 mt-1">
-                  / {localizePriceUnit(car.priceUnit)}
+                <p className="text-sm text-gray-500 mt-2 italic">
+                  *{" "}
+                  {currentLang() === "zh"
+                    ? "请联系我们获取详细价格与预订情况"
+                    : "Contact us for detailed pricing & availability"}
                 </p>
-                {(car.availability || car.availabilityZh) && (
-                  <div className="flex items-center gap-2 text-gray-700 mt-3">
-                    <Clock className="h-5 w-5 text-gray-400" />
-                    <span className="text-sm">
-                      {currentLang() === "zh"
-                        ? car.availabilityZh || car.availability
-                        : car.availability}
-                    </span>
-                  </div>
-                )}
               </div>
 
               <Button
@@ -649,20 +623,40 @@ export const CarDetailPage: React.FC = () => {
               </button>
             </>
           )}
-          {images.map((image, i) => (
-            <img
-              key={image.id || i}
-              src={image.url}
-              alt={image.alt || displayName}
-              loading={i === 0 ? "eager" : "lazy"}
-              className={`absolute max-w-[90vw] max-h-[90vh] object-contain transition-opacity duration-700 ease-in-out ${
-                i === currentImageIndex
-                  ? "opacity-100 animate-kenburns"
-                  : "opacity-0"
-              }`}
-              draggable={false}
-            />
-          ))}
+          {/* Fade + Ken Burns Removed, Added Zoom */}
+          {images.map(
+            (image, i) =>
+              i === currentImageIndex && (
+                <div
+                  key={i}
+                  className="absolute inset-0 w-full h-full flex items-center justify-center pointer-events-auto"
+                >
+                  <TransformWrapper
+                    wheel={{ step: 0.1, wheelDisabled: false }}
+                    minScale={1}
+                    maxScale={8}
+                  >
+                    <TransformComponent
+                      wrapperStyle={{ width: "100%", height: "100%" }}
+                      contentStyle={{
+                        width: "100%",
+                        height: "100%",
+                        display: "flex",
+                        justifyContent: "center",
+                        alignItems: "center",
+                      }}
+                    >
+                      <img
+                        src={image.url}
+                        alt={image.alt || displayName}
+                        className="max-w-[90vw] max-h-[90vh] object-contain cursor-zoom-in"
+                        draggable={false}
+                      />
+                    </TransformComponent>
+                  </TransformWrapper>
+                </div>
+              ),
+          )}
           <div className="absolute bottom-8 left-1/2 -translate-x-1/2 text-white flex items-center gap-4 select-none">
             <span>
               {currentImageIndex + 1} / {images.length}

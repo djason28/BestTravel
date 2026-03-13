@@ -11,19 +11,12 @@ import {
 } from "lucide-react";
 import { carApi } from "../../services/api";
 import type { Car } from "../../types";
-import { formatPrice, debounce } from "../../utils/security";
+import { debounce } from "../../utils/security";
 import { Card } from "../../components/common/Card";
 import { PackageCardSkeleton } from "../../components/common/Loading";
 import { Button } from "../../components/common/Button";
 import { useNavigationState } from "../../contexts/NavigationContext";
 import { t, currentLang } from "../../i18n";
-
-function getPriceUnitLabel(unit: string): string {
-  if (unit === "day") return `/ ${t("per_day")}`;
-  if (unit === "trip") return `/ ${t("per_trip")}`;
-  if (unit === "hour") return `/ ${t("per_hour")}`;
-  return `/ ${unit}`;
-}
 
 const FUEL_ZH: Record<string, string> = {
   Bensin: "汽油",
@@ -309,97 +302,83 @@ const CarCard: React.FC<{ car: Car }> = ({ car }) => {
     car.imageUrl ??
     "https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg"; // Default car image
 
-  const priceLabel = getPriceUnitLabel(car.priceUnit);
-
   return (
-    <Link to={`/cars/${car.slug}`} className="group block h-full">
-      <Card hover className="h-full flex flex-col">
-        {/* Image - h-64 to match Package style */}
-        <div className="relative h-64 overflow-hidden">
-          <img
-            src={coverImage}
-            alt={car.name}
-            loading="lazy"
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
-          />
-          {car.featured && (
-            <div className="absolute top-4 right-4 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
-              <Star className="h-4 w-4 fill-current" />
-              {t("featured")}
+    <Card hover className="h-full flex flex-col group">
+      <div className="relative h-64 overflow-hidden">
+        <img
+          src={coverImage}
+          alt={car.name}
+          loading="lazy"
+          className="w-full h-full object-contain bg-gray-100 transition-transform duration-500 group-hover:scale-110"
+        />
+        {car.featured && (
+          <div className="absolute top-4 right-4 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
+            <Star className="h-4 w-4 fill-current" />
+            {t("featured")}
+          </div>
+        )}
+        {car.withDriver && (
+          <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-[#0891b2] px-3 py-1 rounded-full text-xs font-semibold shadow-sm">
+            {t("with_driver_label")}
+          </div>
+        )}
+      </div>
+
+      {/* Content - p-6 to match Package style */}
+      <div className="p-6 flex flex-col flex-grow">
+        <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-[#0891b2] transition-colors">
+          {currentLang() === "zh" ? car.nameZh || car.name : car.name}
+        </h3>
+        <p className="text-gray-600 mb-4 line-clamp-2 text-sm">
+          {currentLang() === "zh"
+            ? car.descriptionZh ||
+              car.description ||
+              `${car.brand} ${car.model}${car.year ? ` · ${car.year}` : ""}`
+            : car.description ||
+              `${car.brand} ${car.model}${car.year ? ` · ${car.year}` : ""}`}
+        </p>
+
+        <div className="space-y-2 mb-4 flex-grow">
+          {car.seats > 0 && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Users className="h-4 w-4 text-cyan-600" />
+              <span>
+                {car.seats} {currentLang() === "zh" ? "座" : t("seats")}
+              </span>
             </div>
           )}
-          {car.withDriver && (
-            <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm text-[#0891b2] px-3 py-1 rounded-full text-xs font-semibold shadow-sm">
-              {t("with_driver_label")}
+          {car.transmission && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Settings2 className="h-4 w-4 text-cyan-600" />
+              <span>
+                {currentLang() === "zh"
+                  ? TRANSMISSION_ZH[car.transmission] || car.transmission
+                  : car.transmission}
+              </span>
+            </div>
+          )}
+          {car.fuelType && (
+            <div className="flex items-center gap-2 text-sm text-gray-600">
+              <Fuel className="h-4 w-4 text-cyan-600" />
+              <span>
+                {currentLang() === "zh"
+                  ? FUEL_ZH[car.fuelType] || car.fuelType
+                  : car.fuelType}
+              </span>
             </div>
           )}
         </div>
 
-        {/* Content - p-6 to match Package style */}
-        <div className="p-6 flex flex-col flex-grow">
-          <h3 className="text-xl font-bold text-gray-900 mb-2 group-hover:text-[#0891b2] transition-colors">
-            {currentLang() === "zh" ? car.nameZh || car.name : car.name}
-          </h3>
-          <p className="text-gray-600 mb-4 line-clamp-2 text-sm">
-            {currentLang() === "zh"
-              ? car.descriptionZh ||
-                car.description ||
-                `${car.brand} ${car.model}${car.year ? ` · ${car.year}` : ""}`
-              : car.description ||
-                `${car.brand} ${car.model}${car.year ? ` · ${car.year}` : ""}`}
-          </p>
-
-          <div className="space-y-2 mb-4 flex-grow">
-            {car.seats > 0 && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Users className="h-4 w-4 text-cyan-600" />
-                <span>
-                  {car.seats} {currentLang() === "zh" ? "座" : t("seats")}
-                </span>
-              </div>
-            )}
-            {car.transmission && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Settings2 className="h-4 w-4 text-cyan-600" />
-                <span>
-                  {currentLang() === "zh"
-                    ? TRANSMISSION_ZH[car.transmission] || car.transmission
-                    : car.transmission}
-                </span>
-              </div>
-            )}
-            {car.fuelType && (
-              <div className="flex items-center gap-2 text-sm text-gray-600">
-                <Fuel className="h-4 w-4 text-cyan-600" />
-                <span>
-                  {currentLang() === "zh"
-                    ? FUEL_ZH[car.fuelType] || car.fuelType
-                    : car.fuelType}
-                </span>
-              </div>
-            )}
-          </div>
-
-          <div className="flex items-center justify-between pt-4 border-t mt-auto">
-            <div>
-              <p className="text-sm text-gray-600">{t("starting_from")}</p>
-              <div className="flex items-baseline gap-1">
-                <span className="text-2xl font-bold text-[#0891b2]">
-                  {formatPrice(
-                    car.prices?.[0]?.amount || car.price,
-                    car.prices?.[0]?.currency || car.currency,
-                  )}
-                </span>
-                <span className="text-xs text-gray-500">{priceLabel}</span>
-              </div>
-            </div>
-            <button className="px-4 py-2 bg-[#0891b2] text-white rounded-lg hover:bg-cyan-700 transition-colors">
-              {t("details")}
-            </button>
-          </div>
+        <div className="flex items-center justify-end pt-4 border-t mt-auto">
+          <Link
+            to={`/cars/${car.slug}`}
+            className="px-6 py-2 bg-[#0891b2] text-white rounded-lg hover:bg-cyan-700 transition-colors shadow-sm font-medium"
+          >
+            {currentLang() === "zh" ? "立刻预订！" : "Book Now!"}
+          </Link>
         </div>
-      </Card>
-    </Link>
+      </div>
+    </Card>
   );
 };
 

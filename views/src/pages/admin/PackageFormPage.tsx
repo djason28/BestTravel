@@ -236,7 +236,6 @@ export const PackageFormPage: React.FC = () => {
       if (
         !form.titleZh?.trim() ||
         !form.shortDescriptionZh?.trim() ||
-        !form.descriptionZh?.trim() ||
         !form.destinationZh?.trim()
       ) {
         addToast("Mandarin required fields missing", "error");
@@ -527,15 +526,6 @@ export const PackageFormPage: React.FC = () => {
               onChange={onChange}
               rows={3}
               placeholder="A brief overview of the package..."
-              required
-            />
-            <Textarea
-              label="Description"
-              name="description"
-              value={form.description}
-              onChange={onChange}
-              rows={8}
-              placeholder="Detailed description of the package..."
               required
             />
             <Textarea
@@ -985,14 +975,7 @@ export const PackageFormPage: React.FC = () => {
               placeholder="套餐的简要概述..."
             />
             <Textarea
-              label="详细描述"
-              name="descriptionZh"
-              value={form.descriptionZh || ""}
-              onChange={onChange}
-              rows={8}
-              placeholder="套餐的详细介绍..."
-            />
-            <Textarea
+              
               label="费用包含 (每行一条)"
               value={includedZhText}
               onChange={(e) => setIncludedZhText(e.target.value)}

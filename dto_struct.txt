@@ -1,0 +1,28 @@
+
+// PackageDTO exposes a consistent subset of Package fields for API consumers.
+// (Chinese language substitution applied before conversion when requested.)
+type PackageDTO struct {
+	ID               string                `json:"id"`
+	Title            string                `json:"title"`
+	Slug             string                `json:"slug"`
+	ShortDescription string                `json:"shortDescription"`
+	Description      string                `json:"description"`
+	Price            int64                 `json:"price"`
+	Currency         string                `json:"currency"`
+	Prices           models.PriceList      `json:"prices"`
+	Duration         int                   `json:"duration"`
+	DurationUnit     string                `json:"durationUnit"`
+	Categories       models.StringArray    `json:"categories"`
+	Destination      string                `json:"destination"`
+	Included         models.StringArray    `json:"included"`
+	Excluded         models.StringArray    `json:"excluded"`
+	Highlights       models.StringArray    `json:"highlights"`
+	Availability     string                `json:"availability"`
+	MinParticipants  int                   `json:"minParticipants"`
+	MaxParticipants  int                   `json:"maxParticipants"`
+	Featured         bool                  `json:"featured"`
+	Status           string                `json:"status"`
+	ViewCount        int64                 `json:"viewCount"`
+	InquiryCount     int64                 `json:"inquiryCount"`
+	Images           []models.PackageImage `json:"images"`
+	// Itinerary only included in detail endpoints; left empty for list.
