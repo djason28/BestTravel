@@ -81,8 +81,14 @@ func (h *UploadController) UploadImage(c *gin.Context) {
 		return
 	}
 
-	url := "/images/" + key
-	ok(c, gin.H{"url": url})
+	var imgUrl string
+	if h.cfg.R2PublicBaseURL != "" {
+		imgUrl = fmt.Sprintf("%s/%s", strings.TrimRight(h.cfg.R2PublicBaseURL, "/"), key)
+	} else {
+		imgUrl = "/images/" + key
+	}
+
+	ok(c, gin.H{"url": imgUrl})
 }
 
 func (h *UploadController) DeleteImage(c *gin.Context) {
