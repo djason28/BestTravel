@@ -154,14 +154,15 @@ export const PackagePreviewPage: React.FC = () => {
       <div className="container mx-auto px-4 py-8">
         {/* Hero Image Section */}
         <div className="bg-white rounded-lg shadow-md overflow-hidden mb-8">
-          <div className="relative h-96">
+          <div className="relative h-96 bg-gray-100">
             <img
               src={
+                (Array.isArray(pkg.images) && pkg.images[selectedImage]?.url) ||
                 coverImage?.url ||
                 "https://images.pexels.com/photos/1430676/pexels-photo-1430676.jpeg"
               }
               alt={pkg.title}
-              className="w-full h-full object-cover"
+              className="w-full h-full object-contain"
             />
             {pkg.featured && (
               <div className="absolute top-4 right-4 bg-yellow-400 text-gray-900 px-4 py-2 rounded-full font-semibold flex items-center gap-2">
@@ -187,7 +188,7 @@ export const PackagePreviewPage: React.FC = () => {
                   <img
                     src={img.url}
                     alt={img.alt}
-                    className="w-full h-20 object-cover"
+                    className="w-full h-20 object-contain bg-gray-100"
                   />
                   {img.isCover && (
                     <div className="absolute top-1 right-1 bg-yellow-400 text-xs px-1 py-0.5 rounded">

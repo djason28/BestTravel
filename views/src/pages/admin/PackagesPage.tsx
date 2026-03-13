@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   Plus,
@@ -23,13 +23,18 @@ import { Card } from "../../components/common/Card";
 import { Loading } from "../../components/common/Loading";
 import { ConfirmModal } from "../../components/common/Modal";
 import { useToast } from "../../contexts/ToastContext";
+import { useResponsiveLimit } from "../../hooks/useResponsiveLimit";
 
 export const PackagesPage: React.FC = () => {
   const { addToast } = useToast();
+  const responsiveLimit = useResponsiveLimit();
   const [packages, setPackages] = useState<Package[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [showFilters, setShowFilters] = useState(false);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalItems, setTotalItems] = useState(0);
   const [filters, setFilters] = useState<FilterOptions>({
     search: "",
     categories: [],
@@ -42,7 +47,7 @@ export const PackagesPage: React.FC = () => {
     status: undefined,
     sortBy: "newest",
     page: 1,
-    limit: 100,
+    limit: responsiveLimit,
   });
   const [options, setOptions] = useState<PackageFilterOptions>({
     categories: [],
@@ -62,6 +67,11 @@ export const PackagesPage: React.FC = () => {
   useEffect(() => {
     loadPackages();
   }, [searchQuery, filters]);
+
+  useEffect(() => {
+    setFilters((prev) => ({ ...prev, limit: responsiveLimit, page: 1 }));
+    setCurrentPage(1);
+  }, [responsiveLimit]);
 
   useEffect(() => {
     (async () => {
@@ -138,6 +148,11 @@ export const PackagesPage: React.FC = () => {
           } as any;
         });
         setPackages(merged);
+        if (resEn.pagination) {
+          setTotalPages(resEn.pagination.totalPages);
+          setCurrentPage(resEn.pagination.page);
+          setTotalItems(resEn.pagination.total || merged.length);
+        }
       } else {
         throw new Error("English packages response invalid");
       }
@@ -230,7 +245,7 @@ export const PackagesPage: React.FC = () => {
       status: undefined,
       sortBy: "newest",
       page: 1,
-      limit: 100,
+      limit: responsiveLimit,
     });
   };
 
@@ -253,6 +268,33 @@ export const PackagesPage: React.FC = () => {
     draft: "bg-yellow-100 text-yellow-800",
     archived: "bg-gray-100 text-gray-800",
   };
+
+  const paginationItems = useMemo<(number | "ellipsis")[]>(() => {
+    const items: (number | "ellipsis")[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) items.push(i);
+      return items;
+    }
+    if (currentPage <= 4) {
+      items.push(1, 2, 3, 4, 5, "ellipsis", totalPages);
+      return items;
+    }
+    if (currentPage >= totalPages - 3) {
+      items.push(1, "ellipsis");
+      for (let i = totalPages - 4; i <= totalPages; i++) items.push(i);
+      return items;
+    }
+    items.push(
+      1,
+      "ellipsis",
+      currentPage - 1,
+      currentPage,
+      currentPage + 1,
+      "ellipsis",
+      totalPages,
+    );
+    return items;
+  }, [currentPage, totalPages]);
 
   return (
     <div className="space-y-6">
@@ -632,7 +674,7 @@ export const PackagesPage: React.FC = () => {
                             : "https://images.pexels.com/photos/1430676/pexels-photo-1430676.jpeg"
                         }
                         alt={pkg.title}
-                        className="w-52 h-44 object-cover rounded-xl flex-shrink-0"
+                        className="w-52 h-44 object-contain bg-gray-100 rounded-xl flex-shrink-0"
                       />
                       <div className="flex-1">
                         <div className="flex items-start justify-between mb-2">
@@ -752,6 +794,52 @@ export const PackagesPage: React.FC = () => {
               );
             })
           )}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex flex-wrap justify-center gap-2">
+          <Button
+            disabled={currentPage === 1}
+            onClick={() =>
+              setFilters((prev) => ({ ...prev, page: currentPage - 1 }))
+            }
+            variant="outline"
+            size="sm"
+          >
+            Previous
+          </Button>
+          {paginationItems.map((it, idx) =>
+            it === "ellipsis" ? (
+              <span
+                key={`e-${idx}`}
+                className="px-3 py-2 text-gray-500 select-none"
+              >
+                ...
+              </span>
+            ) : (
+              <Button
+                key={it}
+                variant={currentPage === it ? "primary" : "outline"}
+                onClick={() =>
+                  setFilters((prev) => ({ ...prev, page: it as number }))
+                }
+                size="sm"
+              >
+                {it}
+              </Button>
+            ),
+          )}
+          <Button
+            disabled={currentPage === totalPages}
+            onClick={() =>
+              setFilters((prev) => ({ ...prev, page: currentPage + 1 }))
+            }
+            variant="outline"
+            size="sm"
+          >
+            Next
+          </Button>
         </div>
       )}
 

@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useCallback } from "react";
+import React, { useEffect, useState, useCallback, useMemo } from "react";
 import { Link } from "react-router-dom";
 import {
   Plus,
@@ -23,6 +23,7 @@ import { Card } from "../../components/common/Card";
 import { Loading } from "../../components/common/Loading";
 import { ConfirmModal } from "../../components/common/Modal";
 import { useToast } from "../../contexts/ToastContext";
+import { useResponsiveLimit } from "../../hooks/useResponsiveLimit";
 
 const statusMap: Record<string, string> = {
   published: "bg-green-100 text-green-800 border border-green-200",
@@ -32,10 +33,13 @@ const statusMap: Record<string, string> = {
 
 export const CarsPage: React.FC = () => {
   const { addToast } = useToast();
+  const responsiveLimit = useResponsiveLimit();
   const [cars, setCars] = useState<Car[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
   const [deleteModal, setDeleteModal] = useState<{
     isOpen: boolean;
     carId: string | null;
@@ -47,21 +51,35 @@ export const CarsPage: React.FC = () => {
       const res = await carApi.getAll({
         search: searchQuery || undefined,
         status: statusFilter || undefined,
-        limit: 100,
+        limit: responsiveLimit,
+        page: currentPage,
       });
       if (res.success && res.data) {
         setCars(res.data ?? []);
+        if (res.pagination) {
+          setTotalPages(res.pagination.totalPages);
+          if (
+            currentPage > res.pagination.totalPages &&
+            res.pagination.totalPages > 0
+          ) {
+            setCurrentPage(1);
+          }
+        }
       }
     } catch {
       addToast("Gagal memuat data mobil", "error");
     } finally {
       setIsLoading(false);
     }
-  }, [searchQuery, statusFilter]);
+  }, [searchQuery, statusFilter, responsiveLimit, currentPage]);
 
   useEffect(() => {
     loadCars();
   }, [loadCars]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [responsiveLimit]);
 
   const handleDelete = async () => {
     if (!deleteModal.carId) return;
@@ -87,6 +105,33 @@ export const CarsPage: React.FC = () => {
     car.images?.[0]?.url ??
     car.imageUrl ??
     "";
+
+  const paginationItems = useMemo<(number | "ellipsis")[]>(() => {
+    const items: (number | "ellipsis")[] = [];
+    if (totalPages <= 7) {
+      for (let i = 1; i <= totalPages; i++) items.push(i);
+      return items;
+    }
+    if (currentPage <= 4) {
+      items.push(1, 2, 3, 4, 5, "ellipsis", totalPages);
+      return items;
+    }
+    if (currentPage >= totalPages - 3) {
+      items.push(1, "ellipsis");
+      for (let i = totalPages - 4; i <= totalPages; i++) items.push(i);
+      return items;
+    }
+    items.push(
+      1,
+      "ellipsis",
+      currentPage - 1,
+      currentPage,
+      currentPage + 1,
+      "ellipsis",
+      totalPages,
+    );
+    return items;
+  }, [currentPage, totalPages]);
 
   return (
     <div className="space-y-6">
@@ -174,7 +219,7 @@ export const CarsPage: React.FC = () => {
                         <img
                           src={thumb}
                           alt={car.name}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-contain bg-gray-100"
                         />
                       ) : (
                         <div className="w-full h-full flex items-center justify-center">
@@ -307,6 +352,46 @@ export const CarsPage: React.FC = () => {
               </Card>
             );
           })}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex flex-wrap justify-center gap-2">
+          <Button
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => p - 1)}
+            variant="outline"
+            size="sm"
+          >
+            Previous
+          </Button>
+          {paginationItems.map((it, idx) =>
+            it === "ellipsis" ? (
+              <span
+                key={`e-${idx}`}
+                className="px-3 py-2 text-gray-500 select-none"
+              >
+                ...
+              </span>
+            ) : (
+              <Button
+                key={it}
+                variant={currentPage === it ? "primary" : "outline"}
+                onClick={() => setCurrentPage(it as number)}
+                size="sm"
+              >
+                {it}
+              </Button>
+            ),
+          )}
+          <Button
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((p) => p + 1)}
+            variant="outline"
+            size="sm"
+          >
+            Next
+          </Button>
         </div>
       )}
 

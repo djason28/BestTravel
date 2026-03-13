@@ -5,6 +5,7 @@ import {
   Users,
   Fuel,
   Clock,
+  Calendar,
   CheckCircle,
   XCircle,
   MessageCircle,
@@ -528,15 +529,23 @@ export const CarDetailPage: React.FC = () => {
 
           {/* Sticky sidebar */}
           <div className="lg:col-span-1">
-            <div className="bg-white rounded-lg shadow-md p-6 sticky top-24">
-              <div className="mb-6 border-b pb-6">
-                <p className="text-2xl font-bold text-gray-800 mb-2 flex items-center gap-2">
-                  <Clock className="h-6 w-6 text-[#0891b2]" />
+            <div className="sticky top-24 rounded-2xl overflow-hidden shadow-lg border border-gray-100">
+              {/* Gradient header */}
+              <div className="bg-gradient-to-br from-[#0c4a6e] via-[#0891b2] to-teal-500 px-6 py-5 text-white">
+                <div className="flex items-center gap-3 mb-1">
+                  <div className="bg-white/20 backdrop-blur-sm rounded-lg p-2">
+                    <Calendar className="h-5 w-5 text-white" />
+                  </div>
+                  <span className="text-xs font-medium uppercase tracking-wider text-white/80">
+                    {currentLang() === "zh" ? "可用时间" : "Availability"}
+                  </span>
+                </div>
+                <p className="text-3xl font-bold tracking-tight mt-2">
                   {currentLang() === "zh"
                     ? car.availabilityZh || car.availability || car.year
                     : car.availability || car.year}
                 </p>
-                <p className="text-sm text-gray-500 mt-2 italic">
+                <p className="text-xs text-white/70 mt-2">
                   *{" "}
                   {currentLang() === "zh"
                     ? "请联系我们获取详细价格与预订情况"
@@ -544,32 +553,41 @@ export const CarDetailPage: React.FC = () => {
                 </p>
               </div>
 
-              <Button
-                onClick={handleWhatsAppClick}
-                className="w-full mb-3 bg-green-500 hover:bg-green-600 flex items-center justify-center gap-2"
-              >
-                <MessageCircle className="h-5 w-5" />
-                {t("book_car_whatsapp_cta")}
-              </Button>
-
-              <Link to="/contact">
-                <Button variant="outline" className="w-full">
-                  {t("contact_us")}
+              {/* Action buttons */}
+              <div className="bg-white px-6 py-5 space-y-3">
+                <Button
+                  onClick={handleWhatsAppClick}
+                  className="w-full bg-green-500 hover:bg-green-600 flex items-center justify-center gap-2 rounded-xl py-3 text-base font-semibold shadow-md shadow-green-500/20 hover:shadow-lg hover:shadow-green-500/30 transition-all"
+                >
+                  <MessageCircle className="h-5 w-5" />
+                  {t("book_car_whatsapp_cta")}
                 </Button>
-              </Link>
 
-              <div className="mt-6 pt-6 border-t">
-                <h4 className="font-semibold text-gray-900 mb-3">
+                <Link to="/contact">
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-xl py-3 text-base border-2 hover:bg-gray-50 transition-all mt-0"
+                  >
+                    {t("contact_us")}
+                  </Button>
+                </Link>
+              </div>
+
+              {/* Need help section */}
+              <div className="bg-gray-50 px-6 py-5 border-t border-gray-100">
+                <h4 className="font-semibold text-gray-900 mb-2 text-sm">
                   {t("need_help")}
                 </h4>
-                <p className="text-sm text-gray-600 mb-4">
+                <p className="text-xs text-gray-500 mb-3 leading-relaxed">
                   {t("need_help_desc")}
                 </p>
                 <a
                   href="tel:+6285283918338"
-                  className="text-sm text-[#0891b2] hover:underline flex items-center gap-2"
+                  className="inline-flex items-center gap-2 text-sm font-medium text-[#0891b2] hover:text-[#0c4a6e] transition-colors"
                 >
-                  <Phone className="h-4 w-4" />
+                  <div className="bg-[#0891b2]/10 rounded-full p-1.5">
+                    <Phone className="h-3.5 w-3.5" />
+                  </div>
                   +62-852-8391-8338
                 </a>
               </div>

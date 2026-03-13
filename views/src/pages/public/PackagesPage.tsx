@@ -18,6 +18,7 @@ import { Button } from "../../components/common/Button";
 import { t, currentLang } from "../../i18n";
 import { useNavigationState } from "../../contexts/NavigationContext";
 import { useDataCache } from "../../contexts/DataCacheContext";
+import { useResponsiveLimit } from "../../hooks/useResponsiveLimit";
 
 export const PackagesPage: React.FC = () => {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -28,10 +29,12 @@ export const PackagesPage: React.FC = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [totalPages, setTotalPages] = useState(1);
   const [currentPage, setCurrentPage] = useState(1);
+  const responsiveLimit = useResponsiveLimit();
 
   const [filters, setFilters] = useState<FilterOptions>({
     ...parseFilterParams(searchParams as any),
     status: "published",
+    limit: responsiveLimit,
   } as FilterOptions);
 
   const [options, setOptions] = useState<PackageFilterOptions>({
@@ -64,6 +67,10 @@ export const PackagesPage: React.FC = () => {
   useEffect(() => {
     loadPackages();
   }, [filters]);
+
+  useEffect(() => {
+    setFilters((prev) => ({ ...prev, limit: responsiveLimit, page: 1 }));
+  }, [responsiveLimit]);
 
   const loadPackages = async () => {
     setIsLoading(true);
@@ -126,7 +133,7 @@ export const PackagesPage: React.FC = () => {
       notFeatured: false,
       status: "published",
       page: 1,
-      limit: 12,
+      limit: responsiveLimit,
     };
     setFilters(defaults);
     setSearchParams({});

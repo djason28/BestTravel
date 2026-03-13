@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef, useEffect, useLayoutEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 import { PrefetchLink } from "../common";
 import { Menu, X, MessageCircle } from "lucide-react";
@@ -17,6 +17,15 @@ export const Header: React.FC = () => {
     ts: Date.now(),
   });
   const THROTTLE_MS = 400; // prevent rapid double navigation extending loading state
+
+  // Sliding indicator state for desktop nav
+  const navContainerRef = useRef<HTMLElement>(null);
+  const navLinkRefs = useRef<(HTMLAnchorElement | null)[]>([]);
+  const [indicator, setIndicator] = useState<{
+    left: number;
+    width: number;
+  } | null>(null);
+  const [indicatorReady, setIndicatorReady] = useState(false);
   const navLinks = [
     { path: "/", label: lang === "zh" ? "首页" : "Home" },
     { path: "/packages", label: lang === "zh" ? "套餐" : "Packages" },
@@ -26,6 +35,74 @@ export const Header: React.FC = () => {
   ];
 
   const isActive = (path: string) => location.pathname === path;
+
+  // Compute sliding indicator position
+  const updateIndicator = () => {
+    const activeIndex = navLinks.findIndex((l) => isActive(l.path));
+    const el = navLinkRefs.current[activeIndex];
+    const container = navContainerRef.current;
+    if (el && container) {
+      const containerRect = container.getBoundingClientRect();
+      const elRect = el.getBoundingClientRect();
+      setIndicator({
+        left: elRect.left - containerRect.left,
+        width: elRect.width,
+      });
+    } else {
+      setIndicator(null);
+    }
+  };
+
+  // Use layoutEffect for initial render (no animation), then effect for route changes
+  useLayoutEffect(() => {
+    updateIndicator();
+    // Enable transitions after first paint
+    requestAnimationFrame(() => setIndicatorReady(true));
+  }, []);
+
+  useEffect(() => {
+    updateIndicator();
+  }, [location.pathname, lang]);
+
+  const LangToggle = () => (
+    <div
+      className="relative inline-flex items-center bg-gray-200 rounded-full p-1 w-32"
+      aria-label={lang === "zh" ? "语言切换" : "Language toggle"}
+      role="group"
+    >
+      <div
+        className={`absolute top-1 bottom-1 w-[calc(50%-0.25rem)] bg-[#0891b2] rounded-full transition-transform duration-300 ease-in-out ${
+          lang === "zh" ? "translate-x-full" : "translate-x-0"
+        }`}
+      />
+      <button
+        onClick={() => {
+          if (lang !== "en") switchLang();
+        }}
+        className={`relative z-10 flex-1 px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
+          lang === "en" ? "text-white" : "text-gray-700 hover:text-gray-900"
+        }`}
+        aria-label={
+          lang === "zh" ? "切换语言为英文" : "Switch language to English"
+        }
+      >
+        EN
+      </button>
+      <button
+        onClick={() => {
+          if (lang !== "zh") switchLang();
+        }}
+        className={`relative z-10 flex-1 px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
+          lang === "zh" ? "text-white" : "text-gray-700 hover:text-gray-900"
+        }`}
+        aria-label={
+          lang === "zh" ? "当前语言中文" : "Switch language to Chinese"
+        }
+      >
+        中文
+      </button>
+    </div>
+  );
 
   return (
     <header className="bg-white shadow-sm border-b border-sky-100 sticky top-0 z-40">
@@ -50,13 +127,30 @@ export const Header: React.FC = () => {
           </Link>
 
           <nav
-            className="hidden md:flex items-center gap-8"
+            ref={navContainerRef}
+            className="hidden md:flex items-center gap-8 relative"
             aria-label={lang === "zh" ? "主导航" : "Main navigation"}
           >
-            {navLinks.map((link) => (
+            {/* Sliding active indicator */}
+            {indicator && (
+              <div
+                className="absolute bottom-0 h-[3px] bg-[#0891b2] rounded-full"
+                style={{
+                  left: indicator.left,
+                  width: indicator.width,
+                  transition: indicatorReady
+                    ? "left 0.3s ease-in-out, width 0.3s ease-in-out"
+                    : "none",
+                }}
+              />
+            )}
+            {navLinks.map((link, i) => (
               <PrefetchLink
                 key={link.path}
                 to={link.path}
+                ref={(el) => {
+                  navLinkRefs.current[i] = el;
+                }}
                 prefetchEnabled
                 prefetchOn={
                   link.path === "/about" || link.path === "/contact"
@@ -77,10 +171,10 @@ export const Header: React.FC = () => {
                   lastNavRef.current = { path: link.path, ts: now };
                   startNavigation();
                 }}
-                className={`text-sm font-medium transition-colors ${
+                className={`text-sm font-medium transition-all duration-200 px-3 py-1.5 rounded-lg ${
                   isActive(link.path)
-                    ? "text-[#0891b2]"
-                    : "text-gray-700 hover:text-[#0891b2]"
+                    ? "text-[#0891b2] font-semibold"
+                    : "text-gray-700 hover:text-[#0891b2] hover:bg-gray-50"
                 } ${isNavigating ? "pointer-events-none opacity-50" : ""}`}
               >
                 {link.label}
@@ -101,61 +195,23 @@ export const Header: React.FC = () => {
               <MessageCircle className="h-4 w-4" />
               <span>{lang === "zh" ? "微信" : "WhatsApp"}</span>
             </a>
-            <div
-              className="relative inline-flex items-center bg-gray-200 rounded-full p-1 w-32"
-              aria-label={lang === "zh" ? "语言切换" : "Language toggle"}
-              role="group"
-            >
-              <div
-                className={`absolute top-1 bottom-1 w-[calc(50%-0.25rem)] bg-[#0891b2] rounded-full transition-transform duration-300 ease-in-out ${
-                  lang === "zh" ? "translate-x-full" : "translate-x-0"
-                }`}
-              />
-              <button
-                onClick={() => {
-                  if (lang !== "en") switchLang();
-                }}
-                className={`relative z-10 flex-1 px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
-                  lang === "en"
-                    ? "text-white"
-                    : "text-gray-700 hover:text-gray-900"
-                }`}
-                aria-label={
-                  lang === "zh"
-                    ? "切换语言为英文"
-                    : "Switch language to English"
-                }
-              >
-                EN
-              </button>
-              <button
-                onClick={() => {
-                  if (lang !== "zh") switchLang();
-                }}
-                className={`relative z-10 flex-1 px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
-                  lang === "zh"
-                    ? "text-white"
-                    : "text-gray-700 hover:text-gray-900"
-                }`}
-                aria-label={
-                  lang === "zh" ? "当前语言中文" : "Switch language to Chinese"
-                }
-              >
-                中文
-              </button>
-            </div>
+            <LangToggle />
           </div>
 
-          <button
-            className="md:hidden text-gray-700"
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-          >
-            {isMobileMenuOpen ? (
-              <X className="h-6 w-6" />
-            ) : (
-              <Menu className="h-6 w-6" />
-            )}
-          </button>
+          {/* Mobile: lang toggle + hamburger */}
+          <div className="flex items-center gap-3 md:hidden">
+            <LangToggle />
+            <button
+              className="text-gray-700"
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+            >
+              {isMobileMenuOpen ? (
+                <X className="h-6 w-6" />
+              ) : (
+                <Menu className="h-6 w-6" />
+              )}
+            </button>
+          </div>
         </div>
 
         {isMobileMenuOpen && (
@@ -189,10 +245,10 @@ export const Header: React.FC = () => {
                     setIsMobileMenuOpen(false);
                     startNavigation();
                   }}
-                  className={`text-sm font-medium transition-colors ${
+                  className={`text-sm font-medium transition-all duration-200 px-4 py-2 rounded-lg ${
                     isActive(link.path)
-                      ? "text-[#0891b2]"
-                      : "text-gray-700 hover:text-[#0891b2]"
+                      ? "text-[#0891b2] bg-[#0891b2]/10 shadow-inner font-semibold"
+                      : "text-gray-700 hover:text-[#0891b2] hover:bg-gray-50"
                   } ${isNavigating ? "pointer-events-none opacity-50" : ""}`}
                 >
                   {link.label}
@@ -210,51 +266,6 @@ export const Header: React.FC = () => {
                 <MessageCircle className="h-4 w-4" />
                 <span>{lang === "zh" ? "微信" : "WhatsApp"}</span>
               </a>
-              <div
-                className="relative inline-flex items-center bg-gray-200 rounded-full p-1 w-32"
-                aria-label={lang === "zh" ? "语言切换" : "Language toggle"}
-                role="group"
-              >
-                <div
-                  className={`absolute top-1 bottom-1 w-[calc(50%-0.25rem)] bg-[#0891b2] rounded-full transition-transform duration-300 ease-in-out ${
-                    lang === "zh" ? "translate-x-full" : "translate-x-0"
-                  }`}
-                />
-                <button
-                  onClick={() => {
-                    if (lang !== "en") switchLang();
-                  }}
-                  className={`relative z-10 flex-1 px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
-                    lang === "en"
-                      ? "text-white"
-                      : "text-gray-700 hover:text-gray-900"
-                  }`}
-                  aria-label={
-                    lang === "zh"
-                      ? "切换语言为英文"
-                      : "Switch language to English"
-                  }
-                >
-                  EN
-                </button>
-                <button
-                  onClick={() => {
-                    if (lang !== "zh") switchLang();
-                  }}
-                  className={`relative z-10 flex-1 px-3 py-1.5 text-xs font-medium rounded-full transition-colors ${
-                    lang === "zh"
-                      ? "text-white"
-                      : "text-gray-700 hover:text-gray-900"
-                  }`}
-                  aria-label={
-                    lang === "zh"
-                      ? "当前语言中文"
-                      : "Switch language to Chinese"
-                  }
-                >
-                  中文
-                </button>
-              </div>
             </nav>
           </div>
         )}

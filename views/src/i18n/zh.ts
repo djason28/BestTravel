@@ -157,7 +157,7 @@ export const zh = {
   commit_6: "持续改进与创新我们的产品",
   cta_title: "准备好开启冒险了吗？",
   cta_subtitle: "与成千上万满意旅客一起，以全新方式探索印尼",
-  header_subtagline_header: "Exclusive Trip",
+  header_subtagline_header: "Exclusive Travel",
   // Cars Page
   cars_page_title: "汽车租赁",
   cars_page_subtitle: "探索我们的优质车队，为您的旅程提供完善服务",

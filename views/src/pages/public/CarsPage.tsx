@@ -17,6 +17,7 @@ import { PackageCardSkeleton } from "../../components/common/Loading";
 import { Button } from "../../components/common/Button";
 import { useNavigationState } from "../../contexts/NavigationContext";
 import { t, currentLang } from "../../i18n";
+import { useResponsiveLimit } from "../../hooks/useResponsiveLimit";
 
 const FUEL_ZH: Record<string, string> = {
   Bensin: "汽油",
@@ -50,6 +51,7 @@ export const CarsPage: React.FC = () => {
   );
   const [totalPages, setTotalPages] = useState(1);
   const { startNavigation, endNavigation } = useNavigationState();
+  const responsiveLimit = useResponsiveLimit();
 
   const loadCars = useCallback(async () => {
     setIsLoading(true);
@@ -58,7 +60,7 @@ export const CarsPage: React.FC = () => {
       const res = await carApi.getAll({
         status: "published",
         search: searchQuery || undefined,
-        limit: 12,
+        limit: responsiveLimit,
         page: currentPage,
         transmission: transmissionFilter || undefined,
         withDriver: withDriverFilter || undefined,
@@ -81,7 +83,17 @@ export const CarsPage: React.FC = () => {
       setIsLoading(false);
       endNavigation();
     }
-  }, [searchQuery, transmissionFilter, withDriverFilter, currentPage]);
+  }, [
+    searchQuery,
+    transmissionFilter,
+    withDriverFilter,
+    currentPage,
+    responsiveLimit,
+  ]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [responsiveLimit]);
 
   useEffect(() => {
     // Update URL params
