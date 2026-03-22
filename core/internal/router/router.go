@@ -6,7 +6,9 @@ import (
 
 	"besttravel/internal/config"
 	"besttravel/internal/controllers"
+	"besttravel/internal/database"
 	"besttravel/internal/middleware"
+	"besttravel/internal/repository"
 
 	"github.com/gin-gonic/gin"
 )
@@ -33,30 +35,38 @@ func Setup(cfg *config.Config) *gin.Engine {
 	// Limit multipart form memory to prevent large uploads in memory
 	r.MaxMultipartMemory = (int64(cfg.MaxUploadMB) + 1) * 1024 * 1024
 
+	// --- Wire up repositories ---
+	userRepo := repository.NewGormUserRepo(database.DB)
+	authRepo := repository.NewGormAuthRepo(database.DB)
+	pkgRepo := repository.NewGormPackageRepo(database.DB)
+	carRepo := repository.NewGormCarRepo(database.DB)
+	inqRepo := repository.NewGormInquiryRepo(database.DB)
+	dashRepo := repository.NewGormDashboardRepo(database.DB)
+
 	// Health check enhanced (uptime + db)
 	r.GET("/health", controllers.Health)
 
 	api := r.Group("/api")
 	{
 		// Auth
-		auth := controllers.NewAuthController(cfg)
+		auth := controllers.NewAuthController(cfg, userRepo, authRepo)
 		api.POST("/auth/login", middleware.LoginRateLimit(), auth.Login)
 		api.POST("/auth/refresh", auth.Refresh)
 
 		apiAuth := api.Group("/auth")
-		apiAuth.Use(middleware.AuthRequired(cfg))
+		apiAuth.Use(middleware.AuthRequired(cfg, authRepo))
 		{
 			apiAuth.POST("/logout", auth.Logout)
 			apiAuth.GET("/me", auth.Me)
-			userCtrl := controllers.NewUserController()
+			userCtrl := controllers.NewUserController(userRepo)
 			apiAuth.PUT("/profile", userCtrl.UpdateProfile)
 			apiAuth.PUT("/password", userCtrl.ChangePassword)
 		}
 
 		// Users (admin management)
-		userCtrl := controllers.NewUserController()
+		userCtrl := controllers.NewUserController(userRepo)
 		adminUsers := api.Group("/users")
-		adminUsers.Use(middleware.AuthRequired(cfg), middleware.AdminOnly())
+		adminUsers.Use(middleware.AuthRequired(cfg, authRepo), middleware.AdminOnly())
 		{
 			adminUsers.GET("", userCtrl.GetAll)
 			adminUsers.POST("", userCtrl.Create)
@@ -64,15 +74,15 @@ func Setup(cfg *config.Config) *gin.Engine {
 		}
 
 		// Packages
-		pkg := controllers.NewPackageController(cfg)
-		api.GET("/packages", middleware.RequestTimeout(time.Duration(cfg.PackagesListTimeoutSeconds)*time.Second), middleware.OptionalAuth(cfg), pkg.GetAll)
-		api.GET("/packages/:id", middleware.RequestTimeout(time.Duration(cfg.PackageDetailTimeoutSeconds)*time.Second), middleware.OptionalAuth(cfg), pkg.GetByID)
-		api.GET("/packages/slug/:slug", middleware.RequestTimeout(time.Duration(cfg.PackageDetailTimeoutSeconds)*time.Second), middleware.OptionalAuth(cfg), pkg.GetBySlug)
-		api.GET("/packages/options", middleware.RequestTimeout(time.Duration(cfg.PackagesOptionsTimeoutSeconds)*time.Second), middleware.OptionalAuth(cfg), pkg.GetOptions)
+		pkg := controllers.NewPackageController(cfg, pkgRepo)
+		api.GET("/packages", middleware.RequestTimeout(time.Duration(cfg.PackagesListTimeoutSeconds)*time.Second), middleware.OptionalAuth(cfg, authRepo), pkg.GetAll)
+		api.GET("/packages/:id", middleware.RequestTimeout(time.Duration(cfg.PackageDetailTimeoutSeconds)*time.Second), middleware.OptionalAuth(cfg, authRepo), pkg.GetByID)
+		api.GET("/packages/slug/:slug", middleware.RequestTimeout(time.Duration(cfg.PackageDetailTimeoutSeconds)*time.Second), middleware.OptionalAuth(cfg, authRepo), pkg.GetBySlug)
+		api.GET("/packages/options", middleware.RequestTimeout(time.Duration(cfg.PackagesOptionsTimeoutSeconds)*time.Second), middleware.OptionalAuth(cfg, authRepo), pkg.GetOptions)
 		api.POST("/packages/:id/view", pkg.IncrementView)
 
 		adminPackages := api.Group("/packages")
-		adminPackages.Use(middleware.AuthRequired(cfg), middleware.AdminOnly())
+		adminPackages.Use(middleware.AuthRequired(cfg, authRepo), middleware.AdminOnly())
 		{
 			adminPackages.POST("", pkg.Create)
 			adminPackages.PUT(":id", pkg.Update)
@@ -80,23 +90,23 @@ func Setup(cfg *config.Config) *gin.Engine {
 		}
 
 		// Inquiries
-		inq := controllers.NewInquiryController(cfg)
+		inq := controllers.NewInquiryController(cfg, inqRepo)
 		api.POST("/inquiries", middleware.RateLimit(1, 3), inq.Create) // 1 req/sec, burst 3
 		adminInq := api.Group("/inquiries")
-		adminInq.Use(middleware.AuthRequired(cfg), middleware.AdminOnly())
+		adminInq.Use(middleware.AuthRequired(cfg, authRepo), middleware.AdminOnly())
 		{
 			adminInq.GET("", inq.GetAll)
 			adminInq.PATCH(":id/status", inq.UpdateStatus)
 		}
 
 		// Cars
-		car := controllers.NewCarController(cfg)
-		api.GET("/cars", middleware.OptionalAuth(cfg), car.GetAll)
+		car := controllers.NewCarController(cfg, carRepo)
+		api.GET("/cars", middleware.OptionalAuth(cfg, authRepo), car.GetAll)
 		api.GET("/cars/:id", car.GetByID)
 		api.GET("/cars/slug/:slug", car.GetBySlug)
 		api.POST("/cars/:id/view", car.IncrementView)
 		adminCars := api.Group("/cars")
-		adminCars.Use(middleware.AuthRequired(cfg), middleware.AdminOnly())
+		adminCars.Use(middleware.AuthRequired(cfg, authRepo), middleware.AdminOnly())
 		{
 			adminCars.POST("", car.Create)
 			adminCars.PUT(":id", car.Update)
@@ -104,22 +114,22 @@ func Setup(cfg *config.Config) *gin.Engine {
 		}
 
 		// Dashboard
-		dash := controllers.NewDashboardController(cfg)
+		dash := controllers.NewDashboardController(cfg, dashRepo)
 		adminDash := api.Group("/dashboard")
-		adminDash.Use(middleware.AuthRequired(cfg), middleware.AdminOnly())
+		adminDash.Use(middleware.AuthRequired(cfg, authRepo), middleware.AdminOnly())
 		{
 			adminDash.GET("/stats", dash.GetStats)
 		}
 
 		// Contact
-		contact := controllers.NewContactController(cfg)
+		contact := controllers.NewContactController(cfg, inqRepo)
 		api.POST("/contact", middleware.RateLimit(1, 3), contact.Send) // 1 req/sec, burst 3
 
 		// Upload
 		upload := controllers.NewUploadController(cfg)
 		r.GET("/images/*filepath", upload.ServeImage)
 		adminUpload := api.Group("/upload")
-		adminUpload.Use(middleware.AuthRequired(cfg), middleware.AdminOnly())
+		adminUpload.Use(middleware.AuthRequired(cfg, authRepo), middleware.AdminOnly())
 		{
 			adminUpload.POST("/image", upload.UploadImage)
 			adminUpload.DELETE("/image", upload.DeleteImage)

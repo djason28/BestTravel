@@ -14,6 +14,7 @@ import (
 	"besttravel/internal/config"
 	"besttravel/internal/database"
 	"besttravel/internal/models"
+	"besttravel/internal/repository"
 	"besttravel/internal/utils"
 
 	"github.com/gin-gonic/gin"
@@ -21,9 +22,14 @@ import (
 	"gorm.io/gorm"
 )
 
-type PackageController struct{ cfg *config.Config }
+type PackageController struct {
+	cfg  *config.Config
+	repo repository.PackageRepository
+}
 
-func NewPackageController(cfg *config.Config) *PackageController { return &PackageController{cfg: cfg} }
+func NewPackageController(cfg *config.Config, repo repository.PackageRepository) *PackageController {
+	return &PackageController{cfg: cfg, repo: repo}
+}
 
 type packageForm struct {
 	Title              string                 `json:"title" binding:"required,min=3"`
@@ -221,14 +227,12 @@ func (h *PackageController) GetAll(c *gin.Context) {
 
 func (h *PackageController) GetByID(c *gin.Context) {
 	id := c.Param("id")
-	ctx, cancel := context.WithTimeout(c.Request.Context(), 3*time.Second)
-	defer cancel()
-	var pkg models.Package
-	if err := database.DB.WithContext(ctx).First(&pkg, "id = ?", id).Error; err != nil {
+	pkg, err := h.repo.FindByID(c.Request.Context(), id)
+	if err != nil {
 		fail(c, http.StatusNotFound, "not found")
 		return
 	}
-	ok(c, toDTO(pkg, true))
+	ok(c, toDTO(*pkg, true))
 }
 
 func (h *PackageController) GetBySlug(c *gin.Context) {
@@ -514,7 +518,7 @@ func (h *PackageController) Update(c *gin.Context) {
 
 func (h *PackageController) Delete(c *gin.Context) {
 	id := c.Param("id")
-	if err := database.Ctx(c).Delete(&models.Package{}, "id = ?", id).Error; err != nil {
+	if err := h.repo.Delete(c.Request.Context(), id); err != nil {
 		fail(c, http.StatusInternalServerError, "failed to delete")
 		return
 	}
@@ -525,7 +529,7 @@ func (h *PackageController) Delete(c *gin.Context) {
 
 func (h *PackageController) IncrementView(c *gin.Context) {
 	id := c.Param("id")
-	database.Ctx(c).Model(&models.Package{}).Where("id = ?", id).UpdateColumn("view_count", gorm.Expr("view_count + 1"))
+	_ = h.repo.IncrementView(c.Request.Context(), id)
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
@@ -624,19 +628,19 @@ func choose(v, def string) string {
 	return v
 }
 
-// ensureUniqueSlug appends -n if slug already exists
+// ensureUniqueSlug appends -n if slug already exists.
+// Capped at 100 attempts to prevent unbounded DB queries; falls back to UUID suffix.
 func ensureUniqueSlug(c *gin.Context, base string) string {
 	slug := base
 	var count int64
-	i := 1
-	for {
+	for i := 1; i <= 100; i++ {
 		database.Ctx(c).Model(&models.Package{}).Where("slug = ?", slug).Count(&count)
 		if count == 0 {
 			return slug
 		}
-		i++
-		slug = base + "-" + strconv.Itoa(i)
+		slug = base + "-" + strconv.Itoa(i+1)
 	}
+	return base + "-" + uuid.NewString()[:8]
 }
 
 // buildPackageFilters applies query string filters to the base query in a reusable way
@@ -648,7 +652,7 @@ func buildPackageFilters(q *gorm.DB, c *gin.Context, isAdmin bool) *gorm.DB {
 	}
 
 	if s := c.Query("search"); s != "" {
-		like := "%" + strings.ToLower(s) + "%"
+		like := "%" + escapeLike(strings.ToLower(s)) + "%"
 		q = q.Where("lower(title) LIKE ? OR lower(description) LIKE ?", like, like)
 	}
 	cats := utils.QueryStringSlice(c, "categories")
@@ -656,13 +660,13 @@ func buildPackageFilters(q *gorm.DB, c *gin.Context, isAdmin bool) *gorm.DB {
 		mode := strings.ToLower(strings.TrimSpace(c.Query("categoryMode")))
 		if mode == "all" {
 			for _, cat := range cats {
-				q = q.Where("categories_json LIKE ?", "%\""+cat+"\"%")
+				q = q.Where("categories_json LIKE ?", "%\""+escapeLike(cat)+"\"%")
 			}
 		} else {
 			or := q
 			first := true
 			for _, cat := range cats {
-				like := "%\"" + cat + "\"%"
+				like := "%\"" + escapeLike(cat) + "\"%"
 				if first {
 					or = or.Where("categories_json LIKE ?", like)
 					first = false
@@ -673,7 +677,7 @@ func buildPackageFilters(q *gorm.DB, c *gin.Context, isAdmin bool) *gorm.DB {
 			q = or
 		}
 	} else if v := c.Query("category"); v != "" {
-		q = q.Where("categories_json LIKE ?", "%\""+v+"\"%")
+		q = q.Where("categories_json LIKE ?", "%\""+escapeLike(v)+"\"%")
 	}
 
 	if v := c.Query("destination"); v != "" {
@@ -743,4 +747,12 @@ func isSlugConflict(err error) bool {
 		return false
 	}
 	return strings.Contains(err.Error(), "UNIQUE constraint failed: packages.slug")
+}
+
+// escapeLike escapes SQL LIKE wildcards (%, _, \) to prevent pattern injection.
+func escapeLike(s string) string {
+	s = strings.ReplaceAll(s, "\\", "\\\\")
+	s = strings.ReplaceAll(s, "%", "\\%")
+	s = strings.ReplaceAll(s, "_", "\\_")
+	return s
 }

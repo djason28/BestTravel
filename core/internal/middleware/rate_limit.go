@@ -99,42 +99,18 @@ func StartLimiterCleanup(interval time.Duration) {
 }
 
 // RequestTimeout enforces a max duration for handling a request.
-// If the context times out, it aborts with 504 and stops further handlers.
+// It derives a context with a deadline so downstream DB queries (via database.Ctx)
+// will respect the timeout. gin.Context is NOT goroutine-safe, so c.Next() runs
+// on the same goroutine — the timeout propagates through context cancellation.
 func RequestTimeout(timeout time.Duration) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if timeout <= 0 {
 			c.Next()
 			return
 		}
-		done := make(chan struct{})
-		panicChan := make(chan any, 1)
-
-		// Derive a context with timeout for the request
 		ctx, cancel := context.WithTimeout(c.Request.Context(), timeout)
 		defer cancel()
 		c.Request = c.Request.WithContext(ctx)
-
-		go func() {
-			defer close(done)
-			defer func() {
-				if p := recover(); p != nil {
-					panicChan <- p
-				}
-			}()
-			c.Next()
-		}()
-
-		select {
-		case p := <-panicChan:
-			// Re-panic to let Gin recover middleware handle it, but ensure we abort
-			_ = p
-			c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"success": false, "error": "internal server error"})
-		case <-done:
-			// Completed within time
-			return
-		case <-ctx.Done():
-			c.AbortWithStatusJSON(http.StatusGatewayTimeout, gin.H{"success": false, "error": "request timeout"})
-			return
-		}
+		c.Next()
 	}
 }

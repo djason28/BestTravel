@@ -5,18 +5,21 @@ import (
 	"strings"
 
 	"besttravel/internal/config"
-	"besttravel/internal/database"
-	"besttravel/internal/models"
+	"besttravel/internal/repository"
 	"besttravel/internal/utils"
 
 	"github.com/gin-gonic/gin"
 )
 
 type AuthController struct {
-	cfg *config.Config
+	cfg      *config.Config
+	userRepo repository.UserRepository
+	authRepo repository.AuthRepository
 }
 
-func NewAuthController(cfg *config.Config) *AuthController { return &AuthController{cfg: cfg} }
+func NewAuthController(cfg *config.Config, userRepo repository.UserRepository, authRepo repository.AuthRepository) *AuthController {
+	return &AuthController{cfg: cfg, userRepo: userRepo, authRepo: authRepo}
+}
 
 type loginReq struct {
 	Email    string `json:"email" binding:"required,email"`
@@ -29,8 +32,8 @@ func (h *AuthController) Login(c *gin.Context) {
 		fail(c, http.StatusBadRequest, "invalid request body")
 		return
 	}
-	var user models.User
-	if err := database.Ctx(c).Where("email = ?", strings.ToLower(req.Email)).First(&user).Error; err != nil {
+	user, err := h.userRepo.FindByEmail(c.Request.Context(), strings.ToLower(req.Email))
+	if err != nil {
 		fail(c, http.StatusUnauthorized, "invalid credentials")
 		return
 	}
@@ -69,9 +72,7 @@ func (h *AuthController) Refresh(c *gin.Context) {
 	}
 	// Check blacklist by jti before issuing a new token
 	if claims.ID != "" {
-		var count int64
-		database.DB.Model(&models.TokenBlacklist{}).Where("jti = ?", claims.ID).Count(&count)
-		if count > 0 {
+		if h.authRepo.IsTokenBlacklisted(c.Request.Context(), claims.ID) {
 			fail(c, http.StatusUnauthorized, "token revoked")
 			return
 		}
@@ -80,6 +81,10 @@ func (h *AuthController) Refresh(c *gin.Context) {
 	if err != nil {
 		fail(c, http.StatusInternalServerError, "failed to refresh token")
 		return
+	}
+	// Revoke the old token to prevent replay attacks
+	if claims.ID != "" {
+		_ = h.authRepo.BlacklistToken(c.Request.Context(), claims.ID, claims.ExpiresAt.Time)
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "token": newToken})
 }
@@ -91,10 +96,7 @@ func (h *AuthController) Logout(c *gin.Context) {
 		claims, err := utils.ParseJWT(h.cfg, tokenStr)
 		if err == nil && claims.ID != "" {
 			// Store jti in blacklist (small UUID, not full token string)
-			_ = database.DB.Create(&models.TokenBlacklist{
-				JTI:       claims.ID,
-				ExpiresAt: claims.ExpiresAt.Time,
-			}).Error
+			_ = h.authRepo.BlacklistToken(c.Request.Context(), claims.ID, claims.ExpiresAt.Time)
 		}
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true})
@@ -102,8 +104,8 @@ func (h *AuthController) Logout(c *gin.Context) {
 
 func (h *AuthController) Me(c *gin.Context) {
 	uid, _ := c.Get("userId")
-	var user models.User
-	if err := database.Ctx(c).First(&user, "id = ?", uid).Error; err != nil {
+	user, err := h.userRepo.FindByID(c.Request.Context(), uid.(string))
+	if err != nil {
 		fail(c, http.StatusNotFound, "user not found")
 		return
 	}

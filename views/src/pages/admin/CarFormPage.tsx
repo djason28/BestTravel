@@ -15,9 +15,8 @@ const PRICE_UNITS = [
   { value: "trip", label: "Per Perjalanan" },
   { value: "hour", label: "Per Jam" },
 ];
-const CURRENCIES = ["IDR", "SGD", "USD", "MYR", "EUR"];
 
-const emptyForm: CarFormData = {
+const _blankForm: CarFormData = {
   name: "",
   nameZh: "",
   brand: "",
@@ -26,7 +25,7 @@ const emptyForm: CarFormData = {
   seats: 4,
   transmission: "Manual",
   fuelType: "Bensin",
-  prices: [{ amount: 0, currency: "IDR" }],
+  prices: [{ amount: 0, currency: "SGD" }],
   priceUnit: "day",
   minDays: 1,
   withDriver: false,
@@ -45,6 +44,35 @@ const emptyForm: CarFormData = {
   featured: false,
 };
 
+// Dev-mode sample data — auto-fills form so you don't retype test data every time
+const _devCarForm: CarFormData = {
+  ..._blankForm,
+  name: "Toyota Avanza 2024",
+  nameZh: "丰田 Avanza 2024",
+  brand: "Toyota",
+  model: "Avanza",
+  year: 2024,
+  seats: 7,
+  transmission: "Automatic",
+  fuelType: "Bensin",
+  prices: [{ amount: 80, currency: "SGD" }],
+  priceUnit: "day",
+  minDays: 1,
+  withDriver: true,
+  features: ["AC", "Bluetooth", "Rear Camera", "USB Charging"],
+  featuresZh: ["空调", "蓝牙", "倒车摄像头", "USB充电"],
+  included: ["Fuel", "Insurance", "Driver"],
+  includedZh: ["汽油", "保险", "司机"],
+  excluded: ["Parking", "Toll", "Meals"],
+  excludedZh: ["停车费", "过路费", "餐费"],
+  description: "Comfortable 7-seater MPV, perfect for family trips around Batam and Bintan.",
+  descriptionZh: "舒适的7座MPV，非常适合在巴淡岛和民丹岛的家庭旅行。",
+  availability: "Available daily",
+  availabilityZh: "每天可用",
+};
+
+const emptyForm: CarFormData = import.meta.env.DEV ? _devCarForm : _blankForm;
+
 export const CarFormPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
@@ -57,12 +85,12 @@ export const CarFormPage: React.FC = () => {
   const [isSaving, setIsSaving] = useState(false);
 
   // text-array fields helpers (comma or newline separated)
-  const [featuresText, setFeaturesText] = useState("");
-  const [includedText, setIncludedText] = useState("");
-  const [excludedText, setExcludedText] = useState("");
-  const [featuresZhText, setFeaturesZhText] = useState("");
-  const [includedZhText, setIncludedZhText] = useState("");
-  const [excludedZhText, setExcludedZhText] = useState("");
+  const [featuresText, setFeaturesText] = useState(emptyForm.features.join("\n"));
+  const [includedText, setIncludedText] = useState(emptyForm.included.join("\n"));
+  const [excludedText, setExcludedText] = useState(emptyForm.excluded.join("\n"));
+  const [featuresZhText, setFeaturesZhText] = useState((emptyForm.featuresZh || []).join("\n"));
+  const [includedZhText, setIncludedZhText] = useState((emptyForm.includedZh || []).join("\n"));
+  const [excludedZhText, setExcludedZhText] = useState((emptyForm.excludedZh || []).join("\n"));
 
   useEffect(() => {
     if (isEdit) loadCar();
@@ -84,8 +112,11 @@ export const CarFormPage: React.FC = () => {
           transmission: d.transmission ?? "Manual",
           fuelType: d.fuelType ?? "Bensin",
           prices: d.prices?.length
-            ? d.prices
-            : [{ amount: d.price ?? 0, currency: d.currency ?? "IDR" }],
+            ? d.prices.map((p: PricePair) => ({
+                amount: p.amount ?? 0,
+                currency: "SGD",
+              }))
+            : [{ amount: d.price ?? 0, currency: "SGD" }],
           priceUnit: d.priceUnit ?? "day",
           minDays: d.minDays ?? 1,
           withDriver: d.withDriver ?? false,
@@ -165,8 +196,24 @@ export const CarFormPage: React.FC = () => {
       return;
     }
     setIsSaving(true);
+    const normalizedPrices = (form.prices || []).map((p) => ({
+      amount: Number(p.amount) || 0,
+      currency: "SGD",
+    }));
+    if (normalizedPrices.length === 0) {
+      addToast("Minimal 1 harga wajib diisi", "error");
+      setIsSaving(false);
+      return;
+    }
+    if (normalizedPrices.some((p) => p.amount < 1)) {
+      addToast("Harga minimal 1 SGD", "error");
+      setIsSaving(false);
+      return;
+    }
+
     const payload = {
       ...form,
+      prices: normalizedPrices,
       features: parseLines(featuresText),
       featuresZh: parseLines(featuresZhText),
       included: parseLines(includedText),
@@ -370,6 +417,9 @@ export const CarFormPage: React.FC = () => {
       {/* Pricing */}
       <Card className="p-6">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Harga</h2>
+        <p className="text-sm text-gray-500 mb-4">
+          Semua harga wajib dalam SGD.
+        </p>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -416,17 +466,9 @@ export const CarFormPage: React.FC = () => {
                 min={0}
                 className="flex-1 border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
               />
-              <select
-                value={p.currency}
-                onChange={(e) => onPriceChange(idx, "currency", e.target.value)}
-                className="w-24 border border-gray-300 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-              >
-                {CURRENCIES.map((c) => (
-                  <option key={c} value={c}>
-                    {c}
-                  </option>
-                ))}
-              </select>
+              <span className="w-24 border border-gray-300 bg-gray-50 text-gray-700 rounded-lg px-2 py-2 text-sm text-center font-semibold">
+                SGD
+              </span>
               {form.prices.length > 1 && (
                 <button
                   type="button"

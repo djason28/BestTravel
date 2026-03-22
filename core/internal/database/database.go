@@ -4,6 +4,8 @@ import (
 	"context"
 	"log"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -42,7 +44,7 @@ func Init(cfg *config.Config) {
 			sqlDB.SetMaxIdleConns(10)
 			sqlDB.SetConnMaxLifetime(1 * time.Hour)
 			_ = DB.Exec("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci").Error
-			_ = DB.Exec("ALTER DATABASE `" + cfg.DBName + "` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci").Error
+			_ = DB.Exec("ALTER DATABASE `" + strings.ReplaceAll(cfg.DBName, "`", "``") + "` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci").Error
 			ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 			defer cancel()
 			if err := sqlDB.PingContext(ctx); err != nil {
@@ -65,6 +67,28 @@ func Init(cfg *config.Config) {
 			if err := sqlDB.PingContext(ctx); err != nil {
 				log.Fatalf("database ping failed: %v", err)
 			}
+		}
+		ensurePackagesSchema()
+	case "sqlite":
+		dbPath := cfg.DBName
+		if dbPath == "" {
+			dbPath = "./data/besttravel.db"
+		}
+		if dir := filepath.Dir(dbPath); dir != "." {
+			if err := os.MkdirAll(dir, 0755); err != nil {
+				log.Fatalf("failed to create sqlite dir %s: %v", dir, err)
+			}
+		}
+		log.Printf("[DB] Using SQLite (file=%s)", dbPath)
+		dsn := dbPath + "?_journal_mode=WAL&_busy_timeout=5000&_foreign_keys=on"
+		DB, err = gorm.Open(sqlite.Open(dsn), &gorm.Config{PrepareStmt: true})
+		if err != nil {
+			log.Fatalf("failed to connect SQLite: %v", err)
+		}
+		if sqlDB, err := DB.DB(); err == nil {
+			sqlDB.SetMaxOpenConns(1) // SQLite handles one writer at a time
+			sqlDB.SetMaxIdleConns(1)
+			sqlDB.SetConnMaxLifetime(0)
 		}
 		ensurePackagesSchema()
 	default:

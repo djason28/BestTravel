@@ -9,7 +9,7 @@ import type { PackageFormData, PackageImage, PricePair } from "../../types";
 import { useToast } from "../../contexts/ToastContext";
 import { tokenizeCategories } from "../../utils/security";
 
-const emptyForm: PackageFormData = {
+const _blankForm: PackageFormData = {
   title: "",
   titleZh: "",
   shortDescription: "",
@@ -40,6 +40,36 @@ const emptyForm: PackageFormData = {
   featured: false,
 };
 
+// Dev-mode sample data — auto-fills form so you don't retype test data every time
+const _devForm: PackageFormData = {
+  ..._blankForm,
+  title: "Bali Paradise Tour",
+  titleZh: "巴厘岛天堂之旅",
+  shortDescription: "Experience the best of Bali with guided tours, local cuisine and stunning beaches.",
+  shortDescriptionZh: "体验巴厘岛最好的导游、当地美食和迷人的海滩。",
+  prices: [{ amount: 600, currency: "SGD" }],
+  price: 600,
+  currency: "SGD",
+  duration: 3,
+  durationUnit: "days",
+  categories: ["Beach", "Foodie", "Historical"],
+  categoriesZh: ["海滩", "美食", "历史"],
+  destination: "Bali, Indonesia",
+  destinationZh: "巴厘岛, 印度尼西亚",
+  availability: "2026",
+  availabilityZh: "2026年",
+  minParticipants: 1,
+  maxParticipants: 6,
+  highlights: ["Scenic Beach", "Local Cuisine", "Temple Visit"],
+  highlightsZh: ["美丽海滩", "当地美食", "寺庙参观"],
+  included: ["Transport", "Accommodation", "Meals", "Tour Guide"],
+  includedZh: ["交通", "住宿", "餐食", "导游"],
+  excluded: ["Personal Expenses", "Tips"],
+  excludedZh: ["个人消费", "小费"],
+};
+
+const emptyForm: PackageFormData = import.meta.env.DEV ? _devForm : _blankForm;
+
 export const PackageFormPage: React.FC = () => {
   const { id } = useParams();
   const isEdit = Boolean(id);
@@ -49,10 +79,10 @@ export const PackageFormPage: React.FC = () => {
   const [form, setForm] = useState<PackageFormData>(emptyForm);
   const [loading, setLoading] = useState<boolean>(!!id);
   const [saving, setSaving] = useState<boolean>(false);
-  const [includedText, setIncludedText] = useState<string>("");
-  const [excludedText, setExcludedText] = useState<string>("");
-  const [includedZhText, setIncludedZhText] = useState<string>("");
-  const [excludedZhText, setExcludedZhText] = useState<string>("");
+  const [includedText, setIncludedText] = useState<string>(emptyForm.included.join("\n"));
+  const [excludedText, setExcludedText] = useState<string>(emptyForm.excluded.join("\n"));
+  const [includedZhText, setIncludedZhText] = useState<string>((emptyForm.includedZh || []).join("\n"));
+  const [excludedZhText, setExcludedZhText] = useState<string>((emptyForm.excludedZh || []).join("\n"));
   const [categoryInput, setCategoryInput] = useState<string>("");
   const [categoryZhInput, setCategoryZhInput] = useState<string>("");
   const [highlightInput, setHighlightInput] = useState<string>("");
@@ -116,8 +146,8 @@ export const PackageFormPage: React.FC = () => {
           setForm(base);
           setIncludedText(base.included.join("\n"));
           setExcludedText(base.excluded.join("\n"));
-          setIncludedZhText(base.includedZh.join("\n"));
-          setExcludedZhText(base.excludedZh.join("\n"));
+          setIncludedZhText((base.includedZh || []).join("\n"));
+          setExcludedZhText((base.excludedZh || []).join("\n"));
           setImages(p.images || []);
         }
       } catch (e) {
@@ -276,13 +306,11 @@ export const PackageFormPage: React.FC = () => {
   const englishRequiredOk = [
     form.title,
     form.shortDescription,
-    form.description,
     form.destination,
   ].every((v) => v && v.trim());
   const mandarinRequiredOk = [
     form.titleZh,
     form.shortDescriptionZh,
-    form.descriptionZh,
     form.destinationZh,
   ].every((v) => v && v.trim());
   const progressPercent =
@@ -844,9 +872,9 @@ export const PackageFormPage: React.FC = () => {
                     placeholder="输入并按 Enter 或使用 , ;"
                     className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                   />
-                  {form.categoriesZh.length > 0 && (
+                  {(form.categoriesZh || []).length > 0 && (
                     <div className="flex flex-wrap gap-2">
-                      {form.categoriesZh.map((cat, idx) => (
+                      {(form.categoriesZh || []).map((cat, idx) => (
                         <span
                           key={idx}
                           className="inline-flex items-center gap-1 px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm"
@@ -857,7 +885,7 @@ export const PackageFormPage: React.FC = () => {
                             onClick={() =>
                               setForm((prev) => ({
                                 ...prev,
-                                categoriesZh: prev.categoriesZh.filter(
+                                categoriesZh: (prev.categoriesZh || []).filter(
                                   (_, i) => i !== idx,
                                 ),
                               }))
@@ -909,9 +937,9 @@ export const PackageFormPage: React.FC = () => {
                     className="w-full px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                     placeholder="美丽海滩, 当地美食"
                   />
-                  {form.highlightsZh.length > 0 && (
+                  {(form.highlightsZh || []).length > 0 && (
                     <div className="flex flex-wrap gap-2 mt-2">
-                      {form.highlightsZh.map((h, idx) => (
+                      {(form.highlightsZh || []).map((h, idx) => (
                         <span
                           key={idx}
                           className="px-3 py-1 bg-purple-100 text-purple-800 rounded-full text-sm flex items-center gap-1"
@@ -922,7 +950,7 @@ export const PackageFormPage: React.FC = () => {
                             onClick={() =>
                               setForm((prev) => ({
                                 ...prev,
-                                highlightsZh: prev.highlightsZh.filter(
+                                highlightsZh: (prev.highlightsZh || []).filter(
                                   (_, i) => i !== idx,
                                 ),
                               }))

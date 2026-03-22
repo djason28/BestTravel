@@ -71,7 +71,7 @@ func Load() *Config {
 		JWTTTLMinutes:                 getEnvAsInt("JWT_TTL_MINUTES", 30),
 		JWTIssuer:                     getEnv("JWT_ISSUER", "besttravel-api"),
 		JWTAudience:                   getEnv("JWT_AUDIENCE", "besttravel-client"),
-		DBDriver:                      strings.ToLower(getEnv("DB_DRIVER", "turso")),
+		DBDriver:                      strings.ToLower(getEnv("DB_DRIVER", "sqlite")),
 		DBDSN:                         getEnv("DB_DSN", ""),
 		DBHost:                        getEnv("DB_HOST", "127.0.0.1"),
 		DBPort:                        getEnvAsInt("DB_PORT", 3306),
@@ -113,8 +113,14 @@ func Load() *Config {
 			log.Printf("[Config] R2 credentials missing; uploads will fail unless R2_* vars are set")
 		}
 		log.Printf("[Config] DB driver=%s", cfg.DBDriver)
+	case "sqlite":
+		dbPath := cfg.DBName
+		if dbPath == "" {
+			dbPath = "./data/besttravel.db"
+		}
+		log.Printf("[Config] DB driver=%s file=%s", cfg.DBDriver, dbPath)
 	default:
-		log.Fatalf("unsupported DB_DRIVER '%s' - use 'mysql' or 'turso'", cfg.DBDriver)
+		log.Fatalf("unsupported DB_DRIVER '%s' - use 'mysql', 'turso', or 'sqlite'", cfg.DBDriver)
 	}
 
 	// Basic production hardening: require strong JWT secret and non-default admin creds

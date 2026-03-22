@@ -5,13 +5,14 @@ import {
   MapPin,
   Calendar,
   Shield,
-  Award,
+  Tag,
   Clock,
   Star,
+  X,
 } from "lucide-react";
 import { packageApi } from "../../services/api";
 import type { Package } from "../../types";
-import { formatCategories } from "../../utils/security";
+import { formatCategories, formatPrice } from "../../utils/security";
 import { Card } from "../../components/common/Card";
 import { PackageCardSkeleton } from "../../components/common/Loading";
 import { t } from "../../i18n";
@@ -19,12 +20,14 @@ import { useNavigationState } from "../../contexts/NavigationContext";
 import { useDataCache } from "../../contexts/DataCacheContext";
 import { PrefetchLink } from "../../components/common";
 import { useLang } from "../../contexts/LangContext";
-// import { LazySection } from '../../components/common';
+import { useAuth } from "../../contexts/AuthContext";
 
 export const HomePage: React.FC = () => {
   const { lang } = useLang();
   const [featuredPackages, setFeaturedPackages] = useState<Package[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [zoomImage, setZoomImage] = useState<string | null>(null);
+  const { isAuthenticated } = useAuth();
 
   const { endNavigation } = useNavigationState();
   const { featured: cachedFeatured, prefetchFeatured } = useDataCache();
@@ -35,19 +38,22 @@ export const HomePage: React.FC = () => {
   }, [prefetchFeatured]);
 
   const loadFeaturedPackages = async () => {
+    // Show cached data immediately — no loading skeleton on revisit
+    if (cachedFeatured) {
+      setFeaturedPackages(cachedFeatured);
+      setIsLoading(false);
+      endNavigation();
+      return;
+    }
     setIsLoading(true);
     try {
-      if (cachedFeatured) {
-        setFeaturedPackages(cachedFeatured);
-      } else {
-        const response = await packageApi.getAll({
-          limit: 6,
-          sortBy: "popular",
-          status: "published",
-        });
-        if (response.success) {
-          setFeaturedPackages(response.data.slice(0, 6));
-        }
+      const response = await packageApi.getAll({
+        limit: 6,
+        sortBy: "popular",
+        status: "published",
+      });
+      if (response.success) {
+        setFeaturedPackages(response.data.slice(0, 6));
       }
     } catch (error) {
       console.error("Failed to load packages:", error);
@@ -134,7 +140,7 @@ export const HomePage: React.FC = () => {
                 description: t("feature_safe_secure_desc"),
               },
               {
-                icon: <Award className="h-12 w-12 text-[#0891b2]" />,
+                icon: <Tag className="h-12 w-12 text-[#0891b2]" />,
                 title: t("feature_best_prices_title"),
                 description: t("feature_best_prices_desc"),
               },
@@ -151,7 +157,7 @@ export const HomePage: React.FC = () => {
             ].map((feature, index) => (
               <div
                 key={index}
-                className="text-center p-6 rounded-xl border border-sky-100 shadow-sm hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+              className="text-center p-6 rounded-xl border-2 border-sky-100 hover:border-[#0891b2] bg-white opacity-90 hover:opacity-100 hover:-translate-y-2 hover:shadow-xl transition-all duration-300"
               >
                 <div className="flex justify-center mb-4">{feature.icon}</div>
                 <h3 className="text-xl font-semibold mb-2 text-gray-900">
@@ -189,10 +195,28 @@ export const HomePage: React.FC = () => {
                   remaining: remainingCount,
                 } = formatCategories(pkg.categories || [], 3);
 
+                const allPrices = (pkg.prices || []).filter(
+                  (p) => (p.amount || 0) > 0,
+                );
+                const startingPair =
+                  allPrices.length > 0
+                    ? allPrices.reduce((min, p) =>
+                        p.amount < min.amount ? p : min,
+                      )
+                    : {
+                        amount: pkg.price || 0,
+                        currency: pkg.currency || "SGD",
+                      };
+
+                const startingPriceText =
+                  startingPair.amount > 0
+                    ? `${t("starting_from")} ${formatPrice(startingPair.amount, startingPair.currency || "SGD")}`
+                    : t("starting_from");
+
                 return (
                   <div key={pkg.id}>
                     <Card hover className="h-full flex flex-col group">
-                      <div className="relative h-64 overflow-hidden">
+                      <div className="relative h-64 overflow-hidden cursor-zoom-in" onClick={() => setZoomImage(Array.isArray(pkg.images) && pkg.images[0]?.url ? pkg.images[0].url : "https://images.pexels.com/photos/1430676/pexels-photo-1430676.jpeg")}>
                         <img
                           src={
                             Array.isArray(pkg.images) && pkg.images[0]?.url
@@ -201,7 +225,7 @@ export const HomePage: React.FC = () => {
                           }
                           alt={pkg.title}
                           loading="lazy"
-                          className="w-full h-full object-contain bg-gray-100 transition-transform duration-500 hover:scale-110"
+                          className="w-full h-full object-contain bg-gray-100 transition-transform duration-500 group-hover:scale-105"
                         />
                         {pkg.featured && (
                           <div className="absolute top-4 right-4 bg-yellow-400 text-gray-900 px-3 py-1 rounded-full text-sm font-semibold flex items-center gap-1">
@@ -227,7 +251,7 @@ export const HomePage: React.FC = () => {
                             )}
                           </div>
                         )}
-                      </div>
+                        </div>
                       <div className="p-6">
                         <h3 className="text-xl font-bold text-gray-900 mb-2">
                           {lang === "zh" ? pkg.titleZh || pkg.title : pkg.title}
@@ -255,6 +279,12 @@ export const HomePage: React.FC = () => {
                           </div>
                         </div>
 
+                        {isAuthenticated && (
+                          <div className="mb-4 rounded-lg bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-800">
+                            {startingPriceText}
+                          </div>
+                        )}
+
                         <div className="flex items-center justify-end pt-4 border-t mt-auto">
                           <Link
                             to={`/packages/${pkg.slug}`}
@@ -270,6 +300,27 @@ export const HomePage: React.FC = () => {
               })
             )}
           </div>
+
+          {/* Image zoom lightbox */}
+          {zoomImage && (
+            <div
+              className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4"
+              onClick={() => setZoomImage(null)}
+            >
+              <button
+                className="absolute top-4 right-4 text-white p-2 hover:bg-white/20 rounded-full transition-colors"
+                onClick={() => setZoomImage(null)}
+              >
+                <X className="h-8 w-8" />
+              </button>
+              <img
+                src={zoomImage}
+                alt="Package preview"
+                className="max-w-[90vw] max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                onClick={(e) => e.stopPropagation()}
+              />
+            </div>
+          )}      
 
           <div className="text-center">
             <Link

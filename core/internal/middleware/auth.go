@@ -5,8 +5,7 @@ import (
 	"strings"
 
 	"besttravel/internal/config"
-	"besttravel/internal/database"
-	"besttravel/internal/models"
+	"besttravel/internal/repository"
 	"besttravel/internal/utils"
 
 	"github.com/gin-gonic/gin"
@@ -19,7 +18,7 @@ const (
 	CtxUserRole ContextKeys = "role"
 )
 
-func AuthRequired(cfg *config.Config) gin.HandlerFunc {
+func AuthRequired(cfg *config.Config, authRepo repository.AuthRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		auth := c.GetHeader("Authorization")
 		if !strings.HasPrefix(auth, "Bearer ") {
@@ -36,9 +35,7 @@ func AuthRequired(cfg *config.Config) gin.HandlerFunc {
 
 		// Check blacklist by jti (fast UUID primary key lookup)
 		if claims.ID != "" {
-			var count int64
-			database.DB.Model(&models.TokenBlacklist{}).Where("jti = ?", claims.ID).Count(&count)
-			if count > 0 {
+			if authRepo.IsTokenBlacklisted(c.Request.Context(), claims.ID) {
 				c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"success": false, "error": "token revoked"})
 				return
 			}
@@ -62,7 +59,7 @@ func AdminOnly() gin.HandlerFunc {
 }
 
 // OptionalAuth extracts user context if token present, but doesn't abort if missing
-func OptionalAuth(cfg *config.Config) gin.HandlerFunc {
+func OptionalAuth(cfg *config.Config, authRepo repository.AuthRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		auth := c.GetHeader("Authorization")
 		if strings.HasPrefix(auth, "Bearer ") {
@@ -71,9 +68,7 @@ func OptionalAuth(cfg *config.Config) gin.HandlerFunc {
 			if err == nil {
 				// Check blacklist by jti
 				if claims.ID != "" {
-					var count int64
-					database.DB.Model(&models.TokenBlacklist{}).Where("jti = ?", claims.ID).Count(&count)
-					if count == 0 {
+					if !authRepo.IsTokenBlacklisted(c.Request.Context(), claims.ID) {
 						c.Set(string(CtxUserID), claims.UserID)
 						c.Set(string(CtxUserRole), claims.Role)
 					}

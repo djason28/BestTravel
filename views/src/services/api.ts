@@ -169,44 +169,44 @@ export const carApi = {
     return handleResponse<PaginatedResponse<Car>>(response);
   },
 
-  getById: async (id: string): Promise<any> => {
+  getById: async (id: string): Promise<ApiResponse<Car>> => {
     const response = await fetch(`${API_BASE_URL}/cars/${id}`, {
       headers: getAuthHeaders(),
     });
-    return handleResponse<any>(response);
+    return handleResponse<ApiResponse<Car>>(response);
   },
 
-  getBySlug: async (slug: string): Promise<any> => {
+  getBySlug: async (slug: string): Promise<ApiResponse<Car>> => {
     const response = await fetch(`${API_BASE_URL}/cars/slug/${slug}`, {
       headers: getAuthHeaders(),
     });
-    return handleResponse<any>(response);
+    return handleResponse<ApiResponse<Car>>(response);
   },
 
-  create: async (data: any): Promise<any> => {
+  create: async (data: Partial<Car>): Promise<ApiResponse<Car>> => {
     const response = await fetch(`${API_BASE_URL}/cars`, {
       method: "POST",
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
-    return handleResponse<any>(response);
+    return handleResponse<ApiResponse<Car>>(response);
   },
 
-  update: async (id: string, data: any): Promise<any> => {
+  update: async (id: string, data: Partial<Car>): Promise<ApiResponse<Car>> => {
     const response = await fetch(`${API_BASE_URL}/cars/${id}`, {
       method: "PUT",
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
-    return handleResponse<any>(response);
+    return handleResponse<ApiResponse<Car>>(response);
   },
 
-  delete: async (id: string): Promise<any> => {
+  delete: async (id: string): Promise<ApiResponse<void>> => {
     const response = await fetch(`${API_BASE_URL}/cars/${id}`, {
       method: "DELETE",
       headers: getAuthHeaders(),
     });
-    return handleResponse<any>(response);
+    return handleResponse<ApiResponse<void>>(response);
   },
 
   incrementView: async (id: string): Promise<void> => {

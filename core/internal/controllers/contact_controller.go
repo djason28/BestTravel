@@ -4,16 +4,21 @@ import (
 	"net/http"
 
 	"besttravel/internal/config"
-	"besttravel/internal/database"
 	"besttravel/internal/models"
+	"besttravel/internal/repository"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
-type ContactController struct{ cfg *config.Config }
+type ContactController struct {
+	cfg     *config.Config
+	inqRepo repository.InquiryRepository
+}
 
-func NewContactController(cfg *config.Config) *ContactController { return &ContactController{cfg: cfg} }
+func NewContactController(cfg *config.Config, inqRepo repository.InquiryRepository) *ContactController {
+	return &ContactController{cfg: cfg, inqRepo: inqRepo}
+}
 
 type contactReq struct {
 	Name    string `json:"name" binding:"required"`
@@ -48,7 +53,7 @@ func (h *ContactController) Send(c *gin.Context) {
 		Source:  "contact", // Mark as coming from contact form
 	}
 
-	if err := database.DB.Create(&inquiry).Error; err != nil {
+	if err := h.inqRepo.Create(c.Request.Context(), &inquiry); err != nil {
 		fail(c, http.StatusInternalServerError, "failed to save inquiry")
 		return
 	}

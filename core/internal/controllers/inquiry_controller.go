@@ -8,6 +8,7 @@ import (
 	"besttravel/internal/config"
 	"besttravel/internal/database"
 	"besttravel/internal/models"
+	"besttravel/internal/repository"
 	"besttravel/internal/utils"
 
 	"github.com/gin-gonic/gin"
@@ -15,9 +16,14 @@ import (
 	"gorm.io/gorm"
 )
 
-type InquiryController struct{ cfg *config.Config }
+type InquiryController struct {
+	cfg     *config.Config
+	inqRepo repository.InquiryRepository
+}
 
-func NewInquiryController(cfg *config.Config) *InquiryController { return &InquiryController{cfg: cfg} }
+func NewInquiryController(cfg *config.Config, inqRepo repository.InquiryRepository) *InquiryController {
+	return &InquiryController{cfg: cfg, inqRepo: inqRepo}
+}
 
 type inquiryReq struct {
 	PackageID     string `json:"packageId"`
@@ -67,13 +73,13 @@ func (h *InquiryController) Create(c *gin.Context) {
 		Source:        source,
 		Status:        "new",
 	}
-	if err := database.Ctx(c).Create(&inq).Error; err != nil {
+	if err := h.inqRepo.Create(c.Request.Context(), &inq); err != nil {
 		fail(c, http.StatusInternalServerError, "failed to create inquiry")
 		return
 	}
 	// increment inquiry count on package
 	if req.PackageID != "" {
-		database.Ctx(c).Model(&models.Package{}).Where("id = ?", req.PackageID).UpdateColumn("inquiry_count", gorm.Expr("inquiry_count + 1"))
+		_ = h.inqRepo.IncrementPackageInquiryCount(c.Request.Context(), req.PackageID)
 	}
 	created(c, inq)
 }
@@ -81,17 +87,12 @@ func (h *InquiryController) Create(c *gin.Context) {
 func (h *InquiryController) GetAll(c *gin.Context) {
 	qBase := buildInquiryFilters(database.Ctx(c).Model(&models.Inquiry{}), c)
 	page, limit := utils.GetPageLimit(c, 10)
-	var total int64
-	var items []models.Inquiry
 
-	utils.ParallelCountAndList(
-		qBase,
-		func(db *gorm.DB) *gorm.DB {
-			return db.Order("created_at DESC").Offset((page - 1) * limit).Limit(limit)
-		},
-		&items,
-		&total,
-	)
+	items, total, err := h.inqRepo.FindAll(c.Request.Context(), qBase, page, limit)
+	if err != nil {
+		fail(c, http.StatusInternalServerError, "failed to fetch inquiries")
+		return
+	}
 	c.JSON(http.StatusOK, gin.H{"success": true, "data": items, "pagination": gin.H{
 		"page": page, "limit": limit, "total": total, "totalPages": (int((total + int64(limit) - 1) / int64(limit))),
 	}})
@@ -137,11 +138,14 @@ func (h *InquiryController) UpdateStatus(c *gin.Context) {
 		fail(c, http.StatusBadRequest, "invalid status")
 		return
 	}
-	if err := database.Ctx(c).Model(&models.Inquiry{}).Where("id = ?", id).Update("status", req.Status).Error; err != nil {
+	if err := h.inqRepo.UpdateStatus(c.Request.Context(), id, req.Status); err != nil {
 		fail(c, http.StatusInternalServerError, "failed to update status")
 		return
 	}
-	var inq models.Inquiry
-	database.Ctx(c).First(&inq, "id = ?", id)
-	ok(c, inq)
+	inq, _ := h.inqRepo.FindByID(c.Request.Context(), id)
+	if inq != nil {
+		ok(c, *inq)
+	} else {
+		ok(c, gin.H{"message": "updated"})
+	}
 }

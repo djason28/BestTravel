@@ -10,6 +10,7 @@ import (
 	"besttravel/internal/config"
 	"besttravel/internal/database"
 	"besttravel/internal/models"
+	"besttravel/internal/repository"
 	"besttravel/internal/utils"
 
 	"github.com/gin-gonic/gin"
@@ -139,10 +140,13 @@ func toCarDTO(c models.Car) CarDTO {
 
 // ---- controller ---------------------------------------------------------
 
-type CarController struct{ cfg *config.Config }
+type CarController struct {
+	cfg  *config.Config
+	repo repository.CarRepository
+}
 
-func NewCarController(cfg *config.Config) *CarController {
-	return &CarController{cfg: cfg}
+func NewCarController(cfg *config.Config, repo repository.CarRepository) *CarController {
+	return &CarController{cfg: cfg, repo: repo}
 }
 
 // GET /api/cars
@@ -245,28 +249,35 @@ func (h *CarController) GetAll(c *gin.Context) {
 
 // GET /api/cars/:id
 func (h *CarController) GetByID(c *gin.Context) {
-	var car models.Car
-	if err := database.Ctx(c).First(&car, "id = ?", c.Param("id")).Error; err != nil {
+	car, err := h.repo.FindByID(c.Request.Context(), c.Param("id"))
+	if err != nil {
 		fail(c, http.StatusNotFound, "not found")
 		return
 	}
-	ok(c, toCarDTO(car))
+	if !isAdmin(c) && car.Status != "published" {
+		fail(c, http.StatusNotFound, "not found")
+		return
+	}
+	ok(c, toCarDTO(*car))
 }
 
 // GET /api/cars/slug/:slug
 func (h *CarController) GetBySlug(c *gin.Context) {
-	var car models.Car
-	if err := database.Ctx(c).First(&car, "slug = ?", c.Param("slug")).Error; err != nil {
+	car, err := h.repo.FindBySlug(c.Request.Context(), c.Param("slug"))
+	if err != nil {
 		fail(c, http.StatusNotFound, "not found")
 		return
 	}
-	ok(c, toCarDTO(car))
+	if !isAdmin(c) && car.Status != "published" {
+		fail(c, http.StatusNotFound, "not found")
+		return
+	}
+	ok(c, toCarDTO(*car))
 }
 
 // POST /api/cars/:id/view
 func (h *CarController) IncrementView(c *gin.Context) {
-	database.Ctx(c).Model(&models.Car{}).Where("id = ?", c.Param("id")).
-		UpdateColumn("view_count", gorm.Expr("view_count + ?", 1))
+	_ = h.repo.IncrementView(c.Request.Context(), c.Param("id"))
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
@@ -277,12 +288,9 @@ func (h *CarController) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "errors": FormatValidationError(err)})
 		return
 	}
-	if len(req.Prices) == 0 {
-		fail(c, http.StatusBadRequest, "at least one price is required")
-		return
-	}
-	if primaryPrice(req.Prices) < 1 {
-		fail(c, http.StatusBadRequest, "price must be at least 1")
+	validatedPrices, validationErr := validateCarPricesSGD(req.Prices)
+	if validationErr != "" {
+		fail(c, http.StatusBadRequest, validationErr)
 		return
 	}
 
@@ -324,9 +332,9 @@ func (h *CarController) Create(c *gin.Context) {
 				Seats:          req.Seats,
 				Transmission:   chooseStr(req.Transmission, "automatic"),
 				FuelType:       req.FuelType,
-				Prices:         models.PriceList(req.Prices),
-				Price:          primaryPrice(req.Prices),
-				Currency:       primaryCurrency(req.Prices),
+				Prices:         models.PriceList(validatedPrices),
+				Price:          primaryPrice(validatedPrices),
+				Currency:       "SGD",
 				PriceUnit:      chooseStr(req.PriceUnit, "day"),
 				MinDays:        max1(req.MinDays),
 				WithDriver:     req.WithDriver,
@@ -396,9 +404,14 @@ func (h *CarController) Update(c *gin.Context) {
 		car.FuelType = req.FuelType
 	}
 	if len(req.Prices) > 0 {
-		car.Prices = models.PriceList(req.Prices)
-		car.Price = primaryPrice(req.Prices)
-		car.Currency = primaryCurrency(req.Prices)
+		validatedPrices, validationErr := validateCarPricesSGD(req.Prices)
+		if validationErr != "" {
+			fail(c, http.StatusBadRequest, validationErr)
+			return
+		}
+		car.Prices = models.PriceList(validatedPrices)
+		car.Price = primaryPrice(validatedPrices)
+		car.Currency = "SGD"
 	}
 	if req.PriceUnit != "" {
 		car.PriceUnit = req.PriceUnit
@@ -409,16 +422,16 @@ func (h *CarController) Update(c *gin.Context) {
 	car.WithDriver = req.WithDriver
 	car.Features = models.StringArray(req.Features)
 	car.FeaturesZh = models.StringArray(req.FeaturesZh)
-	if len(req.Included) >= 0 {
+	if req.Included != nil {
 		car.Included = models.StringArray(req.Included)
 	}
-	if len(req.Excluded) >= 0 {
+	if req.Excluded != nil {
 		car.Excluded = models.StringArray(req.Excluded)
 	}
-	if len(req.IncludedZh) >= 0 {
+	if req.IncludedZh != nil {
 		car.IncludedZh = models.StringArray(req.IncludedZh)
 	}
-	if len(req.ExcludedZh) >= 0 {
+	if req.ExcludedZh != nil {
 		car.ExcludedZh = models.StringArray(req.ExcludedZh)
 	}
 	if req.Images != nil {
@@ -484,6 +497,32 @@ func max1(v int) int {
 }
 
 func isAdmin(c *gin.Context) bool {
-	role, _ := c.Get("userRole")
+	role, _ := c.Get("role")
 	return role == "admin" || role == "editor"
+}
+
+func validateCarPricesSGD(prices []models.PricePair) ([]models.PricePair, string) {
+	if len(prices) == 0 {
+		return nil, "at least one price is required"
+	}
+
+	normalized := make([]models.PricePair, 0, len(prices))
+	for _, p := range prices {
+		if p.Amount < 1 {
+			return nil, "price must be at least 1"
+		}
+		currency := strings.ToUpper(strings.TrimSpace(p.Currency))
+		if currency == "" {
+			currency = "SGD"
+		}
+		if currency != "SGD" {
+			return nil, "currency must be SGD"
+		}
+		normalized = append(normalized, models.PricePair{
+			Amount:   p.Amount,
+			Currency: "SGD",
+		})
+	}
+
+	return normalized, ""
 }

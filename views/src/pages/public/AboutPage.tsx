@@ -1,7 +1,7 @@
 import React, { useEffect } from "react";
 import {
   Shield,
-  Award,
+  ThumbsUp,
   Heart,
   Users,
   Target,
@@ -63,7 +63,7 @@ export const AboutPage: React.FC = () => {
                 description: t("safe_secure_desc"),
               },
               {
-                icon: <Award className="h-12 w-12 text-[#0891b2]" />,
+                icon: <ThumbsUp className="h-12 w-12 text-[#0891b2]" />,
                 title: t("award_winning"),
                 description: t("award_winning_desc"),
               },

@@ -219,6 +219,23 @@ export const CarDetailPage: React.FC = () => {
     }
   };
 
+  const startingPrice = (() => {
+    const allPrices = (car.prices || []).filter((p) => (p.amount || 0) > 0);
+    const sgdPrices = allPrices.filter(
+      (p) => (p.currency || "").toUpperCase() === "SGD",
+    );
+    const source = sgdPrices.length > 0 ? sgdPrices : allPrices;
+    if (source.length > 0) {
+      return Math.min(...source.map((p) => p.amount));
+    }
+    return car.price > 0 ? car.price : 0;
+  })();
+
+  const startingPriceText =
+    startingPrice > 0
+      ? `${t("starting_price_sgd")} SGD $${startingPrice.toLocaleString()}`
+      : `${t("starting_price_sgd")} SGD`;
+
   return (
     <div className="bg-sky-50">
       <div className="container mx-auto px-4 py-8">
@@ -342,11 +359,9 @@ export const CarDetailPage: React.FC = () => {
                     <span className="px-3 py-1 bg-sky-100 text-sky-800 rounded-full text-sm font-medium">
                       {car.brand}
                     </span>
-                    {car.year > 0 && (
-                      <span className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm font-medium">
-                        {car.year}
-                      </span>
-                    )}
+                    <span className="px-3 py-1 bg-cyan-50 text-cyan-800 rounded-full text-sm font-semibold">
+                      {startingPriceText}
+                    </span>
                     {car.featured && (
                       <span className="px-3 py-1 bg-yellow-100 text-yellow-800 rounded-full text-sm font-medium flex items-center gap-1">
                         <Star className="h-4 w-4 fill-current" />
@@ -536,24 +551,19 @@ export const CarDetailPage: React.FC = () => {
                     <Calendar className="h-5 w-5 text-white" />
                   </div>
                   <span className="text-xs font-medium uppercase tracking-wider text-white/80">
-                    {lang === "zh" ? "可用时间" : "Availability"}
+                    {t("starting_from")}
                   </span>
                 </div>
                 <p className="text-3xl font-bold tracking-tight mt-2">
-                  {lang === "zh"
-                    ? car.availabilityZh || car.availability || car.year
-                    : car.availability || car.year}
+                  {startingPriceText}
                 </p>
                 <p className="text-xs text-white/70 mt-2">
-                  *{" "}
-                  {lang === "zh"
-                    ? "请联系我们获取详细价格与预订情况"
-                    : "Contact us for detailed pricing & availability"}
+                  * {t("starting_price_tagline")}
                 </p>
               </div>
 
               {/* Action buttons */}
-              <div className="bg-white px-6 py-5 space-y-3">
+              <div className="bg-white px-6 py-5 flex flex-col gap-4">
                 <Button
                   onClick={handleWhatsAppClick}
                   className="w-full bg-green-500 hover:bg-green-600 flex items-center justify-center gap-2 rounded-xl py-3 text-base font-semibold shadow-md shadow-green-500/20 hover:shadow-lg hover:shadow-green-500/30 transition-all"

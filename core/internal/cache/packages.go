@@ -43,3 +43,15 @@ func InvalidatePackages() {
 	}
 	listMu.Unlock()
 }
+
+// CleanExpired removes cache entries past their TTL to prevent memory buildup.
+func CleanExpired() {
+	listMu.Lock()
+	now := time.Now()
+	for k, e := range listStore {
+		if now.After(e.expires) {
+			delete(listStore, k)
+		}
+	}
+	listMu.Unlock()
+}

@@ -13,6 +13,8 @@ export const zh = {
   duration: "行程天数",
   destination: "目的地",
   starting_from: "价格起自",
+  starting_price_sgd: "起价",
+  starting_price_tagline: "超值好价，轻松下单，马上出发。",
   details: "详情",
   language_toggle_en: "English",
   language_toggle_zh: "中文",
@@ -122,8 +124,8 @@ export const zh = {
   safe_secure: "安全保障",
   safe_secure_desc:
     "您的安全永远是第一位。我们与合格运营商合作，并严格执行高标准安全规范。",
-  award_winning: "奖项认可服务",
-  award_winning_desc: "多次获旅游行业优秀奖项，服务质量与满意度备受肯定。",
+  award_winning: "深受旅者信赖",
+  award_winning_desc: "数千位满意旅客的信赖之选，提供可靠服务、无缝规划和难忘的印尼旅行体验。",
   personalized_exp: "个性化体验",
   personalized_exp_desc:
     "每位旅行者都是独特的。我们为您量身定制符合兴趣与风格的专属行程。",

@@ -5,6 +5,9 @@ type Lang = 'en' | 'zh';
 
 const translations: Record<Lang, Record<string, string>> = { en, zh };
 
+// Cached resolved language — avoids parsing cookies/localStorage on every t() call
+let _cachedLang: Lang | null = null;
+
 function getCookie(name: string): string | null {
   const match = document.cookie.match(new RegExp('(^| )' + name + '=([^;]+)'));
   return match ? decodeURIComponent(match[2]) : null;
@@ -16,13 +19,15 @@ function setCookie(name: string, value: string, days: number) {
 }
 
 export function currentLang(): Lang {
+  if (_cachedLang) return _cachedLang;
   const cookieLang = getCookie('lang');
-  if (cookieLang === 'zh') return 'zh';
+  if (cookieLang === 'zh') { _cachedLang = 'zh'; return 'zh'; }
   const stored = localStorage.getItem('lang');
-  if (stored === 'zh') return 'zh';
+  if (stored === 'zh') { _cachedLang = 'zh'; return 'zh'; }
   // Fallback to browser
   const navLang = navigator.language?.toLowerCase();
-  if (navLang.startsWith('zh')) return 'zh';
+  if (navLang.startsWith('zh')) { _cachedLang = 'zh'; return 'zh'; }
+  _cachedLang = 'en';
   return 'en';
 }
 
@@ -35,5 +40,6 @@ export function toggleLang(): Lang {
   const next = currentLang() === 'en' ? 'zh' : 'en';
   localStorage.setItem('lang', next);
   setCookie('lang', next, 30);
+  _cachedLang = next;
   return next;
 }

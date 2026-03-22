@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from "react";
+import React, { useEffect, useState, useMemo, useRef } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import {
   Search,
@@ -10,7 +10,7 @@ import {
 } from "lucide-react";
 import { packageApi } from "../../services/api";
 import type { Package, FilterOptions, PackageFilterOptions } from "../../types";
-import { debounce, formatCategories } from "../../utils/security";
+import { debounce, formatCategories, formatPrice } from "../../utils/security";
 import { buildFilterQuery, parseFilterParams } from "../../utils/query";
 import { Card } from "../../components/common/Card";
 import { PackageCardSkeleton } from "../../components/common/Loading";
@@ -20,9 +20,11 @@ import { useNavigationState } from "../../contexts/NavigationContext";
 import { useDataCache } from "../../contexts/DataCacheContext";
 import { useResponsiveLimit } from "../../hooks/useResponsiveLimit";
 import { useLang } from "../../contexts/LangContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 export const PackagesPage: React.FC = () => {
   const { lang } = useLang();
+  const { isAuthenticated } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   const [packages, setPackages] = useState<Package[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -74,9 +76,35 @@ export const PackagesPage: React.FC = () => {
     setFilters((prev) => ({ ...prev, limit: responsiveLimit, page: 1 }));
   }, [responsiveLimit]);
 
+  // Stale-while-revalidate cache for package list — matches backend 30s TTL
+  const pkgCacheRef = useRef<Map<string, { data: Package[]; pagination: any; ts: number }>>(new Map());
+  const CACHE_TTL = 30_000;
+
   const loadPackages = async () => {
-    setIsLoading(true);
-    startNavigation();
+    const cacheKey = JSON.stringify(filters);
+    const cached = pkgCacheRef.current.get(cacheKey);
+
+    // Fresh cache: render immediately, skip network
+    if (cached && Date.now() - cached.ts < CACHE_TTL) {
+      setPackages(cached.data);
+      setTotalPages(cached.pagination.totalPages);
+      setCurrentPage(cached.pagination.page);
+      setTotalItems(cached.pagination.total || cached.data.length);
+      setIsLoading(false);
+      endNavigation();
+      return;
+    }
+    // Stale cache: show immediately, revalidate in background
+    if (cached) {
+      setPackages(cached.data);
+      setTotalPages(cached.pagination.totalPages);
+      setCurrentPage(cached.pagination.page);
+      setTotalItems(cached.pagination.total || cached.data.length);
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+      startNavigation();
+    }
     try {
       const response = await packageApi.getAll(filters);
       if (response.success) {
@@ -84,6 +112,11 @@ export const PackagesPage: React.FC = () => {
         setTotalPages(response.pagination.totalPages);
         setCurrentPage(response.pagination.page);
         setTotalItems(response.pagination.total || response.data.length);
+        pkgCacheRef.current.set(cacheKey, {
+          data: response.data,
+          pagination: response.pagination,
+          ts: Date.now(),
+        });
       }
     } catch (error) {
       console.error("Failed to load packages:", error);
@@ -508,6 +541,24 @@ export const PackagesPage: React.FC = () => {
               const { visible: visibleCategories, remaining: remainingCount } =
                 formatCategories(cats, 3);
 
+              const allPrices = (pkg.prices || []).filter(
+                (p) => (p.amount || 0) > 0,
+              );
+              const startingPair =
+                allPrices.length > 0
+                  ? allPrices.reduce((min, p) =>
+                      p.amount < min.amount ? p : min,
+                    )
+                  : {
+                      amount: pkg.price || 0,
+                      currency: pkg.currency || "SGD",
+                    };
+
+              const startingPriceText =
+                startingPair.amount > 0
+                  ? `${t("starting_from")} ${formatPrice(startingPair.amount, startingPair.currency || "SGD")}`
+                  : t("starting_from");
+
               return (
                 <div key={pkg.id}>
                   <Card hover className="h-full flex flex-col group">
@@ -584,6 +635,12 @@ export const PackagesPage: React.FC = () => {
                           </span>
                         </div>
                       </div>
+
+                      {isAuthenticated && (
+                        <div className="mb-4 rounded-lg bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-800">
+                          {startingPriceText}
+                        </div>
+                      )}
 
                       <div className="flex items-center justify-end pt-4 border-t mt-auto">
                         <Link

@@ -13,6 +13,8 @@ export const en = {
   duration: "Duration",
   destination: "Destination",
   starting_from: "Starting from",
+  starting_price_sgd: "Starts at just",
+  starting_price_tagline: "Sweet deal, no stress. Lock your ride now.",
   details: "Details",
   language_toggle_en: "English",
   language_toggle_zh: "中文",
@@ -132,9 +134,9 @@ export const en = {
   safe_secure: "Safe & Secure",
   safe_secure_desc:
     "Your safety is our top priority. We partner with certified operators and maintain the highest safety standards in all our tours.",
-  award_winning: "Award-Winning Service",
+  award_winning: "Trusted by Travelers",
   award_winning_desc:
-    "Recognized for excellence in tourism, we have received multiple awards for our outstanding service and customer satisfaction.",
+    "Thousands of happy travelers trust us for reliable service, seamless planning, and unforgettable experiences across Indonesia.",
   personalized_exp: "Personalized Experiences",
   personalized_exp_desc:
     "Every traveler is unique. We customize each itinerary to match your interests, preferences, and travel style.",

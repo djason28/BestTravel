@@ -25,7 +25,7 @@ func main() {
 	cfg := config.Load()
 	logger.Init(cfg.Env)
 	database.Init(cfg)
-	database.EnsureIndexes()
+	database.EnsureIndexes(cfg.DBDriver)
 
 	// seed admin
 	seedAdmin(cfg)
@@ -71,7 +71,12 @@ func seedAdmin(cfg *config.Config) {
 	if count > 0 {
 		return
 	}
-	ph, _ := utils.HashPassword(cfg.AdminPassword)
+	ph, err := utils.HashPassword(cfg.AdminPassword)
+	if err != nil {
+		log.Fatalf("failed to hash admin password: %v", err)
+	}
 	u := models.User{ID: uuid.NewString(), Email: cfg.AdminEmail, PasswordHash: ph, Name: cfg.AdminName, Role: "admin"}
-	_ = database.DB.Create(&u).Error
+	if err := database.DB.Create(&u).Error; err != nil {
+		log.Fatalf("failed to seed admin user: %v", err)
+	}
 }

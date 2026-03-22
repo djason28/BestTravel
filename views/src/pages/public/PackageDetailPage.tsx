@@ -16,13 +16,14 @@ import {
 } from "lucide-react";
 import { packageApi } from "../../services/api";
 import type { Package } from "../../types";
-import { getWhatsAppLink } from "../../utils/security";
+import { formatPrice, getWhatsAppLink } from "../../utils/security";
 import { ContentLoader } from "../../components/common/ContentLoader";
 import { useNavigationState } from "../../contexts/NavigationContext";
 import { Button } from "../../components/common/Button";
 import { t } from "../../i18n";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { useLang } from "../../contexts/LangContext";
+import { useAuth } from "../../contexts/AuthContext";
 
 export const PackageDetailPage: React.FC = () => {
   const { lang } = useLang();
@@ -36,6 +37,7 @@ export const PackageDetailPage: React.FC = () => {
   const touchStart = useRef<{ x: number; y: number } | null>(null);
   const [isGalleryOpen, setIsGalleryOpen] = useState(false);
   const { endNavigation } = useNavigationState();
+  const { isAuthenticated } = useAuth();
 
   useEffect(() => {
     if (slug) {
@@ -169,6 +171,19 @@ export const PackageDetailPage: React.FC = () => {
     }
     return unit;
   };
+
+  const allPrices = (pkg.prices || []).filter((p) => (p.amount || 0) > 0);
+  const startingPair =
+    allPrices.length > 0
+      ? allPrices.reduce((min, p) => (p.amount < min.amount ? p : min))
+      : {
+          amount: pkg.price || 0,
+          currency: pkg.currency || "SGD",
+        };
+  const startingPriceText =
+    startingPair.amount > 0
+      ? `${t("starting_from")} ${formatPrice(startingPair.amount, startingPair.currency || "SGD")}`
+      : t("starting_from");
 
   // Normalisasi agar field array yang mungkin datang sebagai null (dari Go: slice nil -> JSON null)
   // images already defined above for autoplay logic.
@@ -491,6 +506,11 @@ export const PackageDetailPage: React.FC = () => {
                     ? pkg.availabilityZh
                     : pkg.availability}
                 </p>
+                {isAuthenticated && (
+                  <p className="text-lg font-semibold mt-2 text-white/95">
+                    {startingPriceText}
+                  </p>
+                )}
                 <p className="text-xs text-white/70 mt-2">
                   *{" "}
                   {lang === "zh"

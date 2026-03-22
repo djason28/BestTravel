@@ -4,17 +4,21 @@ import (
 	"net/http"
 	"strings"
 
-	"besttravel/internal/database"
 	"besttravel/internal/models"
+	"besttravel/internal/repository"
 	"besttravel/internal/utils"
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
 )
 
-type UserController struct{}
+type UserController struct {
+	repo repository.UserRepository
+}
 
-func NewUserController() *UserController { return &UserController{} }
+func NewUserController(repo repository.UserRepository) *UserController {
+	return &UserController{repo: repo}
+}
 
 type userResp struct {
 	ID        string `json:"id"`
@@ -36,8 +40,8 @@ func toUserResp(u models.User) userResp {
 
 // GET /api/users — list all admin users
 func (h *UserController) GetAll(c *gin.Context) {
-	var users []models.User
-	if err := database.Ctx(c).Order("created_at desc").Find(&users).Error; err != nil {
+	users, err := h.repo.FindAll(c.Request.Context())
+	if err != nil {
 		fail(c, http.StatusInternalServerError, "failed to fetch users")
 		return
 	}
@@ -63,8 +67,8 @@ func (h *UserController) Create(c *gin.Context) {
 		return
 	}
 
-	var existing models.User
-	if err := database.Ctx(c).Where("email = ?", strings.ToLower(req.Email)).First(&existing).Error; err == nil {
+	existing, _ := h.repo.FindByEmail(c.Request.Context(), strings.ToLower(req.Email))
+	if existing != nil {
 		fail(c, http.StatusConflict, "email already exists")
 		return
 	}
@@ -79,6 +83,10 @@ func (h *UserController) Create(c *gin.Context) {
 	if role == "" {
 		role = "admin"
 	}
+	if role != "admin" && role != "editor" {
+		fail(c, http.StatusBadRequest, "invalid role: must be 'admin' or 'editor'")
+		return
+	}
 
 	user := models.User{
 		ID:           uuid.NewString(),
@@ -88,7 +96,7 @@ func (h *UserController) Create(c *gin.Context) {
 		Role:         role,
 	}
 
-	if err := database.Ctx(c).Create(&user).Error; err != nil {
+	if err := h.repo.Create(c.Request.Context(), &user); err != nil {
 		fail(c, http.StatusInternalServerError, "failed to create user")
 		return
 	}
@@ -103,7 +111,7 @@ func (h *UserController) Delete(c *gin.Context) {
 		fail(c, http.StatusBadRequest, "cannot delete your own account")
 		return
 	}
-	if err := database.Ctx(c).Where("id = ?", id).Delete(&models.User{}).Error; err != nil {
+	if err := h.repo.Delete(c.Request.Context(), id); err != nil {
 		fail(c, http.StatusInternalServerError, "failed to delete user")
 		return
 	}
@@ -124,16 +132,16 @@ func (h *UserController) UpdateProfile(c *gin.Context) {
 		return
 	}
 
-	var user models.User
-	if err := database.Ctx(c).Where("id = ?", userID).First(&user).Error; err != nil {
+	user, err := h.repo.FindByID(c.Request.Context(), userID)
+	if err != nil {
 		fail(c, http.StatusNotFound, "user not found")
 		return
 	}
 
 	newEmail := strings.ToLower(req.Email)
 	if newEmail != user.Email {
-		var dup models.User
-		if err := database.Ctx(c).Where("email = ? AND id != ?", newEmail, userID).First(&dup).Error; err == nil {
+		dup, _ := h.repo.FindByEmailExcluding(c.Request.Context(), newEmail, userID)
+		if dup != nil {
 			fail(c, http.StatusConflict, "email already in use")
 			return
 		}
@@ -141,11 +149,11 @@ func (h *UserController) UpdateProfile(c *gin.Context) {
 
 	user.Name = req.Name
 	user.Email = newEmail
-	if err := database.Ctx(c).Save(&user).Error; err != nil {
+	if err := h.repo.Save(c.Request.Context(), user); err != nil {
 		fail(c, http.StatusInternalServerError, "failed to update profile")
 		return
 	}
-	ok(c, toUserResp(user))
+	ok(c, toUserResp(*user))
 }
 
 // PUT /api/auth/password — change own password
@@ -162,8 +170,8 @@ func (h *UserController) ChangePassword(c *gin.Context) {
 		return
 	}
 
-	var user models.User
-	if err := database.Ctx(c).Where("id = ?", userID).First(&user).Error; err != nil {
+	user, err := h.repo.FindByID(c.Request.Context(), userID)
+	if err != nil {
 		fail(c, http.StatusNotFound, "user not found")
 		return
 	}
@@ -180,7 +188,7 @@ func (h *UserController) ChangePassword(c *gin.Context) {
 	}
 
 	user.PasswordHash = hash
-	if err := database.Ctx(c).Save(&user).Error; err != nil {
+	if err := h.repo.Save(c.Request.Context(), user); err != nil {
 		fail(c, http.StatusInternalServerError, "failed to update password")
 		return
 	}

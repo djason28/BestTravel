@@ -11,7 +11,7 @@ import {
 } from "lucide-react";
 import { carApi } from "../../services/api";
 import type { Car } from "../../types";
-import { debounce } from "../../utils/security";
+import { debounce, formatPrice } from "../../utils/security";
 import { Card } from "../../components/common/Card";
 import { PackageCardSkeleton } from "../../components/common/Loading";
 import { Button } from "../../components/common/Button";
@@ -316,6 +316,23 @@ const CarCard: React.FC<{ car: Car; lang: "en" | "zh" }> = ({ car, lang }) => {
     car.imageUrl ??
     "https://images.pexels.com/photos/170811/pexels-photo-170811.jpeg"; // Default car image
 
+  const startingPrice = (() => {
+    const allPrices = (car.prices || []).filter((p) => (p.amount || 0) > 0);
+    const sgdPrices = allPrices.filter(
+      (p) => (p.currency || "").toUpperCase() === "SGD",
+    );
+    const source = sgdPrices.length > 0 ? sgdPrices : allPrices;
+    if (source.length > 0) {
+      return Math.min(...source.map((p) => p.amount));
+    }
+    return car.price > 0 ? car.price : 0;
+  })();
+
+  const startingPriceText =
+    startingPrice > 0
+      ? `${t("starting_price_sgd")} ${formatPrice(startingPrice, "SGD")}`
+      : `${t("starting_price_sgd")} SGD`;
+
   return (
     <Card hover className="h-full flex flex-col group">
       <div className="relative h-64 overflow-hidden">
@@ -381,6 +398,10 @@ const CarCard: React.FC<{ car: Car; lang: "en" | "zh" }> = ({ car, lang }) => {
               </span>
             </div>
           )}
+        </div>
+
+        <div className="mb-4 rounded-lg bg-cyan-50 px-3 py-2 text-sm font-semibold text-cyan-800">
+          {startingPriceText}
         </div>
 
         <div className="flex items-center justify-end pt-4 border-t mt-auto">
