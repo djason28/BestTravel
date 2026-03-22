@@ -3,9 +3,8 @@ import { create } from "zustand";
 type Lang = "en" | "zh";
 
 interface AuthState {
-  token: string | null;
   user: { id: string; name: string; email: string; role?: string } | null;
-  setAuth: (token: string, user: AuthState["user"]) => void;
+  setAuth: (user: AuthState["user"]) => void;
   setUser: (user: AuthState["user"]) => void;
   clearAuth: () => void;
 }
@@ -33,16 +32,15 @@ const detectInitialLang = (): Lang => {
 
 export const useAppStore = create<AppState>((set, get) => ({
   // Auth
-  token: localStorage.getItem("auth_token"),
   user: null,
-  setAuth: (token, user) => {
-    localStorage.setItem("auth_token", token);
-    set({ token, user });
+  setAuth: (user) => {
+    localStorage.setItem("is_logged_in", "true");
+    set({ user });
   },
   setUser: (user) => set({ user }),
   clearAuth: () => {
-    localStorage.removeItem("auth_token");
-    set({ token: null, user: null });
+    localStorage.removeItem("is_logged_in");
+    set({ user: null });
   },
   // Language
   lang: detectInitialLang(),

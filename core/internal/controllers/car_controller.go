@@ -2,10 +2,14 @@ package controllers
 
 import (
 	"context"
+	"crypto/sha1"
+	"encoding/hex"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
+
+	"besttravel/internal/cache"
 
 	"besttravel/internal/config"
 	"besttravel/internal/database"
@@ -15,6 +19,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/microcosm-cc/bluemonday"
 	"gorm.io/gorm"
 )
 
@@ -164,6 +169,18 @@ func (h *CarController) GetAll(c *gin.Context) {
 	}
 	// offset := (page - 1) * limit // Calculated inside listBuilder now
 
+	rawKey := c.Request.URL.RawQuery + "|admin=" + strconv.FormatBool(isAdmin(c))
+	sum := sha1.Sum([]byte(rawKey))
+	cacheKey := "car:list:" + hex.EncodeToString(sum[:])
+	
+	if cachedRaw, ok := cache.GetCarList(cacheKey); ok {
+		if resp, ok := cachedRaw.(gin.H); ok {
+			resp["cached"] = true
+			c.JSON(http.StatusOK, resp)
+			return
+		}
+	}
+
 	// Use database.DB directly with context, similar to PackageController
 	db := database.DB.WithContext(ctx)
 	q := db.Model(&models.Car{}).Where("deleted_at IS NULL")
@@ -235,7 +252,7 @@ func (h *CarController) GetAll(c *gin.Context) {
 		totalPages++
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	resp := gin.H{
 		"success": true,
 		"data":    dtos,
 		"pagination": PaginationDTO{
@@ -244,7 +261,10 @@ func (h *CarController) GetAll(c *gin.Context) {
 			Total:      total,
 			TotalPages: totalPages,
 		},
-	})
+		"cached": false,
+	}
+	cache.SetCarList(cacheKey, resp)
+	c.JSON(http.StatusOK, resp)
 }
 
 // GET /api/cars/:id
@@ -288,6 +308,12 @@ func (h *CarController) Create(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "errors": FormatValidationError(err)})
 		return
 	}
+
+	// Sanitize rich text inputs
+	policy := bluemonday.UGCPolicy()
+	req.Description = policy.Sanitize(req.Description)
+	req.DescriptionZh = policy.Sanitize(req.DescriptionZh)
+
 	validatedPrices, validationErr := validateCarPricesSGD(req.Prices)
 	if validationErr != "" {
 		fail(c, http.StatusBadRequest, validationErr)
@@ -354,6 +380,7 @@ func (h *CarController) Create(c *gin.Context) {
 			return tx.Create(&createdCar).Error
 		})
 		if lastErr == nil {
+			cache.InvalidateCars()
 			created(c, toCarDTO(createdCar))
 			return
 		}
@@ -372,6 +399,11 @@ func (h *CarController) Update(c *gin.Context) {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "errors": FormatValidationError(err)})
 		return
 	}
+
+	// Sanitize rich text inputs
+	policy := bluemonday.UGCPolicy()
+	req.Description = policy.Sanitize(req.Description)
+	req.DescriptionZh = policy.Sanitize(req.DescriptionZh)
 
 	var car models.Car
 	if err := database.Ctx(c).First(&car, "id = ?", id).Error; err != nil {
@@ -468,6 +500,7 @@ func (h *CarController) Update(c *gin.Context) {
 		fail(c, http.StatusInternalServerError, "failed to update car")
 		return
 	}
+	cache.InvalidateCars()
 	ok(c, toCarDTO(car))
 }
 
@@ -477,6 +510,7 @@ func (h *CarController) Delete(c *gin.Context) {
 		fail(c, http.StatusInternalServerError, "failed to delete")
 		return
 	}
+	cache.InvalidateCars()
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 

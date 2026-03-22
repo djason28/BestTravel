@@ -28,7 +28,6 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const {
-    token,
     user,
     setAuth,
     setUser: setStoreUser,
@@ -36,7 +35,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     isLoadingAuth,
     setLoadingAuth,
   } = useAppStore((state) => ({
-    token: state.token,
     user: state.user as User | null,
     setAuth: state.setAuth,
     setUser: state.setUser,
@@ -49,29 +47,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     checkAuth();
   }, []);
 
-  /** Decode JWT payload without verification (client-side check only). */
-  const isTokenExpired = (jwt: string): boolean => {
-    try {
-      const payload = JSON.parse(atob(jwt.split(".")[1]));
-      // exp is in seconds; add 10s leeway for clock skew
-      return (
-        typeof payload.exp === "number" &&
-        payload.exp * 1000 < Date.now() - 10_000
-      );
-    } catch {
-      return true; // unparseable → treat as expired
-    }
-  };
-
   const checkAuth = async () => {
-    const existing = token || localStorage.getItem("auth_token");
-    if (!existing) {
-      setLoadingAuth(false);
-      return;
-    }
-    // Skip the network round-trip if the token is already expired on the client side
-    if (isTokenExpired(existing)) {
-      clearAuth();
+    const isLoggedIn = localStorage.getItem("is_logged_in");
+    if (!isLoggedIn) {
       setLoadingAuth(false);
       return;
     }
@@ -79,7 +57,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       const response = await authApi.getCurrentUser();
       if (response.success && response.data) {
-        setAuth(existing, response.data);
+        setAuth(response.data);
       } else {
         clearAuth();
       }
@@ -93,8 +71,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const login = async (credentials: LoginCredentials) => {
     const response = await authApi.login(credentials);
-    if (response.success && response.token && response.user) {
-      setAuth(response.token, response.user);
+    if (response.success && response.user) {
+      setAuth(response.user);
     } else {
       throw new Error(response.error || "Login failed");
     }

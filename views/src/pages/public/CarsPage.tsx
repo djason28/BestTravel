@@ -19,6 +19,7 @@ import { useNavigationState } from "../../contexts/NavigationContext";
 import { t } from "../../i18n";
 import { useResponsiveLimit } from "../../hooks/useResponsiveLimit";
 import { useLang } from "../../contexts/LangContext";
+import { useQuery } from "@tanstack/react-query";
 
 const FUEL_ZH: Record<string, string> = {
   Bensin: "汽油",
@@ -36,8 +37,6 @@ const TRANSMISSION_ZH: Record<string, string> = {
 export const CarsPage: React.FC = () => {
   const { lang } = useLang();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [cars, setCars] = useState<Car[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState(
     searchParams.get("search") || "",
   );
@@ -51,47 +50,48 @@ export const CarsPage: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(
     Number(searchParams.get("page")) || 1,
   );
-  const [totalPages, setTotalPages] = useState(1);
   const { startNavigation, endNavigation } = useNavigationState();
   const responsiveLimit = useResponsiveLimit();
+  const filters = useMemo(
+    () => ({
+      status: "published",
+      search: searchQuery || undefined,
+      limit: responsiveLimit,
+      page: currentPage,
+      transmission: transmissionFilter || undefined,
+      withDriver: withDriverFilter || undefined,
+    }),
+    [
+      searchQuery,
+      responsiveLimit,
+      currentPage,
+      transmissionFilter,
+      withDriverFilter,
+    ],
+  );
 
-  const loadCars = useCallback(async () => {
-    setIsLoading(true);
-    startNavigation();
-    try {
-      const res = await carApi.getAll({
-        status: "published",
-        search: searchQuery || undefined,
-        limit: responsiveLimit,
-        page: currentPage,
-        transmission: transmissionFilter || undefined,
-        withDriver: withDriverFilter || undefined,
-      });
-      if (res.success && res.data) {
-        setCars(res.data);
-        if (res.pagination) {
-          setTotalPages(res.pagination.totalPages);
-          if (
-            currentPage > res.pagination.totalPages &&
-            res.pagination.totalPages > 0
-          ) {
-            setCurrentPage(1);
-          }
-        }
-      }
-    } catch {
-      setCars([]);
-    } finally {
-      setIsLoading(false);
+  const {
+    data: carsData,
+    isLoading,
+    isFetching,
+  } = useQuery({
+    queryKey: ["cars", "list", filters],
+    queryFn: async () => {
+      const res = await carApi.getAll(filters);
+      return res.success ? res : null;
+    },
+  });
+
+  const cars = carsData?.data || [];
+  const totalPages = carsData?.pagination?.totalPages || 1;
+
+  useEffect(() => {
+    if (isLoading || isFetching) {
+      startNavigation();
+    } else {
       endNavigation();
     }
-  }, [
-    searchQuery,
-    transmissionFilter,
-    withDriverFilter,
-    currentPage,
-    responsiveLimit,
-  ]);
+  }, [isLoading, isFetching, startNavigation, endNavigation]);
 
   useEffect(() => {
     setCurrentPage(1);
@@ -105,9 +105,13 @@ export const CarsPage: React.FC = () => {
     if (withDriverFilter) params.withDriver = withDriverFilter;
     if (currentPage > 1) params.page = String(currentPage);
     setSearchParams(params);
-
-    loadCars();
-  }, [loadCars]); // loadCars depends on query/filters, so this is correct
+  }, [
+    searchQuery,
+    transmissionFilter,
+    withDriverFilter,
+    currentPage,
+    setSearchParams,
+  ]);
 
   const handleSearchChange = debounce((val: string) => {
     setSearchQuery(val);

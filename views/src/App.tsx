@@ -15,10 +15,22 @@ import { AdminLayout } from "./layouts/AdminLayout";
 import { ContentLoader } from "./components/common/ContentLoader";
 import { NavigationProvider } from "./contexts/NavigationContext";
 
-import React, { Suspense, lazy, useEffect } from "react";
-import { DataCacheProvider, useDataCache } from "./contexts/DataCacheContext";
+import { Suspense, lazy } from "react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { HelmetProvider } from "react-helmet-async";
 import { LangProvider } from "./contexts/LangContext";
 import { IdleTasks } from "./components/system/IdleTasks";
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 5 * 60 * 1000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
+
 // Wrap named exports so React.lazy gets a default
 const HomePage = lazy(() =>
   import("./pages/public/HomePage").then((m) => ({ default: m.HomePage })),
@@ -97,14 +109,6 @@ const AdminsPage = lazy(() =>
   })),
 );
 
-const CacheWarm: React.FC = () => {
-  const { prefetchFeatured, prefetchFilterOptions } = useDataCache();
-  useEffect(() => {
-    prefetchFeatured();
-    prefetchFilterOptions();
-  }, [prefetchFeatured, prefetchFilterOptions]);
-  return null;
-};
 
 function AppRoutes() {
   const location = useLocation();
@@ -162,7 +166,6 @@ function AppRoutes() {
           </Routes>
         )}
       </Suspense>
-      <CacheWarm />
       <IdleTasks />
     </>
   );
@@ -171,20 +174,22 @@ function AppRoutes() {
 function App() {
   return (
     <ErrorBoundary>
-      <BrowserRouter>
-        <LangProvider>
-          <AuthProvider>
-            <DataCacheProvider>
-              <NavigationProvider>
-                <ToastProvider>
-                  <ToastContainer />
-                  <AppRoutes />
-                </ToastProvider>
-              </NavigationProvider>
-            </DataCacheProvider>
-          </AuthProvider>
-        </LangProvider>
-      </BrowserRouter>
+      <HelmetProvider>
+        <BrowserRouter>
+          <LangProvider>
+            <AuthProvider>
+              <QueryClientProvider client={queryClient}>
+                <NavigationProvider>
+                  <ToastProvider>
+                    <ToastContainer />
+                    <AppRoutes />
+                  </ToastProvider>
+                </NavigationProvider>
+              </QueryClientProvider>
+            </AuthProvider>
+          </LangProvider>
+        </BrowserRouter>
+      </HelmetProvider>
     </ErrorBoundary>
   );
 }

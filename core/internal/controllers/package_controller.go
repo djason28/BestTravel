@@ -19,6 +19,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/google/uuid"
+	"github.com/microcosm-cc/bluemonday"
 	"gorm.io/gorm"
 )
 
@@ -262,6 +263,17 @@ func (h *PackageController) Create(c *gin.Context) {
 		return
 	}
 
+	// Sanitize rich text inputs
+	policy := bluemonday.UGCPolicy()
+	req.Description = policy.Sanitize(req.Description)
+	req.DescriptionZh = policy.Sanitize(req.DescriptionZh)
+	req.ShortDescription = policy.Sanitize(req.ShortDescription)
+	req.ShortDescriptionZh = policy.Sanitize(req.ShortDescriptionZh)
+	for i := range req.Itinerary {
+		req.Itinerary[i].Description = policy.Sanitize(req.Itinerary[i].Description)
+		req.Itinerary[i].DescriptionZh = policy.Sanitize(req.Itinerary[i].DescriptionZh)
+	}
+
 	if len(req.Prices) == 0 {
 		fail(c, http.StatusBadRequest, "at least one price is required")
 		return
@@ -371,6 +383,17 @@ func (h *PackageController) Update(c *gin.Context) {
 	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"success": false, "errors": FormatValidationError(err)})
 		return
+	}
+
+	// Sanitize rich text inputs
+	policy := bluemonday.UGCPolicy()
+	req.Description = policy.Sanitize(req.Description)
+	req.DescriptionZh = policy.Sanitize(req.DescriptionZh)
+	req.ShortDescription = policy.Sanitize(req.ShortDescription)
+	req.ShortDescriptionZh = policy.Sanitize(req.ShortDescriptionZh)
+	for i := range req.Itinerary {
+		req.Itinerary[i].Description = policy.Sanitize(req.Itinerary[i].Description)
+		req.Itinerary[i].DescriptionZh = policy.Sanitize(req.Itinerary[i].DescriptionZh)
 	}
 
 	if len(req.Prices) > 0 && primaryPrice(req.Prices) < 1 {
@@ -746,7 +769,8 @@ func isSlugConflict(err error) bool {
 	if err == nil {
 		return false
 	}
-	return strings.Contains(err.Error(), "UNIQUE constraint failed: packages.slug")
+	errStr := err.Error()
+	return strings.Contains(errStr, "UNIQUE constraint failed") && strings.Contains(errStr, ".slug")
 }
 
 // escapeLike escapes SQL LIKE wildcards (%, _, \) to prevent pattern injection.

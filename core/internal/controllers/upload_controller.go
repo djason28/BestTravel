@@ -7,6 +7,8 @@ import (
 	"mime/multipart"
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -30,10 +32,6 @@ func NewUploadController(cfg *config.Config) *UploadController {
 }
 
 func (h *UploadController) UploadImage(c *gin.Context) {
-	if h.r2 == nil {
-		fail(c, http.StatusServiceUnavailable, "R2 is not configured")
-		return
-	}
 	file, err := c.FormFile("file")
 	if err != nil {
 		fail(c, http.StatusBadRequest, "file is required")
@@ -70,19 +68,38 @@ func (h *UploadController) UploadImage(c *gin.Context) {
 	}
 	defer opened.Close()
 
-	_, err = h.r2.PutObject(c.Request.Context(), &s3.PutObjectInput{
-		Bucket:      aws.String(h.cfg.R2Bucket),
-		Key:         aws.String(key),
-		Body:        opened,
-		ContentType: aws.String(file.Header.Get("Content-Type")),
-	})
-	if err != nil {
-		fail(c, http.StatusInternalServerError, "failed to upload file")
-		return
+	if h.r2 != nil {
+		_, err = h.r2.PutObject(c.Request.Context(), &s3.PutObjectInput{
+			Bucket:      aws.String(h.cfg.R2Bucket),
+			Key:         aws.String(key),
+			Body:        opened,
+			ContentType: aws.String(file.Header.Get("Content-Type")),
+		})
+		if err != nil {
+			fail(c, http.StatusInternalServerError, "failed to upload file")
+			return
+		}
+	} else {
+		// Local fallback
+		uploadPath := filepath.Join(h.cfg.UploadDir, key)
+		if err := os.MkdirAll(filepath.Dir(uploadPath), os.ModePerm); err != nil {
+			fail(c, http.StatusInternalServerError, "failed to create directory")
+			return
+		}
+		out, err := os.Create(uploadPath)
+		if err != nil {
+			fail(c, http.StatusInternalServerError, "failed to create file")
+			return
+		}
+		defer out.Close()
+		if _, err := io.Copy(out, opened); err != nil {
+			fail(c, http.StatusInternalServerError, "failed to save file")
+			return
+		}
 	}
 
 	var imgUrl string
-	if h.cfg.R2PublicBaseURL != "" {
+	if h.r2 != nil && h.cfg.R2PublicBaseURL != "" {
 		imgUrl = fmt.Sprintf("%s/%s", strings.TrimRight(h.cfg.R2PublicBaseURL, "/"), key)
 	} else {
 		imgUrl = "/images/" + key
@@ -92,10 +109,6 @@ func (h *UploadController) UploadImage(c *gin.Context) {
 }
 
 func (h *UploadController) DeleteImage(c *gin.Context) {
-	if h.r2 == nil {
-		fail(c, http.StatusServiceUnavailable, "R2 is not configured")
-		return
-	}
 	var req struct {
 		URL string `json:"url" binding:"required,url"`
 	}
@@ -108,41 +121,59 @@ func (h *UploadController) DeleteImage(c *gin.Context) {
 		fail(c, http.StatusBadRequest, "invalid url")
 		return
 	}
-	_, err := h.r2.DeleteObject(c.Request.Context(), &s3.DeleteObjectInput{
-		Bucket: aws.String(h.cfg.R2Bucket),
-		Key:    aws.String(key),
-	})
-	if err != nil {
-		fail(c, http.StatusInternalServerError, "failed to delete")
-		return
+	
+	if h.r2 != nil {
+		_, err := h.r2.DeleteObject(c.Request.Context(), &s3.DeleteObjectInput{
+			Bucket: aws.String(h.cfg.R2Bucket),
+			Key:    aws.String(key),
+		})
+		if err != nil {
+			fail(c, http.StatusInternalServerError, "failed to delete")
+			return
+		}
+	} else {
+		// Local fallback
+		filePath := filepath.Join(h.cfg.UploadDir, key)
+		if err := os.Remove(filePath); err != nil && !os.IsNotExist(err) {
+			fail(c, http.StatusInternalServerError, "failed to delete local file")
+			return
+		}
 	}
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 
 func (h *UploadController) ServeImage(c *gin.Context) {
-	if h.r2 == nil {
-		c.String(http.StatusServiceUnavailable, "R2 is not configured")
-		return
-	}
 	key := strings.TrimPrefix(c.Param("filepath"), "/")
 	if key == "" {
 		c.String(http.StatusBadRequest, "Invalid filename")
 		return
 	}
-	obj, err := h.r2.GetObject(c.Request.Context(), &s3.GetObjectInput{
-		Bucket: aws.String(h.cfg.R2Bucket),
-		Key:    aws.String(key),
-	})
-	if err != nil {
-		c.String(http.StatusNotFound, "Image not found")
-		return
+	
+	if h.r2 != nil {
+		obj, err := h.r2.GetObject(c.Request.Context(), &s3.GetObjectInput{
+			Bucket: aws.String(h.cfg.R2Bucket),
+			Key:    aws.String(key),
+		})
+		if err != nil {
+			c.String(http.StatusNotFound, "Image not found")
+			return
+		}
+		defer obj.Body.Close()
+		if obj.ContentType != nil {
+			c.Header("Content-Type", *obj.ContentType)
+		}
+		c.Header("Cache-Control", "public, max-age=31536000, immutable")
+		_, _ = io.Copy(c.Writer, obj.Body)
+	} else {
+		// Local fallback
+		filePath := filepath.Join(h.cfg.UploadDir, key)
+		if _, err := os.Stat(filePath); os.IsNotExist(err) {
+			c.String(http.StatusNotFound, "Image not found")
+			return
+		}
+		c.Header("Cache-Control", "public, max-age=31536000, immutable")
+		c.File(filePath)
 	}
-	defer obj.Body.Close()
-	if obj.ContentType != nil {
-		c.Header("Content-Type", *obj.ContentType)
-	}
-	c.Header("Cache-Control", "public, max-age=31536000, immutable")
-	_, _ = io.Copy(c.Writer, obj.Body)
 }
 
 func isImage(f *multipart.FileHeader) bool {

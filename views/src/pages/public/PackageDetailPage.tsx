@@ -24,6 +24,7 @@ import { t } from "../../i18n";
 import { TransformWrapper, TransformComponent } from "react-zoom-pan-pinch";
 import { useLang } from "../../contexts/LangContext";
 import { useAuth } from "../../contexts/AuthContext";
+import { Helmet } from "react-helmet-async";
 
 export const PackageDetailPage: React.FC = () => {
   const { lang } = useLang();
@@ -206,6 +207,10 @@ export const PackageDetailPage: React.FC = () => {
       : pkg?.categories) || [];
   return (
     <div className="bg-sky-50">
+      <Helmet>
+        <title>{lang === "zh" ? pkg.titleZh || pkg.title : pkg.title} | BestTravel</title>
+        <meta name="description" content={lang === "zh" ? pkg.shortDescriptionZh || pkg.shortDescription || pkg.titleZh || pkg.title : pkg.shortDescription || pkg.title} />
+      </Helmet>
       <div className="container mx-auto px-4 py-8">
         <Link
           to="/packages"

@@ -20,12 +20,20 @@ const (
 
 func AuthRequired(cfg *config.Config, authRepo repository.AuthRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		auth := c.GetHeader("Authorization")
-		if !strings.HasPrefix(auth, "Bearer ") {
+		token := ""
+		if cookie, err := c.Cookie("jwt"); err == nil && cookie != "" {
+			token = cookie
+		} else {
+			auth := c.GetHeader("Authorization")
+			if strings.HasPrefix(auth, "Bearer ") {
+				token = strings.TrimPrefix(auth, "Bearer ")
+			}
+		}
+
+		if token == "" {
 			c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"success": false, "error": "missing token"})
 			return
 		}
-		token := strings.TrimPrefix(auth, "Bearer ")
 
 		claims, err := utils.ParseJWT(cfg, token)
 		if err != nil {
@@ -61,9 +69,17 @@ func AdminOnly() gin.HandlerFunc {
 // OptionalAuth extracts user context if token present, but doesn't abort if missing
 func OptionalAuth(cfg *config.Config, authRepo repository.AuthRepository) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		auth := c.GetHeader("Authorization")
-		if strings.HasPrefix(auth, "Bearer ") {
-			token := strings.TrimPrefix(auth, "Bearer ")
+		token := ""
+		if cookie, err := c.Cookie("jwt"); err == nil && cookie != "" {
+			token = cookie
+		} else {
+			auth := c.GetHeader("Authorization")
+			if strings.HasPrefix(auth, "Bearer ") {
+				token = strings.TrimPrefix(auth, "Bearer ")
+			}
+		}
+
+		if token != "" {
 			claims, err := utils.ParseJWT(cfg, token)
 			if err == nil {
 				// Check blacklist by jti

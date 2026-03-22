@@ -17,51 +17,49 @@ import { Card } from "../../components/common/Card";
 import { PackageCardSkeleton } from "../../components/common/Loading";
 import { t } from "../../i18n";
 import { useNavigationState } from "../../contexts/NavigationContext";
-import { useDataCache } from "../../contexts/DataCacheContext";
 import { PrefetchLink } from "../../components/common";
 import { useLang } from "../../contexts/LangContext";
 import { useAuth } from "../../contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { Helmet } from "react-helmet-async";
 
 export const HomePage: React.FC = () => {
   const { lang } = useLang();
-  const [featuredPackages, setFeaturedPackages] = useState<Package[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
   const [zoomImage, setZoomImage] = useState<string | null>(null);
   const { isAuthenticated } = useAuth();
 
   const { endNavigation } = useNavigationState();
-  const { featured: cachedFeatured, prefetchFeatured } = useDataCache();
 
-  useEffect(() => {
-    prefetchFeatured();
-    loadFeaturedPackages();
-  }, [prefetchFeatured]);
-
-  const loadFeaturedPackages = async () => {
-    // Show cached data immediately — no loading skeleton on revisit
-    if (cachedFeatured) {
-      setFeaturedPackages(cachedFeatured);
-      setIsLoading(false);
-      endNavigation();
-      return;
-    }
-    setIsLoading(true);
-    try {
+  const { data: featuredPackages = [], isLoading } = useQuery({
+    queryKey: ["packages", "featured"],
+    queryFn: async () => {
       const response = await packageApi.getAll({
         limit: 6,
         sortBy: "popular",
         status: "published",
       });
-      if (response.success) {
-        setFeaturedPackages(response.data.slice(0, 6));
-      }
-    } catch (error) {
-      console.error("Failed to load packages:", error);
-    } finally {
-      setIsLoading(false);
+      return response.success ? response.data.slice(0, 6) : [];
+    },
+  });
+
+  useEffect(() => {
+    if (!isLoading) {
       endNavigation();
     }
-  };
+  }, [isLoading, endNavigation]);
+
+  useEffect(() => {
+    if (!zoomImage) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") {
+        setZoomImage(null);
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, [zoomImage]);
 
   const localizeUnit = (unit: string) => {
     if (lang === "zh") {
@@ -81,6 +79,10 @@ export const HomePage: React.FC = () => {
 
   return (
     <div>
+      <Helmet>
+        <title>{t("home_title")} | BestTravel</title>
+        <meta name="description" content={t("home_subtitle")} />
+      </Helmet>
       <section className="relative h-[600px] overflow-hidden bg-[#0c4a6e]">
         {/* Image wrapper with skeleton */}
         <HeroPicture />

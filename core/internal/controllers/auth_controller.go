@@ -46,6 +46,9 @@ func (h *AuthController) Login(c *gin.Context) {
 		fail(c, http.StatusInternalServerError, "failed to generate token")
 		return
 	}
+	
+	secure := h.cfg.Env == "production"
+	c.SetCookie("jwt", token, 3600*24, "/", "", secure, true) // 1 day
 	c.JSON(http.StatusOK, gin.H{
 		"success": true,
 		"token":   token,
@@ -59,12 +62,15 @@ func (h *AuthController) Login(c *gin.Context) {
 }
 
 func (h *AuthController) Refresh(c *gin.Context) {
-	auth := c.GetHeader("Authorization")
-	if !strings.HasPrefix(auth, "Bearer ") {
-		fail(c, http.StatusUnauthorized, "missing token")
-		return
+	tokenStr, err := c.Cookie("jwt")
+	if err != nil || tokenStr == "" {
+		auth := c.GetHeader("Authorization")
+		if !strings.HasPrefix(auth, "Bearer ") {
+			fail(c, http.StatusUnauthorized, "missing token")
+			return
+		}
+		tokenStr = strings.TrimPrefix(auth, "Bearer ")
 	}
-	tokenStr := strings.TrimPrefix(auth, "Bearer ")
 	claims, err := utils.ParseJWT(h.cfg, tokenStr)
 	if err != nil {
 		fail(c, http.StatusUnauthorized, "invalid token")
@@ -86,19 +92,31 @@ func (h *AuthController) Refresh(c *gin.Context) {
 	if claims.ID != "" {
 		_ = h.authRepo.BlacklistToken(c.Request.Context(), claims.ID, claims.ExpiresAt.Time)
 	}
+	
+	secure := h.cfg.Env == "production"
+	c.SetCookie("jwt", newToken, 3600*24, "/", "", secure, true) // 1 day
+	
 	c.JSON(http.StatusOK, gin.H{"success": true, "token": newToken})
 }
 
 func (h *AuthController) Logout(c *gin.Context) {
-	auth := c.GetHeader("Authorization")
-	if strings.HasPrefix(auth, "Bearer ") {
-		tokenStr := strings.TrimPrefix(auth, "Bearer ")
+	tokenStr, err := c.Cookie("jwt")
+	if err != nil || tokenStr == "" {
+		auth := c.GetHeader("Authorization")
+		if strings.HasPrefix(auth, "Bearer ") {
+			tokenStr = strings.TrimPrefix(auth, "Bearer ")
+		}
+	}
+
+	if tokenStr != "" {
 		claims, err := utils.ParseJWT(h.cfg, tokenStr)
 		if err == nil && claims.ID != "" {
 			// Store jti in blacklist (small UUID, not full token string)
 			_ = h.authRepo.BlacklistToken(c.Request.Context(), claims.ID, claims.ExpiresAt.Time)
 		}
 	}
+	secure := h.cfg.Env == "production"
+	c.SetCookie("jwt", "", -1, "/", "", secure, true)
 	c.JSON(http.StatusOK, gin.H{"success": true})
 }
 

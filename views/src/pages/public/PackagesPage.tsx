@@ -17,22 +17,18 @@ import { PackageCardSkeleton } from "../../components/common/Loading";
 import { Button } from "../../components/common/Button";
 import { t } from "../../i18n";
 import { useNavigationState } from "../../contexts/NavigationContext";
-import { useDataCache } from "../../contexts/DataCacheContext";
 import { useResponsiveLimit } from "../../hooks/useResponsiveLimit";
 import { useLang } from "../../contexts/LangContext";
 import { useAuth } from "../../contexts/AuthContext";
+import { useQuery } from "@tanstack/react-query";
+import { Helmet } from "react-helmet-async";
 
 export const PackagesPage: React.FC = () => {
   const { lang } = useLang();
   const { isAuthenticated } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
-  const [packages, setPackages] = useState<Package[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [totalItems, setTotalItems] = useState(0);
-  const { endNavigation, startNavigation } = useNavigationState();
   const [showFilters, setShowFilters] = useState(false);
-  const [totalPages, setTotalPages] = useState(1);
-  const [currentPage, setCurrentPage] = useState(1);
+  const { endNavigation, startNavigation } = useNavigationState();
   const responsiveLimit = useResponsiveLimit();
 
   const [filters, setFilters] = useState<FilterOptions>({
@@ -41,90 +37,50 @@ export const PackagesPage: React.FC = () => {
     limit: responsiveLimit,
   } as FilterOptions);
 
-  const [options, setOptions] = useState<PackageFilterOptions>({
+  const { data: optionsData } = useQuery({
+    queryKey: ["packages", "options"],
+    queryFn: async () => {
+      const res = await packageApi.getOptions();
+      return res.success && res.data ? res.data : null;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const options = optionsData || {
     categories: [],
     destinations: [],
     currencies: [],
     availability: [],
+  };
+
+  const {
+    data: packagesData,
+    isLoading,
+    isFetching,
+  } = useQuery({
+    queryKey: ["packages", "list", filters],
+    queryFn: async () => {
+      const res = await packageApi.getAll(filters);
+      return res.success ? res : null;
+    },
   });
-  const { filterOptions: cachedOptions, prefetchFilterOptions } =
-    useDataCache();
+
+  const packages = packagesData?.data || [];
+  const totalPages = packagesData?.pagination?.totalPages || 1;
+  const currentPage = packagesData?.pagination?.page || 1;
+  const totalItems = packagesData?.pagination?.total || packages.length;
 
   useEffect(() => {
-    prefetchFilterOptions();
-    if (cachedOptions) {
-      setOptions(cachedOptions);
+    if (isLoading || isFetching) {
+      startNavigation();
     } else {
-      packageApi
-        .getOptions()
-        .then((res) => {
-          if (res.success && res.data) {
-            setOptions(res.data);
-          }
-        })
-        .catch((e) => {
-          console.warn("Failed to load filter options", e);
-        });
+      endNavigation();
     }
-  }, [cachedOptions, prefetchFilterOptions]);
-
-  useEffect(() => {
-    loadPackages();
-  }, [filters]);
+  }, [isLoading, isFetching, startNavigation, endNavigation]);
 
   useEffect(() => {
     setFilters((prev) => ({ ...prev, limit: responsiveLimit, page: 1 }));
   }, [responsiveLimit]);
-
-  // Stale-while-revalidate cache for package list — matches backend 30s TTL
-  const pkgCacheRef = useRef<Map<string, { data: Package[]; pagination: any; ts: number }>>(new Map());
-  const CACHE_TTL = 30_000;
-
-  const loadPackages = async () => {
-    const cacheKey = JSON.stringify(filters);
-    const cached = pkgCacheRef.current.get(cacheKey);
-
-    // Fresh cache: render immediately, skip network
-    if (cached && Date.now() - cached.ts < CACHE_TTL) {
-      setPackages(cached.data);
-      setTotalPages(cached.pagination.totalPages);
-      setCurrentPage(cached.pagination.page);
-      setTotalItems(cached.pagination.total || cached.data.length);
-      setIsLoading(false);
-      endNavigation();
-      return;
-    }
-    // Stale cache: show immediately, revalidate in background
-    if (cached) {
-      setPackages(cached.data);
-      setTotalPages(cached.pagination.totalPages);
-      setCurrentPage(cached.pagination.page);
-      setTotalItems(cached.pagination.total || cached.data.length);
-      setIsLoading(false);
-    } else {
-      setIsLoading(true);
-      startNavigation();
-    }
-    try {
-      const response = await packageApi.getAll(filters);
-      if (response.success) {
-        setPackages(response.data);
-        setTotalPages(response.pagination.totalPages);
-        setCurrentPage(response.pagination.page);
-        setTotalItems(response.pagination.total || response.data.length);
-        pkgCacheRef.current.set(cacheKey, {
-          data: response.data,
-          pagination: response.pagination,
-          ts: Date.now(),
-        });
-      }
-    } catch (error) {
-      console.error("Failed to load packages:", error);
-    } finally {
-      setIsLoading(false);
-      endNavigation();
-    }
-  };
 
   const handleSearchChange = debounce((value: string) => {
     updateFilter("search", value);
@@ -211,9 +167,13 @@ export const PackagesPage: React.FC = () => {
   }, [currentPage, totalPages]);
 
   return (
-    <div className="bg-sky-50 min-h-screen">
-      <div
-        className="text-white py-16"
+    <div className="bg-sky-50 min-h-screen border-t">
+      <Helmet>
+        <title>{t("packages")} | BestTravel</title>
+        <meta name="description" content="Discover our wide range of carefully curated tour packages. We offer the best deals and seamless travel experiences around the world." />
+      </Helmet>
+      {/* Hero Banner */}
+      <div className="text-white py-16"
         style={{
           background: "linear-gradient(135deg, #0c4a6e 0%, #0891b2 100%)",
         }}

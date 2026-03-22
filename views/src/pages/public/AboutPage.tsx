@@ -14,6 +14,7 @@ import { Button } from "../../components/common/Button";
 import { t } from "../../i18n";
 import { MultiParagraphText } from "../../components/common/MultiParagraphText";
 import { useNavigationState } from "../../contexts/NavigationContext";
+import { Helmet } from "react-helmet-async";
 
 export const AboutPage: React.FC = () => {
   const { endNavigation } = useNavigationState();
@@ -23,6 +24,10 @@ export const AboutPage: React.FC = () => {
   }, [endNavigation]);
   return (
     <div className="bg-sky-50">
+      <Helmet>
+        <title>{t("about_title")} | BestTravel</title>
+        <meta name="description" content={t("about_subtitle")} />
+      </Helmet>
       <div
         className="text-white py-16"
         style={{

@@ -32,11 +32,14 @@ export class ApiError extends Error {
   }
 }
 
+const _fetch = window.fetch;
+const fetch = async (url: RequestInfo | URL, init?: RequestInit) => {
+  return _fetch(url, { ...init, credentials: "include" });
+};
+
 const getAuthHeaders = (): HeadersInit => {
-  const token = localStorage.getItem("auth_token");
   return {
     "Content-Type": "application/json",
-    ...(token && { Authorization: `Bearer ${token}` }),
   };
 };
 
